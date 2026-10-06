@@ -10,6 +10,12 @@
 #include "Components/ETWeaponCollisionComponent.h"
 #include "Components/ETChargeAttackComponent.h"
 #include "Components/ETInteractionComponent.h"
+#include "GameFramework/RootMotionSource.h"
+
+namespace
+{
+	const FName DodgeRootMotionSourceName(TEXT("ETDodge"));
+}
 
 AETPlayer::AETPlayer()
 {
@@ -91,6 +97,8 @@ void AETPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		EnhancedInputComponent->BindAction(PlayerInputData.HeavyAttackAction, ETriggerEvent::Completed, this, &ThisClass::OnHeavyAttackActionCompleted);
 
 		EnhancedInputComponent->BindAction(PlayerInputData.PrimaryAction, ETriggerEvent::Completed, this, &ThisClass::OnPrimaryActionCompleted);
+
+		EnhancedInputComponent->BindAction(PlayerInputData.DodgeAction, ETriggerEvent::Started, this, &ThisClass::OnDodgeActionStarted);
 	}
 }
 
@@ -174,6 +182,62 @@ void AETPlayer::OnHeavyAttackActionCompleted()
 void AETPlayer::OnPrimaryActionCompleted()
 {
 	InteractionComponent->DoInteraction();
+}
+
+void AETPlayer::OnDodgeActionStarted()
+{
+	if (CanDodge() == false || ActionDataAsset == nullptr)
+	{
+		return;
+	}
+
+	// Character.Action.Dodge 몽타주 배열 인덱스 (0 : Fwd, 1 : Bwd)
+	int32 DodgeMontageIndex = 1;
+
+	const FVector InputDirection = GetLastMovementInputVector().GetSafeNormal2D();
+	if (InputDirection.IsNearlyZero() == false)
+	{
+		const bool bForward = FVector::DotProduct(GetActorForwardVector(), InputDirection) >= 0.f;
+
+		DodgeMontageIndex = bForward ? 0 : 1;
+		SetActorRotation((bForward ? InputDirection : -InputDirection).Rotation());
+	}
+
+	UAnimMontage* DodgeMontage = ActionDataAsset->GetAnimMontage(ETGameplayTags::Character_Action_Dodge, DodgeMontageIndex);
+	if (DodgeMontage == nullptr)
+	{
+		return;
+	}
+
+	WeaponCollisionComponent->EndWeaponCollision();
+	ResetComboAttack();
+	ResetHeavyAttack();
+
+	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Dodging);
+
+	if (PlayAnimMontage(DodgeMontage) <= 0.f)
+	{
+		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
+		return;
+	}
+
+	const FVector DodgeDirection = DodgeMontageIndex == 0 ? GetActorForwardVector() : -GetActorForwardVector();
+
+	TSharedPtr<FRootMotionSource_ConstantForce> DodgeForce = MakeShared<FRootMotionSource_ConstantForce>();
+	DodgeForce->InstanceName = DodgeRootMotionSourceName;
+	DodgeForce->AccumulateMode = ERootMotionAccumulateMode::Override;
+	DodgeForce->Force = DodgeDirection * (DodgeDistance / DodgeDuration);
+	DodgeForce->Duration = DodgeDuration;
+	DodgeForce->FinishVelocityParams.Mode = ERootMotionFinishVelocityMode::SetVelocity;
+	DodgeForce->FinishVelocityParams.SetVelocity = FVector::ZeroVector;
+	GetCharacterMovement()->ApplyRootMotionSource(DodgeForce);
+
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		FOnMontageBlendingOutStarted BlendingOutDelegate;
+		BlendingOutDelegate.BindUObject(this, &ThisClass::OnDodgeMontageBlendingOut);
+		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, DodgeMontage);
+	}
 }
 
 void AETPlayer::AdvanceComboAttack()
@@ -263,6 +327,7 @@ void AETPlayer::HitReact(AActor* InDamageCauser)
 		return;
 	}
 
+	GetCharacterMovement()->RemoveRootMotionSource(DodgeRootMotionSourceName);
 	WeaponCollisionComponent->EndWeaponCollision();
 	ResetComboAttack();
 	ResetHeavyAttack();
@@ -324,6 +389,16 @@ bool AETPlayer::CanPlayComboAttack()
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false;
 }
 
+bool AETPlayer::CanDodge()
+{
+	FGameplayTagContainer CheckContainer;
+	CheckContainer.AddTag(ETGameplayTags::Character_State_Death);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_Dodging);
+
+	return CharacterStateComponent->HasCurrentState(CheckContainer) == false &&
+		GetCharacterMovement()->IsFalling() == false;
+}
+
 bool AETPlayer::CanHeavyAttack()
 {
 	FGameplayTagContainer CheckContainer;
@@ -367,4 +442,12 @@ void AETPlayer::OnChargeCountChanged(const int32 InCurrentChargeCount, const int
 	}
 
 	// TODO : 충전 파티클 출력
+}
+
+void AETPlayer::OnDodgeMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted)
+{
+	if (bInterrupted == false)
+	{
+		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
+	}
 }

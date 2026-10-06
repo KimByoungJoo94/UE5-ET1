@@ -41,6 +41,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputAction> PrimaryAction;
+
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UInputAction> DodgeAction;
 };
 
 UCLASS()
@@ -68,6 +71,7 @@ public:
 	void OnHeavyAttackActionStarted();
 	void OnHeavyAttackActionCompleted();
 	void OnPrimaryActionCompleted();
+	void OnDodgeActionStarted();
 	// ~Key Input
 
 	void AdvanceComboAttack();
@@ -88,7 +92,10 @@ protected:
 	bool CanMove();
 	bool CanPlayComboAttack();
 	bool CanHeavyAttack();
+	bool CanDodge();
 	void PlayComboAttack();
+
+	void OnDodgeMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
 
 	void OnChargeCountChanged(const int32 InCurrentChargeCount, const int32 InMaxChargeCount);
 	
@@ -111,6 +118,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "DataAsset")
 	TObjectPtr<UETCharacterActionDataAsset> ActionDataAsset;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Dodge", meta = (ClampMin = "0.0"))
+	float DodgeDistance = 450.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Dodge", meta = (ClampMin = "0.01"))
+	float DodgeDuration = 0.6f;
 
 protected:
 	bool bComboAttackReserved = false;	

@@ -11,6 +11,8 @@
 #include "Components/ETChargeAttackComponent.h"
 #include "Components/ETInteractionComponent.h"
 #include "GameFramework/RootMotionSource.h"
+#include "Effect/ETAfterImageActor.h"
+#include "Subsystem/ETTimeDilationSubsystem.h"
 
 namespace
 {
@@ -232,6 +234,9 @@ void AETPlayer::OnDodgeActionStarted()
 	DodgeForce->FinishVelocityParams.SetVelocity = FVector::ZeroVector;
 	GetCharacterMovement()->ApplyRootMotionSource(DodgeForce);
 
+	// TODO : 적 공격의 회피 가능 구간에서만 호출
+	PlayPerfectDodge();
+
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
 		FOnMontageBlendingOutStarted BlendingOutDelegate;
@@ -449,5 +454,21 @@ void AETPlayer::OnDodgeMontageBlendingOut(UAnimMontage* InMontage, bool bInterru
 	if (bInterrupted == false)
 	{
 		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
+	}
+}
+
+void AETPlayer::PlayPerfectDodge()
+{
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	if (AETAfterImageActor* AfterImageActor = GetWorld()->SpawnActor<AETAfterImageActor>(AETAfterImageActor::StaticClass(), GetMesh()->GetComponentTransform(), SpawnParameters))
+	{
+		AfterImageActor->InitAfterImage(GetMesh(), AfterImageMaterial, AfterImageLifeTime, AfterImageOpacity);
+	}
+
+	if (UETTimeDilationSubsystem* TimeDilationSubsystem = GetWorld()->GetSubsystem<UETTimeDilationSubsystem>())
+	{
+		TimeDilationSubsystem->StartTimeDilation(PerfectDodgeTimeDilation, PerfectDodgeSlowDuration);
 	}
 }

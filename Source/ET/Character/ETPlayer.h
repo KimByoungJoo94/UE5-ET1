@@ -13,6 +13,7 @@ class UInputMappingContext;
 class UInputAction;
 class UETCharacterActionDataAsset;
 class UAnimMontage;
+class UMaterialInterface;
 struct FInputActionValue;
 
 USTRUCT()
@@ -96,6 +97,7 @@ protected:
 	void PlayComboAttack();
 
 	void OnDodgeMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
+	void PlayPerfectDodge();
 
 	void OnChargeCountChanged(const int32 InCurrentChargeCount, const int32 InMaxChargeCount);
 	
@@ -124,6 +126,21 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge", meta = (ClampMin = "0.01"))
 	float DodgeDuration = 0.6f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "PerfectDodge")
+	TObjectPtr<UMaterialInterface> AfterImageMaterial;
+
+	UPROPERTY(EditDefaultsOnly, Category = "PerfectDodge", meta = (ClampMin = "0.01"))
+	float AfterImageLifeTime = 0.5f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "PerfectDodge", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float AfterImageOpacity = 0.5f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "PerfectDodge", meta = (ClampMin = "0.01", ClampMax = "1.0"))
+	float PerfectDodgeTimeDilation = 0.3f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "PerfectDodge", meta = (ClampMin = "0.0"))
+	float PerfectDodgeSlowDuration = 1.f;
 
 protected:
 	bool bComboAttackReserved = false;	

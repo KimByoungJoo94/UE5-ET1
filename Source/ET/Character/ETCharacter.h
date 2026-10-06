@@ -6,7 +6,7 @@
 
 class UETCharacterStateComponent;
 class UETGameStatComponent;
-class UETCombatComponent;
+class UETWeaponCollisionComponent;
 
 UCLASS()
 class ET_API AETCharacter : public ACharacter
@@ -19,13 +19,21 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	virtual void AttackTarget(AActor* InTarget, const FHitResult& InHitResult);
+	virtual float GetAttackDamage() const;
+
 	UETCharacterStateComponent* GetCharacterStateComponent() { return CharacterStateComponent; }
 	UETGameStatComponent* GetGameStatComponent() { return GameStatComponent; }
-	UETCombatComponent* GetCombatComponent() { return CombatComponent; }
+	UETWeaponCollisionComponent* GetWeaponCollisionComponent() { return WeaponCollisionComponent; }
+
+protected:
+	virtual void HitReact(AActor* InDamageCauser) {}
+	virtual void Die() {}
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "ET")
@@ -35,5 +43,5 @@ protected:
 	TObjectPtr<UETGameStatComponent> GameStatComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "ET")
-	TObjectPtr<UETCombatComponent> CombatComponent;
+	TObjectPtr<UETWeaponCollisionComponent> WeaponCollisionComponent;
 };

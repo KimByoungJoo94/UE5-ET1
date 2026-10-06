@@ -6,7 +6,9 @@
 #include "EnhancedInputComponent.h"
 #include "DataAsset/ETCharacterActionDataAsset.h"
 #include "Components/ETCharacterStateComponent.h"
-#include "Components/ETCombatComponent.h"
+#include "Components/ETGameStatComponent.h"
+#include "Components/ETWeaponCollisionComponent.h"
+#include "Components/ETChargeAttackComponent.h"
 #include "Components/ETInteractionComponent.h"
 
 AETPlayer::AETPlayer()
@@ -36,6 +38,7 @@ AETPlayer::AETPlayer()
 	CameraComponent->bUsePawnControlRotation = false;
 
 	InteractionComponent = CreateDefaultSubobject<UETInteractionComponent>(TEXT("InteractionComponent"));
+	ChargeAttackComponent = CreateDefaultSubobject<UETChargeAttackComponent>(TEXT("ChargeAttackComponent"));
 }
 
 void AETPlayer::BeginPlay()
@@ -43,6 +46,15 @@ void AETPlayer::BeginPlay()
 	Super::BeginPlay();
 
 	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
+
+	OnChargeCountChangedHandle = ChargeAttackComponent->OnChargeCountChanged.AddUObject(this, &ThisClass::OnChargeCountChanged);
+}
+
+void AETPlayer::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	ChargeAttackComponent->OnChargeCountChanged.Remove(OnChargeCountChangedHandle);
+
+	Super::EndPlay(EndPlayReason);
 }
 
 void AETPlayer::NotifyControllerChanged()
@@ -150,6 +162,7 @@ void AETPlayer::OnHeavyAttackActionCompleted()
 		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 		{
 			AnimInstance->Montage_Resume(HeavyAttackMontage);
+			ChargeAttackComponent->EndChargeAttack();
 		}
 	}
 	else
@@ -184,21 +197,12 @@ void AETPlayer::ResetHeavyAttack()
 {
 	bPlayHeavyAttack = false;
 	HeavyAttackMontage = nullptr;
+	ChargeAttackComponent->ResetChargeAttack();
 
 	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
 }
 
-void AETPlayer::OnStartWeaponCollision()
-{
-	CombatComponent->StartWeaponCollision();
-}
-
-void AETPlayer::OnEndWeaponCollision()
-{
-	CombatComponent->EndWeaponCollision();
-}
-
-void AETPlayer::OnHeavyAttackPause()
+void AETPlayer::PauseHeavyAttack()
 {
 	if (HeavyAttackMontage == nullptr ||
 		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_HeavyAttacking) == false)
@@ -212,66 +216,94 @@ void AETPlayer::OnHeavyAttackPause()
 		{
 			AnimInstance->Montage_Pause(HeavyAttackMontage);
 			bPlayHeavyAttack = true;
+			ChargeAttackComponent->StartChargeAttack();
 		}
 	}
 }
 
-void AETPlayer::OnHit()
+float AETPlayer::GetAttackDamage() const
 {
-	//// LookAt 회전값을 구합니다. (현재 Actor가 공격자를 바라보는 회전값)
-	//const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetOwner()->GetActorLocation(), Attacker->GetActorLocation());
-	//// 현재 Actor의 회전값과 LookAt 회전값의 차이를 구합니다.
-	//const FRotator DeltaRotation = UKismetMathLibrary::NormalizedDeltaRotator(GetOwner()->GetActorRotation(), LookAtRotation);
-	//// Z축 기준의 회전값 차이만을 취합니다.
-	//const float DeltaZ = DeltaRotation.Yaw;
-
-	//EHitDirection HitDirection = EHitDirection::Front;
-
-	//if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -45.f, 45.f))
-	//{
-	//	HitDirection = EHitDirection::Front;
-	//	UE_LOG(LogTemp, Log, TEXT("Front"));
-	//}
-	//else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 45.f, 135.f))
-	//{
-	//	HitDirection = EHitDirection::Left;
-	//	UE_LOG(LogTemp, Log, TEXT("Left"));
-	//}
-	//else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 135.f, 180.f)
-	//	|| UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -180.f, -135.f))
-	//{
-	//	HitDirection = EHitDirection::Back;
-	//	UE_LOG(LogTemp, Log, TEXT("Back"));
-	//}
-	//else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -135.f, -45.f))
-	//{
-	//	HitDirection = EHitDirection::Right;
-	//	UE_LOG(LogTemp, Log, TEXT("Right"));
-	//}
-
-	//UAnimMontage* SelectedMontage = nullptr;
-	//switch (HitDirection)
-	//{
-	//case EHitDirection::Front:
-	//	SelectedMontage = GetMontageForTag(DS1GameplayTags::Character_Action_HitReaction, 0);
-	//	break;
-	//case EHitDirection::Back:
-	//	SelectedMontage = GetMontageForTag(DS1GameplayTags::Character_Action_HitReaction, 1);
-	//	break;
-	//case EHitDirection::Left:
-	//	SelectedMontage = GetMontageForTag(DS1GameplayTags::Character_Action_HitReaction, 2);
-	//	break;
-	//case EHitDirection::Right:
-	//	SelectedMontage = GetMontageForTag(DS1GameplayTags::Character_Action_HitReaction, 3);
-	//	break;
-	//}
-
-	//return SelectedMontage;
+	return Super::GetAttackDamage() * ChargeAttackComponent->GetDamageMultiplier();
 }
 
-void AETPlayer::OnDeath()
+void AETPlayer::HitReact(AActor* InDamageCauser)
+{
+	if (IsValid(InDamageCauser) == false || ActionDataAsset == nullptr)
+	{
+		return;
+	}
+
+	const FRotator LookAtRotation = (InDamageCauser->GetActorLocation() - GetActorLocation()).Rotation();
+	const float DeltaYaw = (GetActorRotation() - LookAtRotation).GetNormalized().Yaw;
+
+	// Character.Action.Hit 몽타주 배열 인덱스 (0 : Front, 1 : Back, 2 : Left, 3 : Right)
+	int32 HitMontageIndex = 0;
+
+	if (FMath::Abs(DeltaYaw) > 135.f)
+	{
+		HitMontageIndex = 1;
+	}
+	else if (DeltaYaw > 45.f)
+	{
+		HitMontageIndex = 2;
+	}
+	else if (DeltaYaw < -45.f)
+	{
+		HitMontageIndex = 3;
+	}
+
+	UAnimMontage* HitMontage = ActionDataAsset->GetAnimMontage(ETGameplayTags::Character_Action_Hit, HitMontageIndex);
+	if (HitMontage == nullptr)
+	{
+		HitMontage = ActionDataAsset->GetAnimMontage(ETGameplayTags::Character_Action_Hit, 0);
+	}
+
+	if (HitMontage == nullptr)
+	{
+		return;
+	}
+
+	WeaponCollisionComponent->EndWeaponCollision();
+	ResetComboAttack();
+	ResetHeavyAttack();
+
+	PlayAnimMontage(HitMontage);
+}
+
+void AETPlayer::Die()
 {
 	// TODO
+}
+
+const FText& AETPlayer::GetPrimaryActionKeyText() const
+{
+	const APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if (PlayerController == nullptr)
+	{
+		return FText::GetEmpty();
+	}
+
+	const ULocalPlayer* LocalPlayer = PlayerController->GetLocalPlayer();
+	if (LocalPlayer == nullptr)
+	{
+		return FText::GetEmpty();
+	}
+
+	const UEnhancedInputLocalPlayerSubsystem* InputSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+
+	if (InputSubsystem == nullptr || PlayerInputData.PrimaryAction == nullptr)
+	{
+		return FText::GetEmpty();
+	}
+
+	const TArray<FKey> Keys = InputSubsystem->QueryKeysMappedToAction(PlayerInputData.PrimaryAction);
+
+	if (Keys.IsEmpty())
+	{
+		return FText::GetEmpty();
+	}
+
+	return Keys[0].GetDisplayName();
 }
 
 bool AETPlayer::CanMove()
@@ -327,33 +359,12 @@ void AETPlayer::PlayComboAttack()
 	}
 }
 
-const FText& AETPlayer::GetPrimaryActionKeyText() const
+void AETPlayer::OnChargeCountChanged(const int32 InCurrentChargeCount, const int32 InMaxChargeCount)
 {
-	const APlayerController* PlayerController = Cast<APlayerController>(GetController());
-	if (PlayerController == nullptr)
+	if (InCurrentChargeCount <= 0)
 	{
-		return FText::GetEmpty();
+		return;
 	}
 
-	const ULocalPlayer* LocalPlayer = PlayerController->GetLocalPlayer();
-	if (LocalPlayer == nullptr)
-	{
-		return FText::GetEmpty();
-	}
-
-	const UEnhancedInputLocalPlayerSubsystem* InputSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-
-	if (InputSubsystem == nullptr || PlayerInputData.PrimaryAction == nullptr)
-	{
-		return FText::GetEmpty();
-	}
-
-	const TArray<FKey> Keys = InputSubsystem->QueryKeysMappedToAction(PlayerInputData.PrimaryAction);
-
-	if (Keys.IsEmpty())
-	{
-		return FText::GetEmpty();
-	}
-
-	return Keys[0].GetDisplayName();
+	// TODO : 충전 파티클 출력
 }

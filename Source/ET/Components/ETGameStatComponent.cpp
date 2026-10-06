@@ -8,13 +8,19 @@ const FETGameStat FETGameStat::Invalid(EETGameStatType::Max);
 UETGameStatComponent::UETGameStatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+	bWantsInitializeComponent = true;
+}
+
+void UETGameStatComponent::InitializeComponent()
+{
+	Super::InitializeComponent();
+
+	GenerateGameStat();
 }
 
 void UETGameStatComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	GenerateGameStat();
 }
 
 void UETGameStatComponent::GenerateGameStat()
@@ -49,3 +55,14 @@ const FETGameStat& UETGameStatComponent::GetGameStat(const EETGameStatType InGam
 	return FETGameStat::Invalid;
 }
 
+void UETGameStatComponent::AddDepletedValue(const EETGameStatType InGameStatType, const float InValue)
+{
+	if (FETGameStat* FoundGameStat = GameStatMap.Find(InGameStatType))
+	{
+		const float MaxValue = FoundGameStat->GetMaxValue();
+		const float NewCurrentValue = FMath::Clamp(FoundGameStat->GetCurrentValue() + InValue, 0.f, MaxValue);
+
+		FoundGameStat->SetDepletedValue(NewCurrentValue - MaxValue);
+		OnUpdateGameStat.Broadcast(*FoundGameStat);
+	}
+}

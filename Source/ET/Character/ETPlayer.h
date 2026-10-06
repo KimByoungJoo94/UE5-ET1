@@ -2,13 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "Character/ETCharacter.h"
-#include "Interface/ETCombatInterface.h"
 #include "Interface/ETInteractionInterface.h"
 #include "ETPlayer.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
 class UETInteractionComponent;
+class UETChargeAttackComponent;
 class UInputMappingContext;
 class UInputAction;
 class UETCharacterActionDataAsset;
@@ -44,7 +44,7 @@ public:
 };
 
 UCLASS()
-class ET_API AETPlayer : public AETCharacter, public IETCombatInterface
+class ET_API AETPlayer : public AETCharacter
 {
 	GENERATED_BODY()
 	
@@ -53,6 +53,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void NotifyControllerChanged() override;
 
 public:
@@ -71,24 +72,25 @@ public:
 
 	void AdvanceComboAttack();
 	void ResetComboAttack();
+	void PauseHeavyAttack();
 	void ResetHeavyAttack();
 
-	// IETCombatInterface
-	virtual void OnStartWeaponCollision() override;
-	virtual void OnEndWeaponCollision() override;
-	virtual void OnHeavyAttackPause() override;	
-	virtual void OnHit() override;
-	virtual void OnDeath() override;
-	// ~IETCombatInterface
+	virtual float GetAttackDamage() const override;
 
 	UETInteractionComponent* GetInteractionComponent() { return InteractionComponent; }
+	UETChargeAttackComponent* GetChargeAttackComponent() { return ChargeAttackComponent; }
 	const FText& GetPrimaryActionKeyText() const;
 
 protected:
+	virtual void HitReact(AActor* InDamageCauser) override;
+	virtual void Die() override;
+
 	bool CanMove();
 	bool CanPlayComboAttack();
 	bool CanHeavyAttack();
 	void PlayComboAttack();
+
+	void OnChargeCountChanged(const int32 InCurrentChargeCount, const int32 InMaxChargeCount);
 	
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Component")
@@ -99,6 +101,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Component")
 	TObjectPtr<UETInteractionComponent> InteractionComponent;
+
+	UPROPERTY(VisibleAnywhere, Category = "Component")
+	TObjectPtr<UETChargeAttackComponent> ChargeAttackComponent;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
@@ -115,4 +120,7 @@ protected:
 		
 	UPROPERTY(Transient)
 	TObjectPtr<UAnimMontage> HeavyAttackMontage;
+
+private:
+	FDelegateHandle OnChargeCountChangedHandle;
 };

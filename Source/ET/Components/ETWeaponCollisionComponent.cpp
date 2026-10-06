@@ -1,18 +1,17 @@
-#include "Components/ETCombatComponent.h"
+#include "Components/ETWeaponCollisionComponent.h"
 #include "Character/ETCharacter.h"
-#include "Interface/ETCombatInterface.h"
 
-UETCombatComponent::UETCombatComponent()
+UETWeaponCollisionComponent::UETWeaponCollisionComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-void UETCombatComponent::BeginPlay()
+void UETWeaponCollisionComponent::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-void UETCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UETWeaponCollisionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
@@ -22,18 +21,18 @@ void UETCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
     }
 }
 
-void UETCombatComponent::StartWeaponCollision()
+void UETWeaponCollisionComponent::StartWeaponCollision()
 {
     AlreadHitActorSet.Empty();
     bWeaponCollisionTracing = true;
 }
 
-void UETCombatComponent::EndWeaponCollision()
+void UETWeaponCollisionComponent::EndWeaponCollision()
 {
     bWeaponCollisionTracing = false;
 }
 
-void UETCombatComponent::TraceWeaponCollision()
+void UETWeaponCollisionComponent::TraceWeaponCollision()
 {
     if (AETCharacter* OwnerCharacter = Cast<AETCharacter>(GetOwner()))
     {
@@ -47,7 +46,7 @@ void UETCombatComponent::TraceWeaponCollision()
                 OwnerCharacter,
                 StartLocation,
                 EndLocation,
-                WeaponCollisionData.Radius, 
+                WeaponCollisionData.Radius,
                 WeaponCollisionData.ObjectTypes,
                 false,
                 TArray<AActor*>(),
@@ -65,10 +64,7 @@ void UETCombatComponent::TraceWeaponCollision()
                         {
                             AlreadHitActorSet.Add(HitActor);
 
-                            if (IETCombatInterface* CombatInterface = Cast<IETCombatInterface>(HitActor))
-                            {
-                                CombatInterface->OnHit();                                
-                            }
+                            OwnerCharacter->AttackTarget(HitActor, HitResult);
                         }
                     }
                 }

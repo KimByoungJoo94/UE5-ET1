@@ -7,6 +7,7 @@
 class AETCharacter;
 class AETPlayer;
 class UETGameStatComponent;
+class UETChargeAttackComponent;
 
 UCLASS()
 class ET_API UETUserWidget : public UUserWidget
@@ -17,4 +18,5 @@ public:
 	AETCharacter* GetOwningETCharacter() const;
 	AETPlayer* GetOwningETPlayer() const;
 	UETGameStatComponent* GetOwningGameStatComponent() const;
+	UETChargeAttackComponent* GetOwningChargeAttackComponent() const;
 };

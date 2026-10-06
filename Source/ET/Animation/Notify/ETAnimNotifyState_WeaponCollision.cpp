@@ -1,5 +1,5 @@
 #include "Animation/Notify/ETAnimNotifyState_WeaponCollision.h"
-#include "Interface/ETCombatInterface.h"
+#include "Components/ETWeaponCollisionComponent.h"
 
 void UETAnimNotifyState_WeaponCollision::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference)
 {
@@ -7,9 +7,9 @@ void UETAnimNotifyState_WeaponCollision::NotifyBegin(USkeletalMeshComponent* Mes
 
 	if (AActor* OwnerActor = MeshComp->GetOwner())
 	{
-		if (IETCombatInterface* CombatInterface = Cast<IETCombatInterface>(OwnerActor))
+		if (UETWeaponCollisionComponent* WeaponCollisionComponent = OwnerActor->FindComponentByClass<UETWeaponCollisionComponent>())
 		{
-			CombatInterface->OnStartWeaponCollision();
+			WeaponCollisionComponent->StartWeaponCollision();
 		}
 	}
 }
@@ -20,9 +20,9 @@ void UETAnimNotifyState_WeaponCollision::NotifyEnd(USkeletalMeshComponent* MeshC
 
 	if (AActor* OwnerActor = MeshComp->GetOwner())
 	{
-		if (IETCombatInterface* CombatInterface = Cast<IETCombatInterface>(OwnerActor))
+		if (UETWeaponCollisionComponent* WeaponCollisionComponent = OwnerActor->FindComponentByClass<UETWeaponCollisionComponent>())
 		{
-			CombatInterface->OnEndWeaponCollision();
+			WeaponCollisionComponent->EndWeaponCollision();
 		}
 	}
 }

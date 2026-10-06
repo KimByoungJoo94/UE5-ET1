@@ -11,4 +11,5 @@ namespace ETGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_ComboAttack, "Character.Action.ComboAttack");
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_JumpAttack, "Character.Action.JumpAttack");	
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_HeavyAttack, "Character.Action.HeavyAttack");
+	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Hit, "Character.Action.Hit");
 }

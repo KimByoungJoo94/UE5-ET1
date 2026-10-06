@@ -1,15 +1,12 @@
 #include "Animation/Notify/ETAnimNotify_PauseHeavyAttack.h"
-#include "Interface/ETCombatInterface.h"
+#include "Character/ETPlayer.h"
 
 void UETAnimNotify_PauseHeavyAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference)
 {
 	Super::Notify(MeshComp, Animation, EventReference);
 
-	if (AActor* OwnerActor = MeshComp->GetOwner())
+	if (AETPlayer* PlayerCharacter = Cast<AETPlayer>(MeshComp->GetOwner()))
 	{
-		if (IETCombatInterface* CombatInterface = Cast<IETCombatInterface>(OwnerActor))
-		{
-			CombatInterface->OnHeavyAttackPause();
-		}
+		PlayerCharacter->PauseHeavyAttack();
 	}
 }

@@ -54,6 +54,7 @@ public:
 	UETGameStatComponent();
 
 protected:
+	virtual void InitializeComponent() override;
 	virtual void BeginPlay() override;
 
 	void GenerateGameStat();
@@ -61,6 +62,7 @@ protected:
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	const FETGameStat& GetGameStat(const EETGameStatType InGameStatType) const;
+	void AddDepletedValue(const EETGameStatType InGameStatType, const float InValue);
 
 protected:
 	UPROPERTY(EditAnywhere)

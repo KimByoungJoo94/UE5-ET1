@@ -9,6 +9,8 @@ enum class EETGameStatType : uint8
 {
 	Health = 0,	
 	Speed,
+	Attack,
+	HeavyAttackMaxCharge,
 	// Level,
 	// Stamina,
 	// MaxStamina,

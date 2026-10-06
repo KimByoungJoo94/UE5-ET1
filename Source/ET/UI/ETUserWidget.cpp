@@ -39,3 +39,16 @@ UETGameStatComponent* UETUserWidget::GetOwningGameStatComponent() const
 
 	return nullptr;
 }
+
+UETChargeAttackComponent* UETUserWidget::GetOwningChargeAttackComponent() const
+{
+	if (AETPlayer* OwningPlayer = GetOwningETPlayer())
+	{
+		if (UETChargeAttackComponent* ChargeAttackComponent = OwningPlayer->GetChargeAttackComponent())
+		{
+			return ChargeAttackComponent;
+		}
+	}
+
+	return nullptr;
+}

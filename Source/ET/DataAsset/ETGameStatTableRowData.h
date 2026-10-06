@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
-#include "ETGameStatTableRowBase.generated.h"
+#include "ETGameStatTableRowData.generated.h"
 
 UENUM(BlueprintType)
 enum class EETGameStatType : uint8
@@ -16,7 +16,7 @@ enum class EETGameStatType : uint8
 };
 
 USTRUCT(BlueprintType)
-struct ET_API FETGameStatTableRowBase : public FTableRowBase
+struct ET_API FETGameStatTableRowData : public FTableRowBase
 {
 	GENERATED_BODY()
 	

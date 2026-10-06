@@ -22,8 +22,8 @@ public:
 	void SetInteractionTarget(AActor* InTarget);
 	void ClearInteractionTarget();
 	void DoInteraction();
+	void DoInteraction(AActor* InTarget);
 
 private:
-	UPROPERTY(Transient)
-	TObjectPtr<AActor> InteractionTarget;
+	TWeakObjectPtr<AActor> InteractionTarget;
 };

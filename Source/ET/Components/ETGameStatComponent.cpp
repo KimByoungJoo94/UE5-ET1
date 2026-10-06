@@ -1,5 +1,7 @@
 #include "Components/ETGameStatComponent.h"
 #include "Subsystem/ETGameDataSubsystem.h"
+#include "Engine/GameInstance.h"
+#include "Kismet/GameplayStatics.h"
 
 const FETGameStat FETGameStat::Invalid(EETGameStatType::Max);
 
@@ -17,9 +19,9 @@ void UETGameStatComponent::BeginPlay()
 
 void UETGameStatComponent::GenerateGameStat()
 {
-	if (UETGameDataSubsystem* GameDataSubsystem = GetWorld()->GetGameInstance()->GetSubsystem<UETGameDataSubsystem>())
+	if (UETGameDataSubsystem* GameDataSubsystem = UGameInstance::GetSubsystem<UETGameDataSubsystem>(UGameplayStatics::GetGameInstance(this)))
 	{
-		if (const FETGameStatTableRowBase* GameStatRow = GameDataSubsystem->GetGameStatRow(BaseGameStatRowName))
+		if (const FETGameStatTableRowData* GameStatRow = GameDataSubsystem->GetRow<FETGameStatTableRowData>(BaseGameStatRowName))
 		{
 			for (int32 Index = 0; Index < static_cast<int32>(EETGameStatType::Max); ++Index)
 			{

@@ -29,6 +29,6 @@ public:
 	void ClearState();
 	
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	UPROPERTY(VisibleAnywhere, Transient)
 	FGameplayTag CurrentState;
 };

@@ -10,8 +10,11 @@ AETDropItem::AETDropItem()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
+	RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
+	SetRootComponent(RootSceneComponent);
+
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
-	SetRootComponent(StaticMeshComponent);
+	StaticMeshComponent->SetupAttachment(GetRootComponent());
 
 	InteractionBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("InteractionBoxComponent"));
 	InteractionBoxComponent->SetupAttachment(GetRootComponent());
@@ -80,7 +83,7 @@ void AETDropItem::OnInteractionBoxEndOverlap(UPrimitiveComponent* OverlappedComp
 void AETDropItem::OnInteraction(AActor* InInteractor)
 {
 	UE_LOG(LogTemp, Log, TEXT("AETDropItem::OnInteraction(AActor* InInteractor)"));
-	
+
 	// TODO
 }
 

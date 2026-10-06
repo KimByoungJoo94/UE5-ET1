@@ -13,7 +13,7 @@ struct FETCharacterActionData
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere)
 	TArray<TObjectPtr<UAnimMontage>> MontageArray;
 };
 
@@ -28,7 +28,7 @@ public:
 	const TArray<TObjectPtr<UAnimMontage>>& GetAnimMontageArray(const FGameplayTag& InGameplayTag) const;
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere)
 	TMap<FGameplayTag, FETCharacterActionData> GameplayTagActionDataMap;
 
 private:

@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "DataAsset/ETGameStatTableRowBase.h"
+#include "DataAsset/ETGameStatTableRowData.h"
 #include "ETGameStatComponent.generated.h"
 
 #define ET_GAME_STAT_VALUE_FUNCTIONS(Name) \
@@ -66,7 +66,7 @@ protected:
 	UPROPERTY(EditAnywhere)
 	FName BaseGameStatRowName;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Transient)
 	TMap<EETGameStatType, FETGameStat> GameStatMap;
 
 public:

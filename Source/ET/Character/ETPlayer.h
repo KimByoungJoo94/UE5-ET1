@@ -21,25 +21,25 @@ struct FETPlayerInputData
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputMappingContext> InputMappingContext;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputAction> MoveAction;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputAction> LookAction;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputAction> JumpAction;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputAction> AttackAction;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputAction> HeavyAttackAction;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputAction> PrimaryAction;
 };
 
@@ -101,10 +101,10 @@ protected:
 	TObjectPtr<UETInteractionComponent> InteractionComponent;
 
 protected:
-	UPROPERTY(EditAnywhere, Category = "Input")
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	FETPlayerInputData PlayerInputData;
 
-	UPROPERTY(EditAnywhere, Category = "DataAsset")
+	UPROPERTY(EditDefaultsOnly, Category = "DataAsset")
 	TObjectPtr<UETCharacterActionDataAsset> ActionDataAsset;
 
 protected:

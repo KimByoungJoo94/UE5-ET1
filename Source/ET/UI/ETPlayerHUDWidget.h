@@ -22,7 +22,7 @@ public:
 	void OnUpdateGameStat(const FETGameStat& InGameStat);
 
 protected:
-	UPROPERTY()
+	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UProgressBar> HealthProgressBar;
 
 private:

@@ -36,12 +36,15 @@ public:
 	// ~IETInteractionInterface
 
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<USceneComponent> RootSceneComponent;
+
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UBoxComponent> InteractionBoxComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UWidgetComponent> InteractionWidgetComponent;
 };

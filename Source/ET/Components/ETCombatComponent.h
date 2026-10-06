@@ -25,9 +25,6 @@ struct FETWeaponCollisionData
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 		
 	UPROPERTY(EditAnywhere)
-	TArray<AActor*> ActorsToIgnore;
-		
-	UPROPERTY(EditAnywhere)
 	TEnumAsByte<EDrawDebugTrace::Type> DrawDebugType = EDrawDebugTrace::ForDuration;
 };
 
@@ -56,7 +53,7 @@ protected:
 	UPROPERTY(EditAnywhere)
 	FETWeaponCollisionData WeaponCollisionData;
 	
-	TSet<TObjectPtr<AActor>> AlreadHitActorSet;
+	TSet<TWeakObjectPtr<AActor>> AlreadHitActorSet;
 
 	bool bWeaponCollisionTracing = false;
 };

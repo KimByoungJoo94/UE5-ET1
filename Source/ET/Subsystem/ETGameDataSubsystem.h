@@ -1,13 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Subsystems/GameInstanceSubsystem.h"
+#include "Subsystem/ETGameSubsystem.h"
+#include "Engine/DataTable.h"
 #include "ETGameDataSubsystem.generated.h"
 
-struct FETGameStatTableRowBase;
-
-UCLASS()
-class ET_API UETGameDataSubsystem : public UGameInstanceSubsystem
+UCLASS(Config = Game)
+class ET_API UETGameDataSubsystem : public UETGameSubsystem
 {
 	GENERATED_BODY()
 
@@ -16,9 +15,39 @@ public:
 	virtual void Deinitialize() override;
 
 public:
-	const FETGameStatTableRowBase* GetGameStatRow(const FName InRowName) const;
+	template <typename T>
+	const T* GetRow(const FName InRowName) const
+	{
+		const UDataTable* DataTable = GetDataTable<T>();
+
+		if (DataTable == nullptr)
+		{
+			return nullptr;
+		}
+
+		return DataTable->FindRow<T>(InRowName, TEXT("UETGameDataSubsystem::GetRow"));
+	}
+
+	template <typename T>
+	const UDataTable* GetDataTable() const
+	{
+		static_assert(TIsDerivedFrom<T, FTableRowBase>::IsDerived, "T must derive from FTableRowBase.");
+
+		UScriptStruct* RowStruct = T::StaticStruct();
+
+		const TObjectPtr<UDataTable>* FoundDataTable = DataTableMap.Find(RowStruct);
+		if (FoundDataTable == nullptr)
+		{
+			return nullptr;
+		}
+
+		return FoundDataTable->Get();
+	}
 
 private:
-	UPROPERTY()
-	TObjectPtr<UDataTable> BaseGameStatDataTable;
+	UPROPERTY(Config)
+	TArray<TSoftObjectPtr<UDataTable>> DataTableAssetArray;
+
+	UPROPERTY(Transient)
+	TMap<TObjectPtr<UScriptStruct>, TObjectPtr<UDataTable>> DataTableMap;
 };

@@ -28,9 +28,14 @@ void UETInteractionComponent::ClearInteractionTarget()
 
 void UETInteractionComponent::DoInteraction()
 {
-	if (IsValid(InteractionTarget))
+	DoInteraction(InteractionTarget.Get());
+}
+
+void UETInteractionComponent::DoInteraction(AActor* InTarget)
+{
+	if (IsValid(InTarget))
 	{
-		if (IETInteractionInterface* InteractionInterface = Cast<IETInteractionInterface>(InteractionTarget))
+		if (IETInteractionInterface* InteractionInterface = Cast<IETInteractionInterface>(InTarget))
 		{
 			InteractionInterface->OnInteraction(GetOwner());
 		}

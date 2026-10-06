@@ -50,7 +50,7 @@ void UETCombatComponent::TraceWeaponCollision()
                 WeaponCollisionData.Radius, 
                 WeaponCollisionData.ObjectTypes,
                 false,
-                WeaponCollisionData.ActorsToIgnore,
+                TArray<AActor*>(),
                 WeaponCollisionData.DrawDebugType,
                 HitResultArray,
                 true);

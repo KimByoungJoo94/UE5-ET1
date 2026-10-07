@@ -10,8 +10,8 @@
 #include "Components/ETWeaponCollisionComponent.h"
 #include "Components/ETChargeAttackComponent.h"
 #include "Components/ETInteractionComponent.h"
+#include "Components/ETAfterImageComponent.h"
 #include "GameFramework/RootMotionSource.h"
-#include "Effect/ETAfterImageActor.h"
 #include "Subsystem/ETTimeDilationSubsystem.h"
 
 namespace
@@ -47,6 +47,7 @@ AETPlayer::AETPlayer()
 
 	InteractionComponent = CreateDefaultSubobject<UETInteractionComponent>(TEXT("InteractionComponent"));
 	ChargeAttackComponent = CreateDefaultSubobject<UETChargeAttackComponent>(TEXT("ChargeAttackComponent"));
+	AfterImageComponent = CreateDefaultSubobject<UETAfterImageComponent>(TEXT("AfterImageComponent"));
 }
 
 void AETPlayer::BeginPlay()
@@ -228,8 +229,8 @@ void AETPlayer::OnDodgeActionStarted()
 	TSharedPtr<FRootMotionSource_ConstantForce> DodgeForce = MakeShared<FRootMotionSource_ConstantForce>();
 	DodgeForce->InstanceName = DodgeRootMotionSourceName;
 	DodgeForce->AccumulateMode = ERootMotionAccumulateMode::Override;
-	DodgeForce->Force = DodgeDirection * (DodgeDistance / DodgeDuration);
-	DodgeForce->Duration = DodgeDuration;
+	DodgeForce->Force = DodgeDirection * (PlayerDodgeData.DodgeDistance / PlayerDodgeData.DodgeDuration);
+	DodgeForce->Duration = PlayerDodgeData.DodgeDuration;
 	DodgeForce->FinishVelocityParams.Mode = ERootMotionFinishVelocityMode::SetVelocity;
 	DodgeForce->FinishVelocityParams.SetVelocity = FVector::ZeroVector;
 	GetCharacterMovement()->ApplyRootMotionSource(DodgeForce);
@@ -459,16 +460,10 @@ void AETPlayer::OnDodgeMontageBlendingOut(UAnimMontage* InMontage, bool bInterru
 
 void AETPlayer::PlayPerfectDodge()
 {
-	FActorSpawnParameters SpawnParameters;
-	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	if (AETAfterImageActor* AfterImageActor = GetWorld()->SpawnActor<AETAfterImageActor>(AETAfterImageActor::StaticClass(), GetMesh()->GetComponentTransform(), SpawnParameters))
-	{
-		AfterImageActor->InitAfterImage(GetMesh(), AfterImageMaterial, AfterImageLifeTime, AfterImageOpacity);
-	}
+	AfterImageComponent->SpawnAfterImage();
 
 	if (UETTimeDilationSubsystem* TimeDilationSubsystem = GetWorld()->GetSubsystem<UETTimeDilationSubsystem>())
 	{
-		TimeDilationSubsystem->StartTimeDilation(PerfectDodgeTimeDilation, PerfectDodgeSlowDuration);
+		TimeDilationSubsystem->StartTimeDilation(PlayerDodgeData.PerfectDodgeTimeDilation, PlayerDodgeData.PerfectDodgeSlowDuration);
 	}
 }

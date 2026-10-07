@@ -1,0 +1,35 @@
+#include "Components/ETAfterImageComponent.h"
+#include "GameFramework/Character.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Effect/ETAfterImageActor.h"
+
+UETAfterImageComponent::UETAfterImageComponent()
+{
+	PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UETAfterImageComponent::SpawnAfterImage(USkeletalMeshComponent* InSourceMeshComponent)
+{
+	USkeletalMeshComponent* SourceMeshComponent = InSourceMeshComponent;
+	if (SourceMeshComponent == nullptr)
+	{
+		if (ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner()))
+		{
+			SourceMeshComponent = OwnerCharacter->GetMesh();
+		}
+	}
+
+	if (IsValid(SourceMeshComponent) == false || AfterImageMaterial == nullptr)
+	{
+		return;
+	}
+
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.Owner = GetOwner();
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	if (AETAfterImageActor* AfterImageActor = GetWorld()->SpawnActor<AETAfterImageActor>(AETAfterImageActor::StaticClass(), SourceMeshComponent->GetComponentTransform(), SpawnParameters))
+	{
+		AfterImageActor->InitAfterImage(SourceMeshComponent, AfterImageMaterial, AfterImageLifeTime, AfterImageOpacity);
+	}
+}

@@ -9,11 +9,11 @@ class USpringArmComponent;
 class UCameraComponent;
 class UETInteractionComponent;
 class UETChargeAttackComponent;
+class UETAfterImageComponent;
 class UInputMappingContext;
 class UInputAction;
 class UETCharacterActionDataAsset;
 class UAnimMontage;
-class UMaterialInterface;
 struct FInputActionValue;
 
 USTRUCT()
@@ -45,6 +45,25 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputAction> DodgeAction;
+};
+
+USTRUCT()
+struct FETPlayerDodgeData
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0"))
+	float DodgeDistance = 450.f;
+
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.01"))
+	float DodgeDuration = 0.6f;
+
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.01", ClampMax = "1.0"))
+	float PerfectDodgeTimeDilation = 0.3f;
+
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0"))
+	float PerfectDodgeSlowDuration = 0.5f;
 };
 
 UCLASS()
@@ -84,6 +103,7 @@ public:
 
 	UETInteractionComponent* GetInteractionComponent() { return InteractionComponent; }
 	UETChargeAttackComponent* GetChargeAttackComponent() { return ChargeAttackComponent; }
+	UETAfterImageComponent* GetAfterImageComponent() { return AfterImageComponent; }
 	const FText& GetPrimaryActionKeyText() const;
 
 protected:
@@ -114,6 +134,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Component")
 	TObjectPtr<UETChargeAttackComponent> ChargeAttackComponent;
 
+	UPROPERTY(VisibleAnywhere, Category = "Component")
+	TObjectPtr<UETAfterImageComponent> AfterImageComponent;
+
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	FETPlayerInputData PlayerInputData;
@@ -121,26 +144,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "DataAsset")
 	TObjectPtr<UETCharacterActionDataAsset> ActionDataAsset;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Dodge", meta = (ClampMin = "0.0"))
-	float DodgeDistance = 450.f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Dodge", meta = (ClampMin = "0.01"))
-	float DodgeDuration = 0.6f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "PerfectDodge")
-	TObjectPtr<UMaterialInterface> AfterImageMaterial;
-
-	UPROPERTY(EditDefaultsOnly, Category = "PerfectDodge", meta = (ClampMin = "0.01"))
-	float AfterImageLifeTime = 0.5f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "PerfectDodge", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float AfterImageOpacity = 0.5f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "PerfectDodge", meta = (ClampMin = "0.01", ClampMax = "1.0"))
-	float PerfectDodgeTimeDilation = 0.3f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "PerfectDodge", meta = (ClampMin = "0.0"))
-	float PerfectDodgeSlowDuration = 1.f;
+	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
+	FETPlayerDodgeData PlayerDodgeData;
 
 protected:
 	bool bComboAttackReserved = false;	

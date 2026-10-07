@@ -31,6 +31,10 @@ public:
 	UETGameStatComponent* GetGameStatComponent() { return GameStatComponent; }
 	UETWeaponCollisionComponent* GetWeaponCollisionComponent() { return WeaponCollisionComponent; }
 
+	void SetCapsuleHalfHeightKeepGround(const float InHalfHeight);
+	void ResetCapsuleHalfHeight();
+	float GetDefaultCapsuleHalfHeight() const;
+
 protected:
 	virtual void HitReact(AActor* InDamageCauser) {}
 	virtual void Die() {}

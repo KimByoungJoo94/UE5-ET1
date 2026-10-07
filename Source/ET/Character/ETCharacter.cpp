@@ -2,6 +2,8 @@
 #include "Components/ETCharacterStateComponent.h"
 #include "Components/ETGameStatComponent.h"
 #include "Components/ETWeaponCollisionComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/DamageType.h"
 #include "Kismet/GameplayStatics.h"
@@ -66,4 +68,36 @@ void AETCharacter::AttackTarget(AActor* InTarget, const FHitResult& InHitResult)
 float AETCharacter::GetAttackDamage() const
 {
 	return GameStatComponent->GetGameStat(EETGameStatType::Attack).GetCurrentValue();
+}
+
+void AETCharacter::SetCapsuleHalfHeightKeepGround(const float InHalfHeight)
+{
+	UCapsuleComponent* Capsule = GetCapsuleComponent();
+	const float OldScaledHalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+
+	Capsule->SetCapsuleHalfHeight(InHalfHeight);
+
+	// 캡슐 바닥을 지면에 유지하도록 변경된 높이만큼 이동 (메시도 함께 이동)
+	const float HeightOffset = Capsule->GetScaledCapsuleHalfHeight() - OldScaledHalfHeight;
+	if (FMath::IsNearlyZero(HeightOffset) == false)
+	{
+		AddActorWorldOffset(FVector(0.f, 0.f, HeightOffset));
+
+		// 카메라 높이가 캡슐 높이 변화를 따라가지 않도록 반대로 보정
+		if (USpringArmComponent* SpringArmComponent = FindComponentByClass<USpringArmComponent>())
+		{
+			SpringArmComponent->AddRelativeLocation(FVector(0.f, 0.f, -HeightOffset));
+		}
+	}
+}
+
+void AETCharacter::ResetCapsuleHalfHeight()
+{
+	SetCapsuleHalfHeightKeepGround(GetDefaultCapsuleHalfHeight());
+}
+
+float AETCharacter::GetDefaultCapsuleHalfHeight() const
+{
+	const ACharacter* DefaultCharacter = GetClass()->GetDefaultObject<ACharacter>();
+	return DefaultCharacter->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
 }

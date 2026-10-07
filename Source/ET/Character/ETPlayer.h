@@ -45,6 +45,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputAction> DodgeAction;
+
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UInputAction> ParryAction;
 };
 
 USTRUCT()
@@ -64,6 +67,19 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0"))
 	float PerfectDodgeSlowDuration = 0.5f;
+
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0"))
+	float DodgeManaCost = 10.f;
+};
+
+USTRUCT()
+struct FETPlayerParryData
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0"))
+	float ParryManaCost = 10.f;
 };
 
 UCLASS()
@@ -92,12 +108,17 @@ public:
 	void OnHeavyAttackActionCompleted();
 	void OnPrimaryActionCompleted();
 	void OnDodgeActionStarted();
+	void OnParryActionStarted();
+	void OnParryActionCompleted();
 	// ~Key Input
 
 	void AdvanceComboAttack();
 	void ResetComboAttack();
 	void PauseHeavyAttack();
 	void ResetHeavyAttack();
+	void PauseParry();
+	void ReleaseParry();
+	void ResetParry();
 
 	virtual float GetAttackDamage() const override;
 
@@ -107,6 +128,7 @@ public:
 	const FText& GetPrimaryActionKeyText() const;
 
 protected:
+	virtual bool TryAvoidDamage(AActor* InDamageCauser) override;
 	virtual void HitReact(AActor* InDamageCauser) override;
 	virtual void Die() override;
 
@@ -114,10 +136,13 @@ protected:
 	bool CanPlayComboAttack();
 	bool CanHeavyAttack();
 	bool CanDodge();
+	bool CanParry();
 	void PlayComboAttack();
 
 	void OnDodgeMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
 	void PlayPerfectDodge();
+
+	void OnParryMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
 
 	void OnChargeCountChanged(const int32 InCurrentChargeCount, const int32 InMaxChargeCount);
 	
@@ -147,6 +172,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
 	FETPlayerDodgeData PlayerDodgeData;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Parry")
+	FETPlayerParryData PlayerParryData;
+
 protected:
 	bool bComboAttackReserved = false;	
 	int32 ComboAttackIndex = 0;
@@ -155,6 +183,12 @@ protected:
 		
 	UPROPERTY(Transient)
 	TObjectPtr<UAnimMontage> HeavyAttackMontage;
+
+	bool bParryPaused = false;
+	bool bParryReleased = false;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UAnimMontage> ParryMontage;
 
 private:
 	FDelegateHandle OnChargeCountChangedHandle;

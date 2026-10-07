@@ -56,6 +56,13 @@ void AETPlayer::BeginPlay()
 
 	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
 
+	GameStatComponent->StartIncreaseOverTime(EETGameStatType::Mana, EETGameStatType::ManaRegen);
+
+	// 기세는 0 에서 시작해서 시간에 따라 감소
+	const float MomentumMaxValue = GameStatComponent->GetGameStat(EETGameStatType::Momentum).GetMaxValue();
+	GameStatComponent->AddDepletedValue(EETGameStatType::Momentum, -MomentumMaxValue);
+	GameStatComponent->StartDecreaseOverTime(EETGameStatType::Momentum, EETGameStatType::MomentumDrain);
+
 	OnChargeCountChangedHandle = ChargeAttackComponent->OnChargeCountChanged.AddUObject(this, &ThisClass::OnChargeCountChanged);
 }
 
@@ -81,6 +88,12 @@ void AETPlayer::NotifyControllerChanged()
 void AETPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// 패리 유지 중 마나가 모두 소모되면 해제
+	if (bParryPaused && GameStatComponent->GetGameStat(EETGameStatType::Mana).GetCurrentValue() <= 0.f)
+	{
+		ReleaseParry();
+	}
 }
 
 void AETPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -102,6 +115,8 @@ void AETPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		EnhancedInputComponent->BindAction(PlayerInputData.PrimaryAction, ETriggerEvent::Completed, this, &ThisClass::OnPrimaryActionCompleted);
 
 		EnhancedInputComponent->BindAction(PlayerInputData.DodgeAction, ETriggerEvent::Started, this, &ThisClass::OnDodgeActionStarted);
+		EnhancedInputComponent->BindAction(PlayerInputData.ParryAction, ETriggerEvent::Started, this, &ThisClass::OnParryActionStarted);
+		EnhancedInputComponent->BindAction(PlayerInputData.ParryAction, ETriggerEvent::Completed, this, &ThisClass::OnParryActionCompleted);
 	}
 }
 
@@ -224,6 +239,8 @@ void AETPlayer::OnDodgeActionStarted()
 		return;
 	}
 
+	GameStatComponent->AddDepletedValue(EETGameStatType::Mana, -PlayerDodgeData.DodgeManaCost);
+
 	const FVector DodgeDirection = DodgeMontageIndex == 0 ? GetActorForwardVector() : -GetActorForwardVector();
 
 	TSharedPtr<FRootMotionSource_ConstantForce> DodgeForce = MakeShared<FRootMotionSource_ConstantForce>();
@@ -244,6 +261,50 @@ void AETPlayer::OnDodgeActionStarted()
 		BlendingOutDelegate.BindUObject(this, &ThisClass::OnDodgeMontageBlendingOut);
 		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, DodgeMontage);
 	}
+}
+
+void AETPlayer::OnParryActionStarted()
+{
+	if (CanParry() == false || ActionDataAsset == nullptr)
+	{
+		return;
+	}
+
+	UAnimMontage* NewParryMontage = ActionDataAsset->GetAnimMontage(ETGameplayTags::Character_Action_Parry, 0);
+	if (NewParryMontage == nullptr)
+	{
+		return;
+	}
+
+	WeaponCollisionComponent->EndWeaponCollision();
+	ResetComboAttack();
+	ResetHeavyAttack();
+	ResetParry();
+
+	ParryMontage = NewParryMontage;
+
+	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Parrying);
+
+	if (PlayAnimMontage(ParryMontage) <= 0.f)
+	{
+		ResetParry();
+		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
+		return;
+	}
+
+	GameStatComponent->AddDepletedValue(EETGameStatType::Mana, -PlayerParryData.ParryManaCost);
+
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		FOnMontageBlendingOutStarted BlendingOutDelegate;
+		BlendingOutDelegate.BindUObject(this, &ThisClass::OnParryMontageBlendingOut);
+		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, ParryMontage);
+	}
+}
+
+void AETPlayer::OnParryActionCompleted()
+{
+	ReleaseParry();
 }
 
 void AETPlayer::AdvanceComboAttack()
@@ -291,9 +352,85 @@ void AETPlayer::PauseHeavyAttack()
 	}
 }
 
+void AETPlayer::PauseParry()
+{
+	if (ParryMontage == nullptr || bParryReleased || bParryPaused ||
+		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Parrying) == false)
+	{
+		return;
+	}
+
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		AnimInstance->Montage_Pause(ParryMontage);
+		bParryPaused = true;
+
+		GameStatComponent->StartDecreaseOverTime(EETGameStatType::Mana, EETGameStatType::ManaDrain);
+	}
+}
+
+void AETPlayer::ReleaseParry()
+{
+	if (ParryMontage == nullptr ||
+		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Parrying) == false)
+	{
+		return;
+	}
+
+	// 멈춤 노티파이 전에 키를 떼면 멈추지 않고 그대로 복구 자세까지 재생
+	bParryReleased = true;
+
+	if (bParryPaused)
+	{
+		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+		{
+			AnimInstance->Montage_Resume(ParryMontage);
+		}
+
+		bParryPaused = false;
+
+		GameStatComponent->StartIncreaseOverTime(EETGameStatType::Mana, EETGameStatType::ManaRegen);
+	}
+}
+
+void AETPlayer::ResetParry()
+{
+	// 패리 유지 중 끊긴 경우 (회피, 피격 등) 마나 회복으로 복구
+	if (bParryPaused)
+	{
+		GameStatComponent->StartIncreaseOverTime(EETGameStatType::Mana, EETGameStatType::ManaRegen);
+	}
+
+	bParryPaused = false;
+	bParryReleased = false;
+	ParryMontage = nullptr;
+}
+
 float AETPlayer::GetAttackDamage() const
 {
 	return Super::GetAttackDamage() * ChargeAttackComponent->GetDamageMultiplier();
+}
+
+bool AETPlayer::TryAvoidDamage(AActor* InDamageCauser)
+{
+	if (Super::TryAvoidDamage(InDamageCauser))
+	{
+		return true;
+	}
+
+	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Dodging))
+	{
+		// TODO : 퍼펙트 회피 구간이면 PlayPerfectDodge + 기세 획득
+		return true;
+	}
+
+	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Parrying))
+	{
+		// TODO : 퍼펙트 패리 구간이면 퍼펙트 패리 + 기세 획득
+		return true;
+	}
+
+	return false;
 }
 
 void AETPlayer::HitReact(AActor* InDamageCauser)
@@ -402,7 +539,20 @@ bool AETPlayer::CanDodge()
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Dodging);
 
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false &&
-		GetCharacterMovement()->IsFalling() == false;
+		GetCharacterMovement()->IsFalling() == false &&
+		GameStatComponent->HasEnoughCurrentValue(EETGameStatType::Mana, PlayerDodgeData.DodgeManaCost);
+}
+
+bool AETPlayer::CanParry()
+{
+	FGameplayTagContainer CheckContainer;
+	CheckContainer.AddTag(ETGameplayTags::Character_State_Death);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_Dodging);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_Parrying);
+
+	return CharacterStateComponent->HasCurrentState(CheckContainer) == false &&
+		GetCharacterMovement()->IsFalling() == false &&
+		GameStatComponent->HasEnoughCurrentValue(EETGameStatType::Mana, PlayerParryData.ParryManaCost);
 }
 
 bool AETPlayer::CanHeavyAttack()
@@ -465,5 +615,15 @@ void AETPlayer::PlayPerfectDodge()
 	if (UETTimeDilationSubsystem* TimeDilationSubsystem = GetWorld()->GetSubsystem<UETTimeDilationSubsystem>())
 	{
 		TimeDilationSubsystem->StartTimeDilation(PlayerDodgeData.PerfectDodgeTimeDilation, PlayerDodgeData.PerfectDodgeSlowDuration);
+	}
+}
+
+void AETPlayer::OnParryMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted)
+{
+	ResetParry();
+
+	if (bInterrupted == false)
+	{
+		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
 	}
 }

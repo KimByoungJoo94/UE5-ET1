@@ -36,6 +36,8 @@ public:
 	float GetDefaultCapsuleHalfHeight() const;
 
 protected:
+	// true 이면 데미지 무시 (회피, 패리 등 / 퍼펙트 판정 처리 위치)
+	virtual bool TryAvoidDamage(AActor* InDamageCauser);
 	virtual void HitReact(AActor* InDamageCauser) {}
 	virtual void Die() {}
 

@@ -34,7 +34,7 @@ void AETCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 float AETCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death))
+	if (TryAvoidDamage(DamageCauser))
 	{
 		return 0.f;
 	}
@@ -60,6 +60,11 @@ float AETCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 	return ActualDamage;
 }
 
+bool AETCharacter::TryAvoidDamage(AActor* InDamageCauser)
+{
+	return CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death);
+}
+
 void AETCharacter::AttackTarget(AActor* InTarget, const FHitResult& InHitResult)
 {
 	UGameplayStatics::ApplyDamage(InTarget, GetAttackDamage(), GetController(), this, UDamageType::StaticClass());
@@ -67,7 +72,14 @@ void AETCharacter::AttackTarget(AActor* InTarget, const FHitResult& InHitResult)
 
 float AETCharacter::GetAttackDamage() const
 {
-	return GameStatComponent->GetGameStat(EETGameStatType::Attack).GetCurrentValue();
+	const float Attack = GameStatComponent->GetGameStat(EETGameStatType::Attack).GetCurrentValue();
+
+	// 기세 최대일 때 MomentumAttackBonus 비율만큼 공격력 증가 (0.5 = +50%)
+	const FETGameStat& MomentumStat = GameStatComponent->GetGameStat(EETGameStatType::Momentum);
+	const float MomentumRatio = MomentumStat.GetMaxValue() > 0.f ? MomentumStat.GetCurrentValue() / MomentumStat.GetMaxValue() : 0.f;
+	const float MomentumAttackBonus = GameStatComponent->GetGameStat(EETGameStatType::MomentumAttackBonus).GetCurrentValue();
+
+	return Attack * (1.f + MomentumRatio * MomentumAttackBonus);
 }
 
 void AETCharacter::SetCapsuleHalfHeightKeepGround(const float InHalfHeight)

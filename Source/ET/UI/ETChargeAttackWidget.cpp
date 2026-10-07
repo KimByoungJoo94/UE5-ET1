@@ -29,5 +29,5 @@ void UETChargeAttackWidget::OnChargeCountChanged(const int32 InCurrentChargeCoun
 	const float ChargePercent = InMaxChargeCount > 0 ? static_cast<float>(InCurrentChargeCount) / InMaxChargeCount : 0.f;
 
 	ProgressBar->SetPercent(ChargePercent);
-	CountText->SetText(FText::Format(INVTEXT("{0}/{1}"), FText::AsNumber(InCurrentChargeCount), FText::AsNumber(InMaxChargeCount)));
+	CountText->SetText(FText::Format(INVTEXT("{0} / {1}"), FText::AsNumber(InCurrentChargeCount), FText::AsNumber(InMaxChargeCount)));
 }

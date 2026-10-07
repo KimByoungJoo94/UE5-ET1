@@ -43,6 +43,16 @@ public:
 	static const FETGameStat Invalid;
 };
 
+USTRUCT()
+struct FETGameStatOverTimeData
+{
+	GENERATED_BODY()
+
+public:
+	EETGameStatType RateStatType = EETGameStatType::Max;   // 초당 변화량 스탯 (0 이상)
+	bool bIncrease = true;                                  // true : 최대값까지 증가, false : 0 까지 감소
+};
+
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateGameStat, const FETGameStat& InGameStat);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -63,6 +73,18 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	const FETGameStat& GetGameStat(const EETGameStatType InGameStatType) const;
 	void AddDepletedValue(const EETGameStatType InGameStatType, const float InValue);
+	bool HasEnoughCurrentValue(const EETGameStatType InGameStatType, const float InValue) const;
+
+	FOnUpdateGameStat& GetOnUpdateGameStatDelegate(const EETGameStatType InGameStatType);
+		
+	void StartIncreaseOverTime(const EETGameStatType InGameStatType, const EETGameStatType InRateStatType);
+	void StartDecreaseOverTime(const EETGameStatType InGameStatType, const EETGameStatType InRateStatType);
+	void StopOverTime(const EETGameStatType InGameStatType);
+
+protected:
+	void StartOverTime(const EETGameStatType InGameStatType, const EETGameStatType InRateStatType, const bool bInIncrease);
+	void UpdateOverTime(const float InDeltaTime);
+	void BroadcastDirtyGameStat();
 
 protected:
 	UPROPERTY(EditAnywhere)
@@ -71,6 +93,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, Transient)
 	TMap<EETGameStatType, FETGameStat> GameStatMap;
 
-public:
-	FOnUpdateGameStat OnUpdateGameStat;
+	UPROPERTY(Transient)
+	TMap<EETGameStatType, FETGameStatOverTimeData> OverTimeDataMap;
+
+private:
+	static_assert(static_cast<int32>(EETGameStatType::Max) <= 64, "DirtyGameStatFlags supports up to 64 stat types.");
+
+	FOnUpdateGameStat OnUpdateGameStatDelegateArray[static_cast<int32>(EETGameStatType::Max)];
+	uint64 DirtyGameStatFlags = 0;
 };

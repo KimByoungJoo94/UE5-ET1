@@ -1,31 +1,39 @@
 #include "DataAsset/ETCharacterActionDataAsset.h"
 
 const FETCharacterActionData* UETCharacterActionDataAsset::GetActionData(const FGameplayTag& InGameplayTag) const
-{	
+{
 	return GameplayTagActionDataMap.Find(InGameplayTag);
 }
 
-UAnimMontage* UETCharacterActionDataAsset::GetAnimMontage(const FGameplayTag& InGameplayTag, const int32 InIndex) const
+const FETCharacterActionMontageData* UETCharacterActionDataAsset::GetActionMontageData(const FGameplayTag& InGameplayTag, const int32 InIndex) const
 {
 	if (const FETCharacterActionData* FoundActionData = GameplayTagActionDataMap.Find(InGameplayTag))
 	{
-		if (FoundActionData->MontageArray.IsValidIndex(InIndex))
+		if (FoundActionData->MontageDataArray.IsValidIndex(InIndex))
 		{
-			return FoundActionData->MontageArray[InIndex];
+			return &FoundActionData->MontageDataArray[InIndex];
 		}
 	}
 
 	return nullptr;
 }
 
-const TArray<TObjectPtr<UAnimMontage>>& UETCharacterActionDataAsset::GetAnimMontageArray(const FGameplayTag& InGameplayTag) const
+const TArray<FETCharacterActionMontageData>& UETCharacterActionDataAsset::GetActionMontageDataArray(const FGameplayTag& InGameplayTag) const
 {
 	if (const FETCharacterActionData* FoundActionData = GameplayTagActionDataMap.Find(InGameplayTag))
 	{
-		return FoundActionData->MontageArray;
+		return FoundActionData->MontageDataArray;
 	}
 
 	return EmptyArray;
 }
 
+UAnimMontage* UETCharacterActionDataAsset::GetAnimMontage(const FGameplayTag& InGameplayTag, const int32 InIndex) const
+{
+	if (const FETCharacterActionMontageData* FoundMontageData = GetActionMontageData(InGameplayTag, InIndex))
+	{
+		return FoundMontageData->Montage;
+	}
 
+	return nullptr;
+}

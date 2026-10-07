@@ -13,6 +13,7 @@ class UETAfterImageComponent;
 class UInputMappingContext;
 class UInputAction;
 class UETCharacterActionDataAsset;
+struct FETCharacterActionMontageData;
 class UAnimMontage;
 struct FInputActionValue;
 
@@ -22,6 +23,11 @@ struct FETPlayerInputData
 	GENERATED_BODY()
 
 public:
+	FETPlayerInputData()
+	{		
+		ActiveSkillActionArray.Init(nullptr, 3);
+	}
+
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputMappingContext> InputMappingContext;
 
@@ -48,6 +54,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputAction> ParryAction;
+
+	UPROPERTY(EditDefaultsOnly, meta = (EditFixedSize))
+	TArray<TObjectPtr<UInputAction>> ActiveSkillActionArray;
 };
 
 USTRUCT()
@@ -68,19 +77,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0"))
 	float PerfectDodgeSlowDuration = 0.5f;
 
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0"))
-	float DodgeManaCost = 10.f;
 };
 
-USTRUCT()
-struct FETPlayerParryData
-{
-	GENERATED_BODY()
-
-public:
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0"))
-	float ParryManaCost = 10.f;
-};
 
 UCLASS()
 class ET_API AETPlayer : public AETCharacter
@@ -97,7 +95,8 @@ protected:
 
 public:
 	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual bool CanJumpInternal_Implementation() const override;
+virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 		
 public:
 	// Key Input
@@ -110,6 +109,10 @@ public:
 	void OnDodgeActionStarted();
 	void OnParryActionStarted();
 	void OnParryActionCompleted();
+	void OnActiveSkillActionStarted(const int32 InSkillIndex);
+	void UseTimeFreezeSkill(const int32 InSkillIndex);
+	bool TryPayActiveSkillCost(const int32 InSkillIndex);
+	void PlayActiveSkill(const int32 InSkillIndex);
 	// ~Key Input
 
 	void AdvanceComboAttack();
@@ -137,12 +140,16 @@ protected:
 	bool CanHeavyAttack();
 	bool CanDodge();
 	bool CanParry();
-	void PlayComboAttack();
+	bool CanUseActiveSkill();
+	bool HasEnoughActionCost(const FETCharacterActionMontageData& InMontageData) const;
+	void ConsumeActionCost(const FETCharacterActionMontageData& InMontageData);
+void PlayComboAttack();
 
 	void OnDodgeMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
 	void PlayPerfectDodge();
 
 	void OnParryMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
+	void OnActiveSkillMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
 
 	void OnChargeCountChanged(const int32 InCurrentChargeCount, const int32 InMaxChargeCount);
 	
@@ -171,9 +178,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
 	FETPlayerDodgeData PlayerDodgeData;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Parry")
-	FETPlayerParryData PlayerParryData;
 
 protected:
 	bool bComboAttackReserved = false;	

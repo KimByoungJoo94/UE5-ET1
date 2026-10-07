@@ -96,6 +96,13 @@ void AETPlayer::Tick(float DeltaTime)
 	}
 }
 
+bool AETPlayer::CanJumpInternal_Implementation() const
+{
+	// 스킬 시전 중에는 점프 불가
+	return Super::CanJumpInternal_Implementation() &&
+		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_UsingSkill) == false;
+}
+
 void AETPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -117,6 +124,14 @@ void AETPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		EnhancedInputComponent->BindAction(PlayerInputData.DodgeAction, ETriggerEvent::Started, this, &ThisClass::OnDodgeActionStarted);
 		EnhancedInputComponent->BindAction(PlayerInputData.ParryAction, ETriggerEvent::Started, this, &ThisClass::OnParryActionStarted);
 		EnhancedInputComponent->BindAction(PlayerInputData.ParryAction, ETriggerEvent::Completed, this, &ThisClass::OnParryActionCompleted);
+
+		for (int32 Index = 0; Index < PlayerInputData.ActiveSkillActionArray.Num(); ++Index)
+		{
+			if (PlayerInputData.ActiveSkillActionArray[Index])
+			{
+				EnhancedInputComponent->BindAction(PlayerInputData.ActiveSkillActionArray[Index], ETriggerEvent::Started, this, &ThisClass::OnActiveSkillActionStarted, Index);
+			}
+		}
 	}
 }
 
@@ -165,13 +180,18 @@ void AETPlayer::OnAttackActionCompleted()
 void AETPlayer::OnHeavyAttackActionStarted()
 {
 	if (CanHeavyAttack() && ActionDataAsset)
-	{		
-		if (HeavyAttackMontage = ActionDataAsset->GetAnimMontage(ETGameplayTags::Character_Action_HeavyAttack, 0))
+	{
+		const FETCharacterActionMontageData* HeavyAttackMontageData = ActionDataAsset->GetActionMontageData(ETGameplayTags::Character_Action_HeavyAttack, 0);
+		if (HeavyAttackMontageData && HeavyAttackMontageData->Montage && HasEnoughActionCost(*HeavyAttackMontageData))
 		{
+			HeavyAttackMontage = HeavyAttackMontageData->Montage;
 			bPlayHeavyAttack = false;
 			CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_HeavyAttacking);
 
-			PlayAnimMontage(HeavyAttackMontage, 1.f, TEXT("Intro"));
+			if (PlayAnimMontage(HeavyAttackMontage, 1.f, TEXT("Intro")) > 0.f)
+			{
+				ConsumeActionCost(*HeavyAttackMontageData);
+			}
 		}
 	}
 }
@@ -221,11 +241,13 @@ void AETPlayer::OnDodgeActionStarted()
 		SetActorRotation((bForward ? InputDirection : -InputDirection).Rotation());
 	}
 
-	UAnimMontage* DodgeMontage = ActionDataAsset->GetAnimMontage(ETGameplayTags::Character_Action_Dodge, DodgeMontageIndex);
-	if (DodgeMontage == nullptr)
+	const FETCharacterActionMontageData* DodgeMontageData = ActionDataAsset->GetActionMontageData(ETGameplayTags::Character_Action_Dodge, DodgeMontageIndex);
+	if (DodgeMontageData == nullptr || DodgeMontageData->Montage == nullptr || HasEnoughActionCost(*DodgeMontageData) == false)
 	{
 		return;
 	}
+
+	UAnimMontage* DodgeMontage = DodgeMontageData->Montage;
 
 	WeaponCollisionComponent->EndWeaponCollision();
 	ResetComboAttack();
@@ -239,7 +261,7 @@ void AETPlayer::OnDodgeActionStarted()
 		return;
 	}
 
-	GameStatComponent->AddDepletedValue(EETGameStatType::Mana, -PlayerDodgeData.DodgeManaCost);
+	ConsumeActionCost(*DodgeMontageData);
 
 	const FVector DodgeDirection = DodgeMontageIndex == 0 ? GetActorForwardVector() : -GetActorForwardVector();
 
@@ -270,8 +292,8 @@ void AETPlayer::OnParryActionStarted()
 		return;
 	}
 
-	UAnimMontage* NewParryMontage = ActionDataAsset->GetAnimMontage(ETGameplayTags::Character_Action_Parry, 0);
-	if (NewParryMontage == nullptr)
+	const FETCharacterActionMontageData* ParryMontageData = ActionDataAsset->GetActionMontageData(ETGameplayTags::Character_Action_Parry, 0);
+	if (ParryMontageData == nullptr || ParryMontageData->Montage == nullptr || HasEnoughActionCost(*ParryMontageData) == false)
 	{
 		return;
 	}
@@ -281,7 +303,7 @@ void AETPlayer::OnParryActionStarted()
 	ResetHeavyAttack();
 	ResetParry();
 
-	ParryMontage = NewParryMontage;
+	ParryMontage = ParryMontageData->Montage;
 
 	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Parrying);
 
@@ -292,7 +314,7 @@ void AETPlayer::OnParryActionStarted()
 		return;
 	}
 
-	GameStatComponent->AddDepletedValue(EETGameStatType::Mana, -PlayerParryData.ParryManaCost);
+	ConsumeActionCost(*ParryMontageData);
 
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
@@ -305,6 +327,104 @@ void AETPlayer::OnParryActionStarted()
 void AETPlayer::OnParryActionCompleted()
 {
 	ReleaseParry();
+}
+
+void AETPlayer::OnActiveSkillActionStarted(const int32 InSkillIndex)
+{
+	switch (InSkillIndex)
+	{
+	case 0:
+		UseTimeFreezeSkill(InSkillIndex);
+		break;
+
+	case 1:
+	case 2:
+		PlayActiveSkill(InSkillIndex);
+		break;
+
+	case 3:
+		if (TryPayActiveSkillCost(InSkillIndex))
+		{
+			// TODO : 스킬 D
+		}
+		break;
+
+	default:
+		break;
+	}
+}
+
+void AETPlayer::UseTimeFreezeSkill(const int32 InSkillIndex)
+{
+	if (TryPayActiveSkillCost(InSkillIndex) == false)
+	{
+		return;
+	}
+
+	// TODO : 충돌 판정으로 대상 탐색 후 시간 정지 적용 (Components/ETTimeFreezeComponent.h)
+	// for (AActor* TargetActor : TargetActorArray)
+	// {
+	// 	if (UETTimeFreezeComponent* TimeFreezeComponent = TargetActor->FindComponentByClass<UETTimeFreezeComponent>())
+	// 	{
+	// 		TimeFreezeComponent->Freeze(FreezeDuration);
+	// 	}
+	// }
+}
+
+bool AETPlayer::TryPayActiveSkillCost(const int32 InSkillIndex)
+{
+	// 몽타주 없는 스킬용 : 몽타주 항목의 비용만 확인 후 차감
+	if (CanUseActiveSkill() == false || ActionDataAsset == nullptr)
+	{
+		return false;
+	}
+
+	const FETCharacterActionMontageData* SkillMontageData = ActionDataAsset->GetActionMontageData(ETGameplayTags::Character_Action_ActiveSkill, InSkillIndex);
+	if (SkillMontageData == nullptr || HasEnoughActionCost(*SkillMontageData) == false)
+	{
+		return false;
+	}
+
+	ConsumeActionCost(*SkillMontageData);
+	return true;
+}
+
+void AETPlayer::PlayActiveSkill(const int32 InSkillIndex)
+{
+	if (CanUseActiveSkill() == false || ActionDataAsset == nullptr)
+	{
+		return;
+	}
+
+	// Character.Action.ActiveSkill 몽타주 배열 인덱스 = 스킬 슬롯 인덱스
+	const FETCharacterActionMontageData* SkillMontageData = ActionDataAsset->GetActionMontageData(ETGameplayTags::Character_Action_ActiveSkill, InSkillIndex);
+	if (SkillMontageData == nullptr || SkillMontageData->Montage == nullptr || HasEnoughActionCost(*SkillMontageData) == false)
+	{
+		return;
+	}
+
+	UAnimMontage* SkillMontage = SkillMontageData->Montage;
+
+	WeaponCollisionComponent->EndWeaponCollision();
+	ResetComboAttack();
+	ResetHeavyAttack();
+
+	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_UsingSkill);
+
+	if (PlayAnimMontage(SkillMontage) <= 0.f)
+	{
+		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
+		return;
+	}
+
+	ConsumeActionCost(*SkillMontageData);
+
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		FOnMontageBlendingOutStarted BlendingOutDelegate;
+		BlendingOutDelegate.BindUObject(this, &ThisClass::OnActiveSkillMontageBlendingOut);
+		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, SkillMontage);
+	}
 }
 
 void AETPlayer::AdvanceComboAttack()
@@ -440,6 +560,12 @@ void AETPlayer::HitReact(AActor* InDamageCauser)
 		return;
 	}
 
+	// 스킬 시전 중에는 슈퍼아머 (데미지만 받고 피격 리액션 없음)
+	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_UsingSkill))
+	{
+		return;
+	}
+
 	const FRotator LookAtRotation = (InDamageCauser->GetActorLocation() - GetActorLocation()).Rotation();
 	const float DeltaYaw = (GetActorRotation() - LookAtRotation).GetNormalized().Yaw;
 
@@ -528,6 +654,7 @@ bool AETPlayer::CanPlayComboAttack()
 	FGameplayTagContainer CheckContainer;
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Death);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_HeavyAttacking);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
 
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false;
 }
@@ -537,10 +664,10 @@ bool AETPlayer::CanDodge()
 	FGameplayTagContainer CheckContainer;
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Death);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Dodging);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
 
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false &&
-		GetCharacterMovement()->IsFalling() == false &&
-		GameStatComponent->HasEnoughCurrentValue(EETGameStatType::Mana, PlayerDodgeData.DodgeManaCost);
+		GetCharacterMovement()->IsFalling() == false;
 }
 
 bool AETPlayer::CanParry()
@@ -549,10 +676,22 @@ bool AETPlayer::CanParry()
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Death);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Dodging);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Parrying);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
 
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false &&
-		GetCharacterMovement()->IsFalling() == false &&
-		GameStatComponent->HasEnoughCurrentValue(EETGameStatType::Mana, PlayerParryData.ParryManaCost);
+		GetCharacterMovement()->IsFalling() == false;
+}
+
+bool AETPlayer::CanUseActiveSkill()
+{
+	FGameplayTagContainer CheckContainer;
+	CheckContainer.AddTag(ETGameplayTags::Character_State_Death);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_Dodging);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_Parrying);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
+
+	return CharacterStateComponent->HasCurrentState(CheckContainer) == false &&
+		GetCharacterMovement()->IsFalling() == false;
 }
 
 bool AETPlayer::CanHeavyAttack()
@@ -560,8 +699,27 @@ bool AETPlayer::CanHeavyAttack()
 	FGameplayTagContainer CheckContainer;
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Death);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Attacking);
-	
+	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
+
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false;
+}
+
+bool AETPlayer::HasEnoughActionCost(const FETCharacterActionMontageData& InMontageData) const
+{
+	if (InMontageData.CostValue <= 0.f)
+	{
+		return true;
+	}
+
+	return GameStatComponent->HasEnoughCurrentValue(InMontageData.CostStatType, InMontageData.CostValue);
+}
+
+void AETPlayer::ConsumeActionCost(const FETCharacterActionMontageData& InMontageData)
+{
+	if (InMontageData.CostValue > 0.f)
+	{
+		GameStatComponent->AddDepletedValue(InMontageData.CostStatType, -InMontageData.CostValue);
+	}
 }
 
 void AETPlayer::PlayComboAttack()
@@ -577,15 +735,18 @@ void AETPlayer::PlayComboAttack()
 
 		const int32 CurrentIndex = ComboAttackIndex;
 
-		const TArray<TObjectPtr<UAnimMontage>>& AttackMontageArray = ActionDataAsset->GetAnimMontageArray(AttackGameplayTag);
-		if (AttackMontageArray.IsEmpty() == false &&
-			AttackMontageArray.IsValidIndex(CurrentIndex))
+		const TArray<FETCharacterActionMontageData>& AttackMontageDataArray = ActionDataAsset->GetActionMontageDataArray(AttackGameplayTag);
+		if (AttackMontageDataArray.IsValidIndex(CurrentIndex) &&
+			HasEnoughActionCost(AttackMontageDataArray[CurrentIndex]))
 		{
-			ComboAttackIndex = (ComboAttackIndex + 1) % AttackMontageArray.Num();
-						
+			ComboAttackIndex = (ComboAttackIndex + 1) % AttackMontageDataArray.Num();
+
 			CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Attacking);
-			
-			PlayAnimMontage(AttackMontageArray[CurrentIndex]);
+
+			if (PlayAnimMontage(AttackMontageDataArray[CurrentIndex].Montage) > 0.f)
+			{
+				ConsumeActionCost(AttackMontageDataArray[CurrentIndex]);
+			}
 		}
 	}
 }
@@ -622,6 +783,14 @@ void AETPlayer::OnParryMontageBlendingOut(UAnimMontage* InMontage, bool bInterru
 {
 	ResetParry();
 
+	if (bInterrupted == false)
+	{
+		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
+	}
+}
+
+void AETPlayer::OnActiveSkillMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted)
+{
 	if (bInterrupted == false)
 	{
 		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);

@@ -10,6 +10,7 @@ class UCameraComponent;
 class UETInteractionComponent;
 class UETChargeAttackComponent;
 class UETAfterImageComponent;
+class UETLockOnComponent;
 class UInputMappingContext;
 class UInputAction;
 class UETCharacterActionDataAsset;
@@ -79,6 +80,29 @@ public:
 
 };
 
+USTRUCT()
+struct FETPlayerTimeFreezeSkillData
+{
+	GENERATED_BODY()
+
+public:
+	// 플레이어 기준 탐색 반경
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0"))
+	float SearchRadius = 1500.f;
+
+	// 카메라 정면 기준 시야 반각
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0", ClampMax = "180.0"))
+	float ViewHalfAngle = 45.f;
+
+	// 가까운 순으로 적용할 최대 대상 수 (0 이면 범위 안 전체)
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0"))
+	int32 MaxTargetCount = 1;
+
+	// 0 이하이면 Unfreeze 호출 전까지 정지 유지
+	UPROPERTY(EditDefaultsOnly)
+	float FreezeDuration = 3.f;
+};
+
 
 UCLASS()
 class ET_API AETPlayer : public AETCharacter
@@ -111,6 +135,8 @@ public:
 	void OnParryActionCompleted();
 	void OnActiveSkillActionStarted(const int32 InSkillIndex);
 	void UseTimeFreezeSkill(const int32 InSkillIndex);
+	void GatherTimeFreezeTargets(OUT TArray<AETCharacter*>& OutTargetArray) const;
+	void ApplyTimeFreeze(const TArray<AETCharacter*>& InTargetArray);
 	bool TryPayActiveSkillCost(const int32 InSkillIndex);
 	void PlayActiveSkill(const int32 InSkillIndex);
 	// ~Key Input
@@ -128,6 +154,7 @@ public:
 	UETInteractionComponent* GetInteractionComponent() { return InteractionComponent; }
 	UETChargeAttackComponent* GetChargeAttackComponent() { return ChargeAttackComponent; }
 	UETAfterImageComponent* GetAfterImageComponent() { return AfterImageComponent; }
+	UETLockOnComponent* GetLockOnComponent() { return LockOnComponent; }
 	const FText& GetPrimaryActionKeyText() const;
 
 protected:
@@ -141,6 +168,7 @@ protected:
 	bool CanDodge();
 	bool CanParry();
 	bool CanUseActiveSkill();
+	bool CanInteract();
 	bool HasEnoughActionCost(const FETCharacterActionMontageData& InMontageData) const;
 	void ConsumeActionCost(const FETCharacterActionMontageData& InMontageData);
 void PlayComboAttack();
@@ -150,6 +178,7 @@ void PlayComboAttack();
 
 	void OnParryMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
 	void OnActiveSkillMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
+	void OnInteractionMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
 
 	void OnChargeCountChanged(const int32 InCurrentChargeCount, const int32 InMaxChargeCount);
 	
@@ -169,6 +198,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Component")
 	TObjectPtr<UETAfterImageComponent> AfterImageComponent;
 
+	UPROPERTY(VisibleAnywhere, Category = "Component")
+	TObjectPtr<UETLockOnComponent> LockOnComponent;
+
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	FETPlayerInputData PlayerInputData;
@@ -178,6 +210,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
 	FETPlayerDodgeData PlayerDodgeData;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Skill")
+	FETPlayerTimeFreezeSkillData TimeFreezeSkillData;
 
 protected:
 	bool bComboAttackReserved = false;	

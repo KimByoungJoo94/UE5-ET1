@@ -1,12 +1,13 @@
-#include "Item/ETDropItem.h"
+#include "Interaction/ETInteractionActor.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Components/ETInteractionComponent.h"
 #include "Character/ETPlayer.h"
 #include "UI/ETInteractionWidget.h"
+#include "Engine/Engine.h"
 
-AETDropItem::AETDropItem()
+AETInteractionActor::AETInteractionActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
@@ -21,35 +22,45 @@ AETDropItem::AETDropItem()
 	InteractionBoxComponent->SetGenerateOverlapEvents(true);
 
 	InteractionWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("InteractionWidgetComponent"));
-	InteractionWidgetComponent->SetupAttachment(GetRootComponent());	
+	InteractionWidgetComponent->SetupAttachment(GetRootComponent());
 	InteractionWidgetComponent->SetDrawSize(FVector2D(50.f, 50.f));
-	InteractionWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);	
+	InteractionWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 }
 
-void AETDropItem::BeginPlay()
+void AETInteractionActor::BeginPlay()
 {
-	Super::BeginPlay();	
-	
+	Super::BeginPlay();
+
 	InteractionWidgetComponent->SetVisibility(false);
-	
+
 	InteractionBoxComponent->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnInteractionBoxBeginOverlap);
 	InteractionBoxComponent->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnInteractionBoxEndOverlap);
 }
 
-void AETDropItem::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void AETInteractionActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	InteractionBoxComponent->OnComponentBeginOverlap.RemoveDynamic(this, &AETDropItem::OnInteractionBoxBeginOverlap);
-	InteractionBoxComponent->OnComponentEndOverlap.RemoveDynamic(this, &AETDropItem::OnInteractionBoxEndOverlap);
+	InteractionBoxComponent->OnComponentBeginOverlap.RemoveDynamic(this, &ThisClass::OnInteractionBoxBeginOverlap);
+	InteractionBoxComponent->OnComponentEndOverlap.RemoveDynamic(this, &ThisClass::OnInteractionBoxEndOverlap);
 
 	Super::EndPlay(EndPlayReason);
 }
 
-void AETDropItem::Tick(float DeltaTime)
+void AETInteractionActor::OnInteraction(AActor* InInteractor)
 {
-	Super::Tick(DeltaTime);
+#if !UE_BUILD_SHIPPING
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Yellow, FString::Printf(TEXT("%s::OnInteraction"), *GetClass()->GetName()));
+	}
+#endif
 }
 
-void AETDropItem::OnInteractionBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AETInteractionActor::OnInteractionTargetReleased()
+{
+	InteractionWidgetComponent->SetVisibility(false);
+}
+
+void AETInteractionActor::OnInteractionBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (AETPlayer* Player = Cast<AETPlayer>(OtherActor))
 	{
@@ -68,23 +79,17 @@ void AETDropItem::OnInteractionBoxBeginOverlap(UPrimitiveComponent* OverlappedCo
 	}
 }
 
-void AETDropItem::OnInteractionBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void AETInteractionActor::OnInteractionBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (AETPlayer* Player = Cast<AETPlayer>(OtherActor))
 	{
 		if (UETInteractionComponent* InteractionComponent = Player->GetInteractionComponent())
 		{
-			InteractionComponent->ClearInteractionTarget();
-			InteractionWidgetComponent->SetVisibility(false);			
+			// 다른 상호작용 액터가 대상으로 등록된 경우 유지 (위젯은 대상 교체 시 이미 숨김)
+			if (InteractionComponent->GetInteractionTarget() == this)
+			{
+				InteractionComponent->ClearInteractionTarget();
+			}
 		}
 	}
 }
-
-void AETDropItem::OnInteraction(AActor* InInteractor)
-{
-	UE_LOG(LogTemp, Log, TEXT("AETDropItem::OnInteraction(AActor* InInteractor)"));
-
-	// TODO
-}
-
-

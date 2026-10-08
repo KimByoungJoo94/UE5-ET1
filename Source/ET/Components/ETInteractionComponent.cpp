@@ -18,12 +18,27 @@ void UETInteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType
 
 void UETInteractionComponent::SetInteractionTarget(AActor* InTarget)
 {
+	if (InteractionTarget.Get() != InTarget)
+	{
+		ReleaseInteractionTarget();
+	}
+
 	InteractionTarget = InTarget;
 }
 
 void UETInteractionComponent::ClearInteractionTarget()
 {
+	ReleaseInteractionTarget();
+
 	InteractionTarget = nullptr;
+}
+
+void UETInteractionComponent::ReleaseInteractionTarget()
+{
+	if (IETInteractionInterface* InteractionInterface = Cast<IETInteractionInterface>(InteractionTarget.Get()))
+	{
+		InteractionInterface->OnInteractionTargetReleased();
+	}
 }
 
 void UETInteractionComponent::DoInteraction()

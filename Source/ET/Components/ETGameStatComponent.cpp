@@ -76,6 +76,22 @@ void UETGameStatComponent::AddDepletedValue(const EETGameStatType InGameStatType
 	}
 }
 
+void UETGameStatComponent::AddPermanentValue(const EETGameStatType InGameStatType, const float InValue)
+{
+	if (FMath::IsNearlyZero(InValue))
+	{
+		return;
+	}
+
+	// 최대값과 현재값이 함께 변경 (DepletedValue 유지)
+	if (FETGameStat* FoundGameStat = GameStatMap.Find(InGameStatType))
+	{
+		FoundGameStat->AddPermanentValue(InValue);
+
+		DirtyGameStatFlags |= (1ull << static_cast<uint8>(InGameStatType));
+	}
+}
+
 bool UETGameStatComponent::HasEnoughCurrentValue(const EETGameStatType InGameStatType, const float InValue) const
 {
 	const FETGameStat& GameStat = GetGameStat(InGameStatType);

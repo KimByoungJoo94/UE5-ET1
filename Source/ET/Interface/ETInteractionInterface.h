@@ -22,4 +22,5 @@ class ET_API IETInteractionInterface
 	
 public:	
 	virtual void OnInteraction(AActor* InInteractor) = 0;
+	virtual void OnInteractionTargetReleased() {}
 };

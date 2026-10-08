@@ -1,7 +1,7 @@
 #include "Character/ETCharacter.h"
 #include "Components/ETCharacterStateComponent.h"
 #include "Components/ETGameStatComponent.h"
-#include "Components/ETWeaponCollisionComponent.h"
+#include "Components/ETAttackCollisionComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/DamageEvents.h"
@@ -14,7 +14,8 @@ AETCharacter::AETCharacter()
 
 	CharacterStateComponent = CreateDefaultSubobject<UETCharacterStateComponent>(TEXT("CharacterStateComponent"));
 	GameStatComponent = CreateDefaultSubobject<UETGameStatComponent>(TEXT("GameStatComponent"));
-	WeaponCollisionComponent = CreateDefaultSubobject<UETWeaponCollisionComponent>(TEXT("WeaponCollisionComponent"));
+	// BP 에 저장된 컴포넌트 설정 유지를 위해 서브오브젝트 이름은 기존 이름 유지
+	AttackCollisionComponent = CreateDefaultSubobject<UETAttackCollisionComponent>(TEXT("WeaponCollisionComponent"));
 }
 
 void AETCharacter::BeginPlay()

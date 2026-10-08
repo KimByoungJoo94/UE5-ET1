@@ -21,8 +21,12 @@ public:
 public:
 	void SetInteractionTarget(AActor* InTarget);
 	void ClearInteractionTarget();
+	AActor* GetInteractionTarget() const { return InteractionTarget.Get(); }
 	void DoInteraction();
 	void DoInteraction(AActor* InTarget);
+
+private:
+	void ReleaseInteractionTarget();
 
 private:
 	TWeakObjectPtr<AActor> InteractionTarget;

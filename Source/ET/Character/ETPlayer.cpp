@@ -7,10 +7,12 @@
 #include "DataAsset/ETCharacterActionDataAsset.h"
 #include "Components/ETCharacterStateComponent.h"
 #include "Components/ETGameStatComponent.h"
-#include "Components/ETWeaponCollisionComponent.h"
+#include "Components/ETAttackCollisionComponent.h"
 #include "Components/ETChargeAttackComponent.h"
 #include "Components/ETInteractionComponent.h"
 #include "Components/ETAfterImageComponent.h"
+#include "Components/ETLockOnComponent.h"
+#include "Components/ETTimeFreezeComponent.h"
 #include "GameFramework/RootMotionSource.h"
 #include "Subsystem/ETTimeDilationSubsystem.h"
 
@@ -48,6 +50,7 @@ AETPlayer::AETPlayer()
 	InteractionComponent = CreateDefaultSubobject<UETInteractionComponent>(TEXT("InteractionComponent"));
 	ChargeAttackComponent = CreateDefaultSubobject<UETChargeAttackComponent>(TEXT("ChargeAttackComponent"));
 	AfterImageComponent = CreateDefaultSubobject<UETAfterImageComponent>(TEXT("AfterImageComponent"));
+	LockOnComponent = CreateDefaultSubobject<UETLockOnComponent>(TEXT("LockOnComponent"));
 }
 
 void AETPlayer::BeginPlay()
@@ -100,7 +103,8 @@ bool AETPlayer::CanJumpInternal_Implementation() const
 {
 	// 스킬 시전 중에는 점프 불가
 	return Super::CanJumpInternal_Implementation() &&
-		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_UsingSkill) == false;
+		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_UsingSkill) == false &&
+		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Interacting) == false;
 }
 
 void AETPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -219,7 +223,31 @@ void AETPlayer::OnHeavyAttackActionCompleted()
 
 void AETPlayer::OnPrimaryActionCompleted()
 {
-	InteractionComponent->DoInteraction();
+	if (CanInteract() == false || ActionDataAsset == nullptr || InteractionComponent->GetInteractionTarget() == nullptr)
+	{
+		return;
+	}
+
+	UAnimMontage* InteractionMontage = ActionDataAsset->GetAnimMontage(ETGameplayTags::Character_Action_Interaction, 0);
+	if (InteractionMontage == nullptr)
+	{
+		return;
+	}
+
+	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Interacting);
+
+	if (PlayAnimMontage(InteractionMontage) <= 0.f)
+	{
+		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
+		return;
+	}
+
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		FOnMontageBlendingOutStarted BlendingOutDelegate;
+		BlendingOutDelegate.BindUObject(this, &ThisClass::OnInteractionMontageBlendingOut);
+		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, InteractionMontage);
+	}
 }
 
 void AETPlayer::OnDodgeActionStarted()
@@ -249,7 +277,7 @@ void AETPlayer::OnDodgeActionStarted()
 
 	UAnimMontage* DodgeMontage = DodgeMontageData->Montage;
 
-	WeaponCollisionComponent->EndWeaponCollision();
+	AttackCollisionComponent->EndWeaponCollision();
 	ResetComboAttack();
 	ResetHeavyAttack();
 
@@ -298,7 +326,7 @@ void AETPlayer::OnParryActionStarted()
 		return;
 	}
 
-	WeaponCollisionComponent->EndWeaponCollision();
+	AttackCollisionComponent->EndWeaponCollision();
 	ResetComboAttack();
 	ResetHeavyAttack();
 	ResetParry();
@@ -356,19 +384,50 @@ void AETPlayer::OnActiveSkillActionStarted(const int32 InSkillIndex)
 
 void AETPlayer::UseTimeFreezeSkill(const int32 InSkillIndex)
 {
+	if (CanUseActiveSkill() == false)
+	{
+		return;
+	}
+
+	// 대상이 없으면 비용 소모 없이 취소
+	TArray<AETCharacter*> TargetArray;
+	GatherTimeFreezeTargets(TargetArray);
+	if (TargetArray.IsEmpty())
+	{
+		return;
+	}
+
 	if (TryPayActiveSkillCost(InSkillIndex) == false)
 	{
 		return;
 	}
 
-	// TODO : 충돌 판정으로 대상 탐색 후 시간 정지 적용 (Components/ETTimeFreezeComponent.h)
-	// for (AActor* TargetActor : TargetActorArray)
-	// {
-	// 	if (UETTimeFreezeComponent* TimeFreezeComponent = TargetActor->FindComponentByClass<UETTimeFreezeComponent>())
-	// 	{
-	// 		TimeFreezeComponent->Freeze(FreezeDuration);
-	// 	}
-	// }
+	ApplyTimeFreeze(TargetArray);
+}
+
+void AETPlayer::GatherTimeFreezeTargets(OUT TArray<AETCharacter*>& OutTargetArray) const
+{
+	OutTargetArray.Reset();
+
+	// 락온 대상이 있으면 우선 적용
+	if (AETCharacter* LockOnTarget = LockOnComponent->GetLockOnTarget())
+	{
+		OutTargetArray.Add(LockOnTarget);
+		return;
+	}
+
+	LockOnComponent->FindTargetsInView(TimeFreezeSkillData.SearchRadius, TimeFreezeSkillData.ViewHalfAngle, TimeFreezeSkillData.MaxTargetCount, OutTargetArray);
+}
+
+void AETPlayer::ApplyTimeFreeze(const TArray<AETCharacter*>& InTargetArray)
+{
+	for (AETCharacter* TargetCharacter : InTargetArray)
+	{
+		if (UETTimeFreezeComponent* TimeFreezeComponent = TargetCharacter ? TargetCharacter->FindComponentByClass<UETTimeFreezeComponent>() : nullptr)
+		{
+			TimeFreezeComponent->Freeze(TimeFreezeSkillData.FreezeDuration);
+		}
+	}
 }
 
 bool AETPlayer::TryPayActiveSkillCost(const int32 InSkillIndex)
@@ -405,7 +464,7 @@ void AETPlayer::PlayActiveSkill(const int32 InSkillIndex)
 
 	UAnimMontage* SkillMontage = SkillMontageData->Montage;
 
-	WeaponCollisionComponent->EndWeaponCollision();
+	AttackCollisionComponent->EndWeaponCollision();
 	ResetComboAttack();
 	ResetHeavyAttack();
 
@@ -597,7 +656,7 @@ void AETPlayer::HitReact(AActor* InDamageCauser)
 	}
 
 	GetCharacterMovement()->RemoveRootMotionSource(DodgeRootMotionSourceName);
-	WeaponCollisionComponent->EndWeaponCollision();
+	AttackCollisionComponent->EndWeaponCollision();
 	ResetComboAttack();
 	ResetHeavyAttack();
 
@@ -655,6 +714,7 @@ bool AETPlayer::CanPlayComboAttack()
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Death);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_HeavyAttacking);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_Interacting);
 
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false;
 }
@@ -665,6 +725,7 @@ bool AETPlayer::CanDodge()
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Death);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Dodging);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_Interacting);
 
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false &&
 		GetCharacterMovement()->IsFalling() == false;
@@ -677,6 +738,7 @@ bool AETPlayer::CanParry()
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Dodging);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Parrying);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_Interacting);
 
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false &&
 		GetCharacterMovement()->IsFalling() == false;
@@ -689,8 +751,15 @@ bool AETPlayer::CanUseActiveSkill()
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Dodging);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Parrying);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_Interacting);
 
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false &&
+		GetCharacterMovement()->IsFalling() == false;
+}
+
+bool AETPlayer::CanInteract()
+{
+	return CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Idle) &&
 		GetCharacterMovement()->IsFalling() == false;
 }
 
@@ -700,6 +769,7 @@ bool AETPlayer::CanHeavyAttack()
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Death);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Attacking);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_Interacting);
 
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false;
 }
@@ -792,6 +862,14 @@ void AETPlayer::OnParryMontageBlendingOut(UAnimMontage* InMontage, bool bInterru
 void AETPlayer::OnActiveSkillMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted)
 {
 	if (bInterrupted == false)
+	{
+		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
+	}
+}
+
+void AETPlayer::OnInteractionMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted)
+{
+	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Interacting))
 	{
 		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
 	}

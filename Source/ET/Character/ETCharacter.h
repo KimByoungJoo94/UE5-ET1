@@ -6,7 +6,7 @@
 
 class UETCharacterStateComponent;
 class UETGameStatComponent;
-class UETWeaponCollisionComponent;
+class UETAttackCollisionComponent;
 
 UCLASS()
 class ET_API AETCharacter : public ACharacter
@@ -29,7 +29,7 @@ public:
 
 	UETCharacterStateComponent* GetCharacterStateComponent() { return CharacterStateComponent; }
 	UETGameStatComponent* GetGameStatComponent() { return GameStatComponent; }
-	UETWeaponCollisionComponent* GetWeaponCollisionComponent() { return WeaponCollisionComponent; }
+	UETAttackCollisionComponent* GetAttackCollisionComponent() { return AttackCollisionComponent; }
 
 	void SetCapsuleHalfHeightKeepGround(const float InHalfHeight);
 	void ResetCapsuleHalfHeight();
@@ -49,5 +49,5 @@ protected:
 	TObjectPtr<UETGameStatComponent> GameStatComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "ET")
-	TObjectPtr<UETWeaponCollisionComponent> WeaponCollisionComponent;
+	TObjectPtr<UETAttackCollisionComponent> AttackCollisionComponent;
 };

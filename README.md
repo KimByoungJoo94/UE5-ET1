@@ -10,5 +10,6 @@
 | Paragon: Kwang | Fab | `Content/ParagonKwang` |
 | Paragon: Sun Wukong | Fab | `Content/ParagonSunWukong` |
 | Sci-fi Container Free 02 | Fab | `Content/Fab/Sci-fi_Container_Free_02` |
+| The Motherland Calls | Fab | `Content/Fab/The_Motherland_Calls` |
 
 > Fab 에서 "프로젝트에 추가(Add to Project)" 로 받으면 위 경로에 자동으로 설치됩니다.

@@ -2,9 +2,11 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Components/ArrowComponent.h"
 #include "Components/ETInteractionComponent.h"
 #include "Character/ETPlayer.h"
 #include "UI/ETInteractionWidget.h"
+#include "Common/ETCommonSettings.h"
 #include "Engine/Engine.h"
 
 AETInteractionActor::AETInteractionActor()
@@ -23,12 +25,27 @@ AETInteractionActor::AETInteractionActor()
 
 	InteractionWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("InteractionWidgetComponent"));
 	InteractionWidgetComponent->SetupAttachment(GetRootComponent());
+	InteractionWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 200.f));
 	InteractionWidgetComponent->SetDrawSize(FVector2D(50.f, 50.f));
 	InteractionWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+
+#if WITH_EDITORONLY_DATA
+	ArrowComponent = CreateEditorOnlyDefaultSubobject<UArrowComponent>(TEXT("ArrowComponent"));
+	if (ArrowComponent)
+	{
+		ArrowComponent->SetupAttachment(GetRootComponent());
+	}
+#endif
 }
 
 void AETInteractionActor::BeginPlay()
 {
+	// 위젯 컴포넌트가 BeginPlay 에서 위젯을 생성하므로 Super 전에 설정 (BP 에서 지정한 위젯 우선)
+	if (InteractionWidgetComponent->GetWidgetClass() == nullptr)
+	{
+		InteractionWidgetComponent->SetWidgetClass(GetDefault<UETCommonSettings>()->UI.InteractionWidgetClass.LoadSynchronous());
+	}
+
 	Super::BeginPlay();
 
 	InteractionWidgetComponent->SetVisibility(false);
@@ -50,7 +67,7 @@ void AETInteractionActor::OnInteraction(AActor* InInteractor)
 #if !UE_BUILD_SHIPPING
 	if (GEngine)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Yellow, FString::Printf(TEXT("%s::OnInteraction"), *GetClass()->GetName()));
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Black, FString::Printf(TEXT("%s::OnInteraction"), *GetClass()->GetName()));
 	}
 #endif
 }

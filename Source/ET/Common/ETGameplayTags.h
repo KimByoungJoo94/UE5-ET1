@@ -11,6 +11,7 @@ namespace ETGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Parrying);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_UsingSkill);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Interacting);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_UsingItem);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Death);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_ComboAttack);
@@ -21,4 +22,5 @@ namespace ETGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Parry);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_ActiveSkill);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Interaction);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_UseItem);
 }

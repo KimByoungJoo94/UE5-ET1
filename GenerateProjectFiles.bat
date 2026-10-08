@@ -34,7 +34,6 @@ if errorlevel 1 goto :fail
 echo.
 echo Project files generated successfully.
 endlocal
-pause
 exit /b 0
 
 :fail

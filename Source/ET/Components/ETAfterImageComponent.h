@@ -4,7 +4,6 @@
 #include "Components/ActorComponent.h"
 #include "ETAfterImageComponent.generated.h"
 
-class UMaterialInterface;
 class USkeletalMeshComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -20,9 +19,6 @@ public:
 	void SpawnAfterImage(USkeletalMeshComponent* InSourceMeshComponent = nullptr);
 
 protected:
-	UPROPERTY(EditAnywhere, Category = "AfterImage")
-	TObjectPtr<UMaterialInterface> AfterImageMaterial;
-
 	UPROPERTY(EditAnywhere, Category = "AfterImage", meta = (ClampMin = "0.01"))
 	float AfterImageLifeTime = 0.5f;
 

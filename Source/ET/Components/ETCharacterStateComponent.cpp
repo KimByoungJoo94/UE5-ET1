@@ -31,7 +31,7 @@ void UETCharacterStateComponent::ChangeState(const FGameplayTag InNewState)
 #if !UE_BUILD_SHIPPING
 		if (GEngine)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, Message);
+			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, Message);
 		}
 #endif
 	}

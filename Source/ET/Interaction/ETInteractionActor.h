@@ -8,6 +8,7 @@
 class UStaticMeshComponent;
 class UBoxComponent;
 class UWidgetComponent;
+class UArrowComponent;
 
 // 상호작용 액터 공통 (박스 오버랩 시 플레이어 상호작용 대상 등록, 키 위젯 표시)
 UCLASS(Abstract)
@@ -47,4 +48,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UWidgetComponent> InteractionWidgetComponent;
+
+#if WITH_EDITORONLY_DATA
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UArrowComponent> ArrowComponent;
+#endif
 };

@@ -10,6 +10,7 @@ namespace ETGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Character_State_Parrying, "Character.State.Parrying");
 	UE_DEFINE_GAMEPLAY_TAG(Character_State_UsingSkill, "Character.State.UsingSkill");
 	UE_DEFINE_GAMEPLAY_TAG(Character_State_Interacting, "Character.State.Interacting");
+	UE_DEFINE_GAMEPLAY_TAG(Character_State_UsingItem, "Character.State.UsingItem");
 	UE_DEFINE_GAMEPLAY_TAG(Character_State_Death, "Character.State.Death");
 
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_ComboAttack, "Character.Action.ComboAttack");
@@ -20,4 +21,5 @@ namespace ETGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Parry, "Character.Action.Parry");
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_ActiveSkill, "Character.Action.ActiveSkill");
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Interaction, "Character.Action.Interaction");
+	UE_DEFINE_GAMEPLAY_TAG(Character_Action_UseItem, "Character.Action.UseItem");
 }

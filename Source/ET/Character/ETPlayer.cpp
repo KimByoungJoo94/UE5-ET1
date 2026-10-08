@@ -12,7 +12,6 @@
 #include "Components/ETInteractionComponent.h"
 #include "Components/ETAfterImageComponent.h"
 #include "Components/ETLockOnComponent.h"
-#include "Components/ETTimeFreezeComponent.h"
 #include "GameFramework/RootMotionSource.h"
 #include "Subsystem/ETTimeDilationSubsystem.h"
 
@@ -59,11 +58,9 @@ void AETPlayer::BeginPlay()
 
 	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
 
-	GameStatComponent->StartIncreaseOverTime(EETGameStatType::Mana, EETGameStatType::ManaRegen);
+	ResetGameStat();
 
-	// 기세는 0 에서 시작해서 시간에 따라 감소
-	const float MomentumMaxValue = GameStatComponent->GetGameStat(EETGameStatType::Momentum).GetMaxValue();
-	GameStatComponent->AddDepletedValue(EETGameStatType::Momentum, -MomentumMaxValue);
+	GameStatComponent->StartIncreaseOverTime(EETGameStatType::Mana, EETGameStatType::ManaRegen);
 	GameStatComponent->StartDecreaseOverTime(EETGameStatType::Momentum, EETGameStatType::MomentumDrain);
 
 	OnChargeCountChangedHandle = ChargeAttackComponent->OnChargeCountChanged.AddUObject(this, &ThisClass::OnChargeCountChanged);
@@ -104,7 +101,8 @@ bool AETPlayer::CanJumpInternal_Implementation() const
 	// 스킬 시전 중에는 점프 불가
 	return Super::CanJumpInternal_Implementation() &&
 		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_UsingSkill) == false &&
-		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Interacting) == false;
+		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Interacting) == false &&
+		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_UsingItem) == false;
 }
 
 void AETPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -128,6 +126,8 @@ void AETPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		EnhancedInputComponent->BindAction(PlayerInputData.DodgeAction, ETriggerEvent::Started, this, &ThisClass::OnDodgeActionStarted);
 		EnhancedInputComponent->BindAction(PlayerInputData.ParryAction, ETriggerEvent::Started, this, &ThisClass::OnParryActionStarted);
 		EnhancedInputComponent->BindAction(PlayerInputData.ParryAction, ETriggerEvent::Completed, this, &ThisClass::OnParryActionCompleted);
+
+		EnhancedInputComponent->BindAction(PlayerInputData.UseItemAction, ETriggerEvent::Started, this, &ThisClass::OnUseItemActionStarted);
 
 		for (int32 Index = 0; Index < PlayerInputData.ActiveSkillActionArray.Num(); ++Index)
 		{
@@ -223,36 +223,40 @@ void AETPlayer::OnHeavyAttackActionCompleted()
 
 void AETPlayer::OnPrimaryActionCompleted()
 {
-	if (CanInteract() == false || ActionDataAsset == nullptr || InteractionComponent->GetInteractionTarget() == nullptr)
+	if (CanInteract() == false || InteractionComponent->GetInteractionTarget() == nullptr)
 	{
 		return;
 	}
 
-	UAnimMontage* InteractionMontage = ActionDataAsset->GetAnimMontage(ETGameplayTags::Character_Action_Interaction, 0);
-	if (InteractionMontage == nullptr)
+	if (const FETCharacterActionMontageData* InteractionMontageData = FindPlayableActionMontageData(ETGameplayTags::Character_Action_Interaction, 0))
+	{
+		PlayActionMontage(*InteractionMontageData, ETGameplayTags::Character_State_Interacting, &ThisClass::OnInteractionMontageBlendingOut);
+	}
+}
+
+void AETPlayer::OnUseItemActionStarted()
+{
+	if (CanUseItem() == false)
 	{
 		return;
 	}
 
-	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Interacting);
-
-	if (PlayAnimMontage(InteractionMontage) <= 0.f)
+	// 실제 아이템 사용은 몽타주의 ETAnimNotify_UseItem 시점에 처리
+	if (const FETCharacterActionMontageData* UseItemMontageData = FindPlayableActionMontageData(ETGameplayTags::Character_Action_UseItem, 0))
 	{
-		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
-		return;
+		PlayActionMontage(*UseItemMontageData, ETGameplayTags::Character_State_UsingItem, &ThisClass::OnUseItemMontageBlendingOut);
 	}
+}
 
-	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
-	{
-		FOnMontageBlendingOutStarted BlendingOutDelegate;
-		BlendingOutDelegate.BindUObject(this, &ThisClass::OnInteractionMontageBlendingOut);
-		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, InteractionMontage);
-	}
+void AETPlayer::UseItem()
+{
+	// TODO : 기본 체력 회복 또는 설정한 아이템 사용
+	GameStatComponent->AddDepletedValue(EETGameStatType::Health, 10.f);
 }
 
 void AETPlayer::OnDodgeActionStarted()
 {
-	if (CanDodge() == false || ActionDataAsset == nullptr)
+	if (CanDodge() == false)
 	{
 		return;
 	}
@@ -269,27 +273,20 @@ void AETPlayer::OnDodgeActionStarted()
 		SetActorRotation((bForward ? InputDirection : -InputDirection).Rotation());
 	}
 
-	const FETCharacterActionMontageData* DodgeMontageData = ActionDataAsset->GetActionMontageData(ETGameplayTags::Character_Action_Dodge, DodgeMontageIndex);
-	if (DodgeMontageData == nullptr || DodgeMontageData->Montage == nullptr || HasEnoughActionCost(*DodgeMontageData) == false)
+	const FETCharacterActionMontageData* DodgeMontageData = FindPlayableActionMontageData(ETGameplayTags::Character_Action_Dodge, DodgeMontageIndex);
+	if (DodgeMontageData == nullptr)
 	{
 		return;
 	}
-
-	UAnimMontage* DodgeMontage = DodgeMontageData->Montage;
 
 	AttackCollisionComponent->EndWeaponCollision();
 	ResetComboAttack();
 	ResetHeavyAttack();
 
-	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Dodging);
-
-	if (PlayAnimMontage(DodgeMontage) <= 0.f)
+	if (PlayActionMontage(*DodgeMontageData, ETGameplayTags::Character_State_Dodging, &ThisClass::OnDodgeMontageBlendingOut) == false)
 	{
-		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
 		return;
 	}
-
-	ConsumeActionCost(*DodgeMontageData);
 
 	const FVector DodgeDirection = DodgeMontageIndex == 0 ? GetActorForwardVector() : -GetActorForwardVector();
 
@@ -304,24 +301,17 @@ void AETPlayer::OnDodgeActionStarted()
 
 	// TODO : 적 공격의 회피 가능 구간에서만 호출
 	PlayPerfectDodge();
-
-	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
-	{
-		FOnMontageBlendingOutStarted BlendingOutDelegate;
-		BlendingOutDelegate.BindUObject(this, &ThisClass::OnDodgeMontageBlendingOut);
-		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, DodgeMontage);
-	}
 }
 
 void AETPlayer::OnParryActionStarted()
 {
-	if (CanParry() == false || ActionDataAsset == nullptr)
+	if (CanParry() == false)
 	{
 		return;
 	}
 
-	const FETCharacterActionMontageData* ParryMontageData = ActionDataAsset->GetActionMontageData(ETGameplayTags::Character_Action_Parry, 0);
-	if (ParryMontageData == nullptr || ParryMontageData->Montage == nullptr || HasEnoughActionCost(*ParryMontageData) == false)
+	const FETCharacterActionMontageData* ParryMontageData = FindPlayableActionMontageData(ETGameplayTags::Character_Action_Parry, 0);
+	if (ParryMontageData == nullptr)
 	{
 		return;
 	}
@@ -333,22 +323,9 @@ void AETPlayer::OnParryActionStarted()
 
 	ParryMontage = ParryMontageData->Montage;
 
-	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Parrying);
-
-	if (PlayAnimMontage(ParryMontage) <= 0.f)
+	if (PlayActionMontage(*ParryMontageData, ETGameplayTags::Character_State_Parrying, &ThisClass::OnParryMontageBlendingOut) == false)
 	{
 		ResetParry();
-		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
-		return;
-	}
-
-	ConsumeActionCost(*ParryMontageData);
-
-	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
-	{
-		FOnMontageBlendingOutStarted BlendingOutDelegate;
-		BlendingOutDelegate.BindUObject(this, &ThisClass::OnParryMontageBlendingOut);
-		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, ParryMontage);
 	}
 }
 
@@ -362,9 +339,6 @@ void AETPlayer::OnActiveSkillActionStarted(const int32 InSkillIndex)
 	switch (InSkillIndex)
 	{
 	case 0:
-		UseTimeFreezeSkill(InSkillIndex);
-		break;
-
 	case 1:
 	case 2:
 		PlayActiveSkill(InSkillIndex);
@@ -379,54 +353,6 @@ void AETPlayer::OnActiveSkillActionStarted(const int32 InSkillIndex)
 
 	default:
 		break;
-	}
-}
-
-void AETPlayer::UseTimeFreezeSkill(const int32 InSkillIndex)
-{
-	if (CanUseActiveSkill() == false)
-	{
-		return;
-	}
-
-	// 대상이 없으면 비용 소모 없이 취소
-	TArray<AETCharacter*> TargetArray;
-	GatherTimeFreezeTargets(TargetArray);
-	if (TargetArray.IsEmpty())
-	{
-		return;
-	}
-
-	if (TryPayActiveSkillCost(InSkillIndex) == false)
-	{
-		return;
-	}
-
-	ApplyTimeFreeze(TargetArray);
-}
-
-void AETPlayer::GatherTimeFreezeTargets(OUT TArray<AETCharacter*>& OutTargetArray) const
-{
-	OutTargetArray.Reset();
-
-	// 락온 대상이 있으면 우선 적용
-	if (AETCharacter* LockOnTarget = LockOnComponent->GetLockOnTarget())
-	{
-		OutTargetArray.Add(LockOnTarget);
-		return;
-	}
-
-	LockOnComponent->FindTargetsInView(TimeFreezeSkillData.SearchRadius, TimeFreezeSkillData.ViewHalfAngle, TimeFreezeSkillData.MaxTargetCount, OutTargetArray);
-}
-
-void AETPlayer::ApplyTimeFreeze(const TArray<AETCharacter*>& InTargetArray)
-{
-	for (AETCharacter* TargetCharacter : InTargetArray)
-	{
-		if (UETTimeFreezeComponent* TimeFreezeComponent = TargetCharacter ? TargetCharacter->FindComponentByClass<UETTimeFreezeComponent>() : nullptr)
-		{
-			TimeFreezeComponent->Freeze(TimeFreezeSkillData.FreezeDuration);
-		}
 	}
 }
 
@@ -450,40 +376,23 @@ bool AETPlayer::TryPayActiveSkillCost(const int32 InSkillIndex)
 
 void AETPlayer::PlayActiveSkill(const int32 InSkillIndex)
 {
-	if (CanUseActiveSkill() == false || ActionDataAsset == nullptr)
+	if (CanUseActiveSkill() == false)
 	{
 		return;
 	}
 
 	// Character.Action.ActiveSkill 몽타주 배열 인덱스 = 스킬 슬롯 인덱스
-	const FETCharacterActionMontageData* SkillMontageData = ActionDataAsset->GetActionMontageData(ETGameplayTags::Character_Action_ActiveSkill, InSkillIndex);
-	if (SkillMontageData == nullptr || SkillMontageData->Montage == nullptr || HasEnoughActionCost(*SkillMontageData) == false)
+	const FETCharacterActionMontageData* SkillMontageData = FindPlayableActionMontageData(ETGameplayTags::Character_Action_ActiveSkill, InSkillIndex);
+	if (SkillMontageData == nullptr)
 	{
 		return;
 	}
-
-	UAnimMontage* SkillMontage = SkillMontageData->Montage;
 
 	AttackCollisionComponent->EndWeaponCollision();
 	ResetComboAttack();
 	ResetHeavyAttack();
 
-	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_UsingSkill);
-
-	if (PlayAnimMontage(SkillMontage) <= 0.f)
-	{
-		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
-		return;
-	}
-
-	ConsumeActionCost(*SkillMontageData);
-
-	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
-	{
-		FOnMontageBlendingOutStarted BlendingOutDelegate;
-		BlendingOutDelegate.BindUObject(this, &ThisClass::OnActiveSkillMontageBlendingOut);
-		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, SkillMontage);
-	}
+	PlayActionMontage(*SkillMontageData, ETGameplayTags::Character_State_UsingSkill, &ThisClass::OnActiveSkillMontageBlendingOut);
 }
 
 void AETPlayer::AdvanceComboAttack()
@@ -715,6 +624,7 @@ bool AETPlayer::CanPlayComboAttack()
 	CheckContainer.AddTag(ETGameplayTags::Character_State_HeavyAttacking);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Interacting);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingItem);
 
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false;
 }
@@ -726,6 +636,7 @@ bool AETPlayer::CanDodge()
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Dodging);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Interacting);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingItem);
 
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false &&
 		GetCharacterMovement()->IsFalling() == false;
@@ -739,6 +650,7 @@ bool AETPlayer::CanParry()
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Parrying);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Interacting);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingItem);
 
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false &&
 		GetCharacterMovement()->IsFalling() == false;
@@ -752,12 +664,19 @@ bool AETPlayer::CanUseActiveSkill()
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Parrying);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Interacting);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingItem);
 
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false &&
 		GetCharacterMovement()->IsFalling() == false;
 }
 
 bool AETPlayer::CanInteract()
+{
+	return CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Idle) &&
+		GetCharacterMovement()->IsFalling() == false;
+}
+
+bool AETPlayer::CanUseItem()
 {
 	return CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Idle) &&
 		GetCharacterMovement()->IsFalling() == false;
@@ -770,6 +689,7 @@ bool AETPlayer::CanHeavyAttack()
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Attacking);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
 	CheckContainer.AddTag(ETGameplayTags::Character_State_Interacting);
+	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingItem);
 
 	return CharacterStateComponent->HasCurrentState(CheckContainer) == false;
 }
@@ -790,6 +710,46 @@ void AETPlayer::ConsumeActionCost(const FETCharacterActionMontageData& InMontage
 	{
 		GameStatComponent->AddDepletedValue(InMontageData.CostStatType, -InMontageData.CostValue);
 	}
+}
+
+const FETCharacterActionMontageData* AETPlayer::FindPlayableActionMontageData(const FGameplayTag& InActionTag, const int32 InIndex) const
+{
+	if (ActionDataAsset == nullptr)
+	{
+		return nullptr;
+	}
+
+	const FETCharacterActionMontageData* MontageData = ActionDataAsset->GetActionMontageData(InActionTag, InIndex);
+	if (MontageData == nullptr || MontageData->Montage == nullptr || HasEnoughActionCost(*MontageData) == false)
+	{
+		return nullptr;
+	}
+
+	return MontageData;
+}
+
+bool AETPlayer::PlayActionMontage(const FETCharacterActionMontageData& InMontageData, const FGameplayTag& InStateTag, void (ThisClass::*InBlendingOutFunc)(UAnimMontage*, bool))
+{
+	UAnimMontage* Montage = InMontageData.Montage;
+
+	CharacterStateComponent->ChangeState(InStateTag);
+
+	if (PlayAnimMontage(Montage) <= 0.f)
+	{
+		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
+		return false;
+	}
+
+	ConsumeActionCost(InMontageData);
+
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		FOnMontageBlendingOutStarted BlendingOutDelegate;
+		BlendingOutDelegate.BindUObject(this, InBlendingOutFunc);
+		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, Montage);
+	}
+
+	return true;
 }
 
 void AETPlayer::PlayComboAttack()
@@ -870,6 +830,14 @@ void AETPlayer::OnActiveSkillMontageBlendingOut(UAnimMontage* InMontage, bool bI
 void AETPlayer::OnInteractionMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted)
 {
 	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Interacting))
+	{
+		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
+	}
+}
+
+void AETPlayer::OnUseItemMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted)
+{
+	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_UsingItem))
 	{
 		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
 	}

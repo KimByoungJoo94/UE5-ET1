@@ -17,6 +17,7 @@ class UETCharacterActionDataAsset;
 struct FETCharacterActionMontageData;
 class UAnimMontage;
 struct FInputActionValue;
+struct FGameplayTag;
 
 USTRUCT()
 struct FETPlayerInputData
@@ -26,7 +27,7 @@ struct FETPlayerInputData
 public:
 	FETPlayerInputData()
 	{		
-		ActiveSkillActionArray.Init(nullptr, 3);
+		ActiveSkillActionArray.Init(nullptr, 4);
 	}
 
 	UPROPERTY(EditDefaultsOnly)
@@ -58,6 +59,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, meta = (EditFixedSize))
 	TArray<TObjectPtr<UInputAction>> ActiveSkillActionArray;
+
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UInputAction> UseItemAction;
 };
 
 USTRUCT()
@@ -77,30 +81,6 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0"))
 	float PerfectDodgeSlowDuration = 0.5f;
-
-};
-
-USTRUCT()
-struct FETPlayerTimeFreezeSkillData
-{
-	GENERATED_BODY()
-
-public:
-	// 플레이어 기준 탐색 반경
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0"))
-	float SearchRadius = 1500.f;
-
-	// 카메라 정면 기준 시야 반각
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0", ClampMax = "180.0"))
-	float ViewHalfAngle = 45.f;
-
-	// 가까운 순으로 적용할 최대 대상 수 (0 이면 범위 안 전체)
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0"))
-	int32 MaxTargetCount = 1;
-
-	// 0 이하이면 Unfreeze 호출 전까지 정지 유지
-	UPROPERTY(EditDefaultsOnly)
-	float FreezeDuration = 3.f;
 };
 
 
@@ -130,16 +110,16 @@ public:
 	void OnHeavyAttackActionStarted();
 	void OnHeavyAttackActionCompleted();
 	void OnPrimaryActionCompleted();
+	void OnUseItemActionStarted();
 	void OnDodgeActionStarted();
 	void OnParryActionStarted();
 	void OnParryActionCompleted();
 	void OnActiveSkillActionStarted(const int32 InSkillIndex);
-	void UseTimeFreezeSkill(const int32 InSkillIndex);
-	void GatherTimeFreezeTargets(OUT TArray<AETCharacter*>& OutTargetArray) const;
-	void ApplyTimeFreeze(const TArray<AETCharacter*>& InTargetArray);
 	bool TryPayActiveSkillCost(const int32 InSkillIndex);
 	void PlayActiveSkill(const int32 InSkillIndex);
 	// ~Key Input
+
+	void UseItem();
 
 	void AdvanceComboAttack();
 	void ResetComboAttack();
@@ -169,9 +149,15 @@ protected:
 	bool CanParry();
 	bool CanUseActiveSkill();
 	bool CanInteract();
+	bool CanUseItem();
 	bool HasEnoughActionCost(const FETCharacterActionMontageData& InMontageData) const;
 	void ConsumeActionCost(const FETCharacterActionMontageData& InMontageData);
-void PlayComboAttack();
+
+	// 몽타주가 있고 비용이 충분한 행동 데이터 (없으면 nullptr)
+	const FETCharacterActionMontageData* FindPlayableActionMontageData(const FGameplayTag& InActionTag, const int32 InIndex) const;
+	// 상태 변경 후 재생, 성공 시 비용 차감 및 BlendingOut 바인딩 (실패 시 Idle 복구)
+	bool PlayActionMontage(const FETCharacterActionMontageData& InMontageData, const FGameplayTag& InStateTag, void (ThisClass::*InBlendingOutFunc)(UAnimMontage*, bool));
+	void PlayComboAttack();
 
 	void OnDodgeMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
 	void PlayPerfectDodge();
@@ -179,6 +165,7 @@ void PlayComboAttack();
 	void OnParryMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
 	void OnActiveSkillMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
 	void OnInteractionMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
+	void OnUseItemMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
 
 	void OnChargeCountChanged(const int32 InCurrentChargeCount, const int32 InMaxChargeCount);
 	
@@ -210,9 +197,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
 	FETPlayerDodgeData PlayerDodgeData;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Skill")
-	FETPlayerTimeFreezeSkillData TimeFreezeSkillData;
 
 protected:
 	bool bComboAttackReserved = false;	

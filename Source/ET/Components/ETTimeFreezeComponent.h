@@ -5,6 +5,10 @@
 #include "Engine/TimerHandle.h"
 #include "ETTimeFreezeComponent.generated.h"
 
+class AETCharacter;
+struct FETTimeFreezeTableRowData;
+
+// 시간 정지 시전 (주변 대상 탐색 후 정지) 및 Owner 자신의 정지 / 해제
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ET_API UETTimeFreezeComponent : public UActorComponent
 {
@@ -17,11 +21,14 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
-	// InDuration 이 0 이하이면 Unfreeze 호출 전까지 정지 유지, 정지 중 호출 시 시간 갱신
+	void CastTimeFreeze(const FName InRowName);
 	void Freeze(const float InDuration);
 	void Unfreeze();
 
 	FORCEINLINE bool IsFrozen() const { return bFrozen; }
+
+protected:
+	void FindTimeFreezeTargets(const FETTimeFreezeTableRowData& InRowData, OUT TArray<AETCharacter*>& OutTargetArray) const;
 
 private:
 	bool bFrozen = false;

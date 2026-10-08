@@ -92,6 +92,24 @@ void UETGameStatComponent::AddPermanentValue(const EETGameStatType InGameStatTyp
 	}
 }
 
+void UETGameStatComponent::ResetAllDepletedValue()
+{
+	for (TPair<EETGameStatType, FETGameStat>& GameStatPair : GameStatMap)
+	{
+		if (FMath::IsNearlyZero(GameStatPair.Value.GetCurrentValue() - GameStatPair.Value.GetMaxValue()) == false)
+		{
+			GameStatPair.Value.ResetDepletedValue();
+
+			DirtyGameStatFlags |= (1ull << static_cast<uint8>(GameStatPair.Key));
+		}
+	}
+}
+
+void UETGameStatComponent::EmptyCurrentValue(const EETGameStatType InGameStatType)
+{
+	AddDepletedValue(InGameStatType, -GetGameStat(InGameStatType).GetCurrentValue());
+}
+
 bool UETGameStatComponent::HasEnoughCurrentValue(const EETGameStatType InGameStatType, const float InValue) const
 {
 	const FETGameStat& GameStat = GetGameStat(InGameStatType);

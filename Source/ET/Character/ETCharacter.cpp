@@ -2,6 +2,7 @@
 #include "Components/ETCharacterStateComponent.h"
 #include "Components/ETGameStatComponent.h"
 #include "Components/ETAttackCollisionComponent.h"
+#include "Components/ETTimeFreezeComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/DamageEvents.h"
@@ -16,6 +17,7 @@ AETCharacter::AETCharacter()
 	GameStatComponent = CreateDefaultSubobject<UETGameStatComponent>(TEXT("GameStatComponent"));
 	// BP 에 저장된 컴포넌트 설정 유지를 위해 서브오브젝트 이름은 기존 이름 유지
 	AttackCollisionComponent = CreateDefaultSubobject<UETAttackCollisionComponent>(TEXT("WeaponCollisionComponent"));
+	TimeFreezeComponent = CreateDefaultSubobject<UETTimeFreezeComponent>(TEXT("TimeFreezeComponent"));
 }
 
 void AETCharacter::BeginPlay()
@@ -81,6 +83,14 @@ float AETCharacter::GetAttackDamage() const
 	const float MomentumAttackBonus = GameStatComponent->GetGameStat(EETGameStatType::MomentumAttackBonus).GetCurrentValue();
 
 	return Attack * (1.f + MomentumRatio * MomentumAttackBonus);
+}
+
+void AETCharacter::ResetGameStat()
+{
+	GameStatComponent->ResetAllDepletedValue();
+
+	// 기세는 0 에서 시작해서 시간에 따라 감소
+	GameStatComponent->EmptyCurrentValue(EETGameStatType::Momentum);
 }
 
 void AETCharacter::SetCapsuleHalfHeightKeepGround(const float InHalfHeight)

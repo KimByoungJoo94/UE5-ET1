@@ -2,6 +2,8 @@
 #include "GameFramework/Character.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Effect/ETAfterImageActor.h"
+#include "Common/ETCommonSettings.h"
+#include "Materials/MaterialInterface.h"
 
 UETAfterImageComponent::UETAfterImageComponent()
 {
@@ -19,6 +21,7 @@ void UETAfterImageComponent::SpawnAfterImage(USkeletalMeshComponent* InSourceMes
 		}
 	}
 
+	UMaterialInterface* AfterImageMaterial = GetDefault<UETCommonSettings>()->Character.AfterImageMaterial.LoadSynchronous();
 	if (IsValid(SourceMeshComponent) == false || AfterImageMaterial == nullptr)
 	{
 		return;

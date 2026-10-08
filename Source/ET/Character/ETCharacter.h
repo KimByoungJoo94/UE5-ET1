@@ -7,6 +7,7 @@
 class UETCharacterStateComponent;
 class UETGameStatComponent;
 class UETAttackCollisionComponent;
+class UETTimeFreezeComponent;
 
 UCLASS()
 class ET_API AETCharacter : public ACharacter
@@ -27,9 +28,13 @@ public:
 	virtual void AttackTarget(AActor* InTarget, const FHitResult& InHitResult);
 	virtual float GetAttackDamage() const;
 
+	// 체력, 마나 최대 / 기세 0
+	virtual void ResetGameStat();
+
 	UETCharacterStateComponent* GetCharacterStateComponent() { return CharacterStateComponent; }
 	UETGameStatComponent* GetGameStatComponent() { return GameStatComponent; }
 	UETAttackCollisionComponent* GetAttackCollisionComponent() { return AttackCollisionComponent; }
+	UETTimeFreezeComponent* GetTimeFreezeComponent() { return TimeFreezeComponent; }
 
 	void SetCapsuleHalfHeightKeepGround(const float InHalfHeight);
 	void ResetCapsuleHalfHeight();
@@ -50,4 +55,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "ET")
 	TObjectPtr<UETAttackCollisionComponent> AttackCollisionComponent;
+
+	UPROPERTY(VisibleAnywhere, Category = "ET")
+	TObjectPtr<UETTimeFreezeComponent> TimeFreezeComponent;
 };

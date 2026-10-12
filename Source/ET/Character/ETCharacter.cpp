@@ -3,15 +3,15 @@
 #include "Components/ETGameStatComponent.h"
 #include "Components/ETAttackCollisionComponent.h"
 #include "Components/ETTimeFreezeComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "DataAsset/ETCharacterActionDataAsset.h"
 #include "DataAsset/ETCharacterTableRowData.h"
 #include "Subsystem/ETGameDataSubsystem.h"
-#include "Components/CapsuleComponent.h"
-#include "Components/SkeletalMeshComponent.h"
 #include "Animation/AnimInstance.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "Engine/DamageEvents.h"
 #include "GameFramework/DamageType.h"
+#include "Engine/DamageEvents.h"
 #include "Kismet/GameplayStatics.h"
 
 AETCharacter::AETCharacter()

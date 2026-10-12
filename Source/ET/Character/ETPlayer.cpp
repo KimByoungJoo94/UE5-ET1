@@ -1,6 +1,7 @@
 ﻿#include "Character/ETPlayer.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/RootMotionSource.h"
 #include "Camera/CameraComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
@@ -12,7 +13,6 @@
 #include "Components/ETInteractionComponent.h"
 #include "Components/ETAfterImageComponent.h"
 #include "Components/ETLockOnComponent.h"
-#include "GameFramework/RootMotionSource.h"
 #include "Subsystem/ETTimeDilationSubsystem.h"
 
 namespace

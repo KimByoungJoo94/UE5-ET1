@@ -1,4 +1,4 @@
-#include "Components/ETGameStatComponent.h"
+ï»¿#include "Components/ETGameStatComponent.h"
 #include "Subsystem/ETGameDataSubsystem.h"
 
 const FETGameStat FETGameStat::Invalid(EETGameStatType::Max);
@@ -72,7 +72,7 @@ void UETGameStatComponent::AddPermanentValue(const EETGameStatType InGameStatTyp
 		return;
 	}
 
-	// ÃÖ´ë°ª°ú ÇöÀç°ªÀÌ ÇÔ²² º¯°æ (DepletedValue À¯Áö)
+	// ìµœëŒ€ê°’ê³¼ í˜„ì¬ê°’ì´ í•¨ê»˜ ë³€ê²½ (DepletedValue ìœ ì§€)
 	if (FETGameStat* FoundGameStat = GameStatMap.Find(InGameStatType))
 	{
 		FoundGameStat->AddPermanentValue(InValue);
@@ -185,7 +185,7 @@ void UETGameStatComponent::BroadcastDirtyGameStat()
 		return;
 	}
 
-	// Broadcast Áß »õ·Î Dirty µÈ ½ºÅÈÀº ´ÙÀ½ Tick ¿¡¼­ Ã³¸®
+	// Broadcast ì¤‘ ìƒˆë¡œ Dirty ëœ ìŠ¤íƒ¯ì€ ë‹¤ìŒ Tick ì—ì„œ ì²˜ë¦¬
 	const uint64 BroadcastFlags = DirtyGameStatFlags;
 	DirtyGameStatFlags = 0;
 

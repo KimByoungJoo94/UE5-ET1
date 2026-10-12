@@ -1,4 +1,4 @@
-#include "Animation/Notify/ETAnimNotify_PauseParry.h"
+﻿#include "Animation/Notify/ETAnimNotify_PauseParry.h"
 #include "Character/ETPlayer.h"
 
 void UETAnimNotify_PauseParry::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference)

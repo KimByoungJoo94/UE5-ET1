@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotifyState.h"
@@ -18,11 +18,11 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
 	float TargetHalfHeight = 40.f;
 
-	// ±¸°£ ½ÃÀÛºÎÅÍ ÀÌ ºñÀ²±îÁö ±âº» ³ôÀÌ -> ¸ñÇ¥ ³ôÀÌ
+	// êµ¬ê°„ ì‹œì‘ë¶€í„° ì´ ë¹„ìœ¨ê¹Œì§€ ê¸°ë³¸ ë†’ì´ -> ëª©í‘œ ë†’ì´
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float ShrinkRatio = 0.3f;
 
-	// ±¸°£ ³¡¿¡¼­ ÀÌ ºñÀ²¸¸Å­ ¸ñÇ¥ ³ôÀÌ -> ±âº» ³ôÀÌ
+	// êµ¬ê°„ ëì—ì„œ ì´ ë¹„ìœ¨ë§Œí¼ ëª©í‘œ ë†’ì´ -> ê¸°ë³¸ ë†’ì´
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float RestoreRatio = 0.3f;
 

@@ -1,4 +1,4 @@
-#include "Character/ETPlayer.h"
+ï»¿#include "Character/ETPlayer.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
@@ -89,7 +89,7 @@ void AETPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// ÆĞ¸® À¯Áö Áß ¸¶³ª°¡ ¸ğµÎ ¼Ò¸ğµÇ¸é ÇØÁ¦
+	// íŒ¨ë¦¬ ìœ ì§€ ì¤‘ ë§ˆë‚˜ê°€ ëª¨ë‘ ì†Œëª¨ë˜ë©´ í•´ì œ
 	if (bParryPaused && GameStatComponent->GetGameStat(EETGameStatType::Mana).GetCurrentValue() <= 0.f)
 	{
 		ReleaseParry();
@@ -160,7 +160,7 @@ void AETPlayer::OnMoveActionTriggered(const FInputActionValue& InValue)
 
 void AETPlayer::OnLookActionTriggered(const FInputActionValue& InValue)
 {
-	// ¶ô¿Â Áß¿¡´Â Ä«¸Ş¶ó°¡ ´ë»óÀ» µû¶ó°¡¹Ç·Î ½ÃÁ¡ ÀÔ·Â ¹«½Ã
+	// ë½ì˜¨ ì¤‘ì—ëŠ” ì¹´ë©”ë¼ê°€ ëŒ€ìƒì„ ë”°ë¼ê°€ë¯€ë¡œ ì‹œì  ì…ë ¥ ë¬´ì‹œ
 	if (LockOnComponent->IsLockedOn())
 	{
 		return;
@@ -248,13 +248,13 @@ void AETPlayer::OnUseItemActionStarted()
 		return;
 	}
 
-	// ½ÇÁ¦ ¾ÆÀÌÅÛ »ç¿ëÀº ¸ùÅ¸ÁÖÀÇ ETAnimNotify_UseItem ½ÃÁ¡¿¡ Ã³¸®
+	// ì‹¤ì œ ì•„ì´í…œ ì‚¬ìš©ì€ ëª½íƒ€ì£¼ì˜ ETAnimNotify_UseItem ì‹œì ì— ì²˜ë¦¬
 	PlayAction(ETGameplayTags::Character_Action_UseItem, 0, ETGameplayTags::Character_State_UsingItem);
 }
 
 void AETPlayer::UseItem()
 {
-	// TODO : ±âº» Ã¼·Â È¸º¹ ¶Ç´Â ¼³Á¤ÇÑ ¾ÆÀÌÅÛ »ç¿ë
+	// TODO : ê¸°ë³¸ ì²´ë ¥ íšŒë³µ ë˜ëŠ” ì„¤ì •í•œ ì•„ì´í…œ ì‚¬ìš©
 	GameStatComponent->AddDepletedValue(EETGameStatType::Health, 10.f);
 }
 
@@ -265,7 +265,7 @@ void AETPlayer::OnDodgeActionStarted()
 		return;
 	}
 
-	// Character.Action.Dodge ¸ùÅ¸ÁÖ ¹è¿­ ÀÎµ¦½º (0 : Fwd, 1 : Bwd)
+	// Character.Action.Dodge ëª½íƒ€ì£¼ ë°°ì—´ ì¸ë±ìŠ¤ (0 : Fwd, 1 : Bwd)
 	int32 DodgeMontageIndex = 1;
 
 	const FVector InputDirection = GetLastMovementInputVector().GetSafeNormal2D();
@@ -303,7 +303,7 @@ void AETPlayer::OnDodgeActionStarted()
 	DodgeForce->FinishVelocityParams.SetVelocity = FVector::ZeroVector;
 	GetCharacterMovement()->ApplyRootMotionSource(DodgeForce);
 
-	// TODO : Àû °ø°İÀÇ È¸ÇÇ °¡´É ±¸°£¿¡¼­¸¸ È£Ãâ
+	// TODO : ì  ê³µê²©ì˜ íšŒí”¼ ê°€ëŠ¥ êµ¬ê°„ì—ì„œë§Œ í˜¸ì¶œ
 	PlayPerfectDodge();
 }
 
@@ -351,7 +351,7 @@ void AETPlayer::OnActiveSkillActionStarted(const int32 InSkillIndex)
 	case 3:
 		if (TryPayActiveSkillCost(InSkillIndex))
 		{
-			// TODO : ½ºÅ³ D
+			// TODO : ìŠ¤í‚¬ D
 		}
 		break;
 
@@ -362,7 +362,7 @@ void AETPlayer::OnActiveSkillActionStarted(const int32 InSkillIndex)
 
 bool AETPlayer::TryPayActiveSkillCost(const int32 InSkillIndex)
 {
-	// ¸ùÅ¸ÁÖ ¾ø´Â ½ºÅ³¿ë : ¸ùÅ¸ÁÖ Ç×¸ñÀÇ ºñ¿ë¸¸ È®ÀÎ ÈÄ Â÷°¨
+	// ëª½íƒ€ì£¼ ì—†ëŠ” ìŠ¤í‚¬ìš© : ëª½íƒ€ì£¼ í•­ëª©ì˜ ë¹„ìš©ë§Œ í™•ì¸ í›„ ì°¨ê°
 	if (CanPlayAction(ETGameplayTags::Character_Action_ActiveSkill) == false || GetCharacterMovement()->IsFalling() || CachedActionDataAsset == nullptr)
 	{
 		return false;
@@ -385,7 +385,7 @@ void AETPlayer::PlayActiveSkill(const int32 InSkillIndex)
 		return;
 	}
 
-	// Character.Action.ActiveSkill ¸ùÅ¸ÁÖ ¹è¿­ ÀÎµ¦½º = ½ºÅ³ ½½·Ô ÀÎµ¦½º
+	// Character.Action.ActiveSkill ëª½íƒ€ì£¼ ë°°ì—´ ì¸ë±ìŠ¤ = ìŠ¤í‚¬ ìŠ¬ë¡¯ ì¸ë±ìŠ¤
 	const FETCharacterActionMontageData* SkillMontageData = FindPlayableActionMontageData(ETGameplayTags::Character_Action_ActiveSkill, InSkillIndex);
 	if (SkillMontageData == nullptr)
 	{
@@ -469,7 +469,7 @@ void AETPlayer::ReleaseParry()
 		return;
 	}
 
-	// ¸ØÃã ³ëÆ¼ÆÄÀÌ Àü¿¡ Å°¸¦ ¶¼¸é ¸ØÃßÁö ¾Ê°í ±×´ë·Î º¹±¸ ÀÚ¼¼±îÁö Àç»ı
+	// ë©ˆì¶¤ ë…¸í‹°íŒŒì´ ì „ì— í‚¤ë¥¼ ë–¼ë©´ ë©ˆì¶”ì§€ ì•Šê³  ê·¸ëŒ€ë¡œ ë³µêµ¬ ìì„¸ê¹Œì§€ ì¬ìƒ
 	bParryReleased = true;
 
 	if (bParryPaused)
@@ -487,7 +487,7 @@ void AETPlayer::ReleaseParry()
 
 void AETPlayer::ResetParry()
 {
-	// ÆĞ¸® À¯Áö Áß ²÷±ä °æ¿ì (È¸ÇÇ, ÇÇ°İ µî) ¸¶³ª È¸º¹À¸·Î º¹±¸
+	// íŒ¨ë¦¬ ìœ ì§€ ì¤‘ ëŠê¸´ ê²½ìš° (íšŒí”¼, í”¼ê²© ë“±) ë§ˆë‚˜ íšŒë³µìœ¼ë¡œ ë³µêµ¬
 	if (bParryPaused)
 	{
 		GameStatComponent->StartIncreaseOverTime(EETGameStatType::Mana, EETGameStatType::ManaRegen);
@@ -517,13 +517,13 @@ bool AETPlayer::TryAvoidDamage(AActor* InDamageCauser)
 
 	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Dodging))
 	{
-		// TODO : ÆÛÆåÆ® È¸ÇÇ ±¸°£ÀÌ¸é PlayPerfectDodge + ±â¼¼ È¹µæ
+		// TODO : í¼í™íŠ¸ íšŒí”¼ êµ¬ê°„ì´ë©´ PlayPerfectDodge + ê¸°ì„¸ íšë“
 		return true;
 	}
 
 	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Parrying))
 	{
-		// TODO : ÆÛÆåÆ® ÆĞ¸® ±¸°£ÀÌ¸é ÆÛÆåÆ® ÆĞ¸® + ±â¼¼ È¹µæ
+		// TODO : í¼í™íŠ¸ íŒ¨ë¦¬ êµ¬ê°„ì´ë©´ í¼í™íŠ¸ íŒ¨ë¦¬ + ê¸°ì„¸ íšë“
 		return true;
 	}
 
@@ -537,7 +537,7 @@ void AETPlayer::HitReact(AActor* InDamageCauser)
 		return;
 	}
 
-	// ½ºÅ³ ½ÃÀü Áß¿¡´Â ½´ÆÛ¾Æ¸Ó (µ¥¹ÌÁö¸¸ ¹Ş°í ÇÇ°İ ¸®¾×¼Ç ¾øÀ½)
+	// ìŠ¤í‚¬ ì‹œì „ ì¤‘ì—ëŠ” ìŠˆí¼ì•„ë¨¸ (ë°ë¯¸ì§€ë§Œ ë°›ê³  í”¼ê²© ë¦¬ì•¡ì…˜ ì—†ìŒ)
 	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_UsingSkill))
 	{
 		return;
@@ -546,7 +546,7 @@ void AETPlayer::HitReact(AActor* InDamageCauser)
 	const FRotator LookAtRotation = (InDamageCauser->GetActorLocation() - GetActorLocation()).Rotation();
 	const float DeltaYaw = (GetActorRotation() - LookAtRotation).GetNormalized().Yaw;
 
-	// Character.Action.Hit ¸ùÅ¸ÁÖ ¹è¿­ ÀÎµ¦½º (0 : Front, 1 : Back, 2 : Left, 3 : Right)
+	// Character.Action.Hit ëª½íƒ€ì£¼ ë°°ì—´ ì¸ë±ìŠ¤ (0 : Front, 1 : Back, 2 : Left, 3 : Right)
 	int32 HitMontageIndex = 0;
 
 	if (FMath::Abs(DeltaYaw) > 135.f)
@@ -649,7 +649,7 @@ void AETPlayer::OnChargeCountChanged(const int32 InCurrentChargeCount, const int
 		return;
 	}
 
-	// TODO : ÃæÀü ÆÄÆ¼Å¬ Ãâ·Â
+	// TODO : ì¶©ì „ íŒŒí‹°í´ ì¶œë ¥
 }
 
 void AETPlayer::PlayPerfectDodge()
@@ -666,7 +666,7 @@ void AETPlayer::OnActionMontageBlendingOut(const FGameplayTag& InStateTag, const
 {
 	Super::OnActionMontageBlendingOut(InStateTag, bInterrupted);
 
-	// ÆĞ¸®´Â ²÷±ä °æ¿ì¿¡µµ À¯Áö »óÅÂ(¸¶³ª ¼Ò¸ğ) Á¤¸®
+	// íŒ¨ë¦¬ëŠ” ëŠê¸´ ê²½ìš°ì—ë„ ìœ ì§€ ìƒíƒœ(ë§ˆë‚˜ ì†Œëª¨) ì •ë¦¬
 	if (InStateTag == ETGameplayTags::Character_State_Parrying)
 	{
 		ResetParry();

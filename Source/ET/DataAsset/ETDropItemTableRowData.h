@@ -1,20 +1,20 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "DataAsset/ETGameStatTableRowData.h"
 #include "ETDropItemTableRowData.generated.h"
 
-// Ã¤¿öÁø Ç×¸ñÀ» ¸ğµÎ È¹µæÀÚ¿¡°Ô Àû¿ë
+// ì±„ì›Œì§„ í•­ëª©ì„ ëª¨ë‘ íšë“ìì—ê²Œ ì ìš©
 USTRUCT()
 struct ET_API FETDropItemTableRowData : public FTableRowBase
 {
 	GENERATED_BODY()
 
 public:
-	// ¿µ±¸ ´É·ÂÄ¡ »ó½Â (½ºÅÈ Á¾·ù -> Áõ°¡·®)
+	// ì˜êµ¬ ëŠ¥ë ¥ì¹˜ ìƒìŠ¹ (ìŠ¤íƒ¯ ì¢…ë¥˜ -> ì¦ê°€ëŸ‰)
 	UPROPERTY(EditAnywhere)
 	TMap<EETGameStatType, float> PermanentGameStatMap;
 
-	// TODO : ¾ÆÀÌÅÛ ½Ã½ºÅÛ Ãß°¡ ÈÄ ItemRewardArray
+	// TODO : ì•„ì´í…œ ì‹œìŠ¤í…œ ì¶”ê°€ í›„ ItemRewardArray
 };

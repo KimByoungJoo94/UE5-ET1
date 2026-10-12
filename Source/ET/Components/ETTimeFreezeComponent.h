@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
@@ -9,7 +9,7 @@ class AETCharacter;
 class UMaterialInterface;
 struct FETTimeFreezeTableRowData;
 
-// ½Ã°£ Á¤Áö ½ÃÀü (ÁÖº¯ ´ë»ó Å½»ö ÈÄ Á¤Áö) ¹× Owner ÀÚ½ÅÀÇ Á¤Áö / ÇØÁ¦
+// ì‹œê°„ ì •ì§€ ì‹œì „ (ì£¼ë³€ ëŒ€ìƒ íƒìƒ‰ í›„ ì •ì§€) ë° Owner ìì‹ ì˜ ì •ì§€ / í•´ì œ
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ET_API UETTimeFreezeComponent : public UActorComponent
 {
@@ -31,12 +31,12 @@ public:
 protected:
 	void FindTimeFreezeTargets(const FETTimeFreezeTableRowData& InRowData, OUT TArray<AETCharacter*>& OutTargetArray) const;
 
-	// Á¤Áö µ¿¾È Owner Ä³¸¯ÅÍ ¸Ş½ÃÀÇ ¸ğµç ½½·ÔÀ» Á¤Áö ¸ÓÅÍ¸®¾ó·Î ±³Ã¼ / ¿ø·¡ ¸ÓÅÍ¸®¾ó·Î º¹±¸
+	// ì •ì§€ ë™ì•ˆ Owner ìºë¦­í„° ë©”ì‹œì˜ ëª¨ë“  ìŠ¬ë¡¯ì„ ì •ì§€ ë¨¸í„°ë¦¬ì–¼ë¡œ êµì²´ / ì›ë˜ ë¨¸í„°ë¦¬ì–¼ë¡œ ë³µêµ¬
 	void ApplyTimeFreezeMaterial();
 	void RestoreOriginMaterials();
 
 private:
-	// Á¤Áö Àü ¸Ş½Ã ½½·Ôº° ¸ÓÅÍ¸®¾ó
+	// ì •ì§€ ì „ ë©”ì‹œ ìŠ¬ë¡¯ë³„ ë¨¸í„°ë¦¬ì–¼
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UMaterialInterface>> OriginMaterialArray;
 

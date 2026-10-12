@@ -1,10 +1,10 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
 #include "ETAnimNotify_TimeFreeze.generated.h"
 
-// ½Ã°£ Á¤Áö ½ÃÀü ½ÃÁ¡
+// ì‹œê°„ ì •ì§€ ì‹œì „ ì‹œì 
 UCLASS()
 class ET_API UETAnimNotify_TimeFreeze : public UAnimNotify
 {

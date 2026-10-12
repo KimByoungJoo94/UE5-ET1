@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
@@ -34,10 +34,10 @@ public:
 private:
 	EETGameStatType StatType = EETGameStatType::Max;
 		
-	float BaseValue = 0.f;       // ¿øº» ±âº»°ª
-	float PermanentValue = 0.f;  // ¿µ±¸ÀûÀÎ Áõ°¨°ª
-	float ModifierValue = 0.f;   // ÀÏ½ÃÀûÀÎ ´É·ÂÄ¡ º¸Á¤°ª
-	float DepletedValue = 0.f;   // ÇöÀç »óÅÂ¿¡ ÀÇÇÑ º¯µ¿°ª
+	float BaseValue = 0.f;       // ì›ë³¸ ê¸°ë³¸ê°’
+	float PermanentValue = 0.f;  // ì˜êµ¬ì ì¸ ì¦ê°ê°’
+	float ModifierValue = 0.f;   // ì¼ì‹œì ì¸ ëŠ¥ë ¥ì¹˜ ë³´ì •ê°’
+	float DepletedValue = 0.f;   // í˜„ì¬ ìƒíƒœì— ì˜í•œ ë³€ë™ê°’
 	
 public:
 	static const FETGameStat Invalid;
@@ -49,8 +49,8 @@ struct FETGameStatOverTimeData
 	GENERATED_BODY()
 
 public:
-	EETGameStatType RateStatType = EETGameStatType::Max;   // ÃÊ´ç º¯È­·® ½ºÅÈ (0 ÀÌ»ó)
-	bool bIncrease = true;                                  // true : ÃÖ´ë°ª±îÁö Áõ°¡, false : 0 ±îÁö °¨¼Ò
+	EETGameStatType RateStatType = EETGameStatType::Max;   // ì´ˆë‹¹ ë³€í™”ëŸ‰ ìŠ¤íƒ¯ (0 ì´ìƒ)
+	bool bIncrease = true;                                  // true : ìµœëŒ€ê°’ê¹Œì§€ ì¦ê°€, false : 0 ê¹Œì§€ ê°ì†Œ
 };
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateGameStat, const FETGameStat& InGameStat);
@@ -67,7 +67,7 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
-	// ±âº» ½ºÅÈ Å×ÀÌºí ÇàÀ¸·Î ½ºÅÈ »ı¼º (¼ÒÀ¯ Ä³¸¯ÅÍ°¡ Ä³¸¯ÅÍ Å×ÀÌºí ÇàÀÇ °ªÀ¸·Î È£Ãâ)
+	// ê¸°ë³¸ ìŠ¤íƒ¯ í…Œì´ë¸” í–‰ìœ¼ë¡œ ìŠ¤íƒ¯ ìƒì„± (ì†Œìœ  ìºë¦­í„°ê°€ ìºë¦­í„° í…Œì´ë¸” í–‰ì˜ ê°’ìœ¼ë¡œ í˜¸ì¶œ)
 	void GenerateGameStat(const FName InBaseGameStatRowName);
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

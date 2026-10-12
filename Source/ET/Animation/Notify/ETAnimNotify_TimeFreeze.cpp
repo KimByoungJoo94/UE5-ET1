@@ -1,4 +1,4 @@
-#include "Animation/Notify/ETAnimNotify_TimeFreeze.h"
+﻿#include "Animation/Notify/ETAnimNotify_TimeFreeze.h"
 #include "Character/ETCharacter.h"
 #include "Components/ETTimeFreezeComponent.h"
 

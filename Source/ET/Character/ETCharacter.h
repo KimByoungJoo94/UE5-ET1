@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
@@ -35,21 +35,21 @@ public:
 	virtual void AttackTarget(AActor* InTarget, const FHitResult& InHitResult);
 	virtual float GetAttackDamage() const;
 
-	// ¶ô¿Â ÁßÀÎ ´ë»ó (¶ô¿Â ±â´ÉÀÌ ¾ø´Â Ä³¸¯ÅÍ´Â nullptr)
+	// ë½ì˜¨ ì¤‘ì¸ ëŒ€ìƒ (ë½ì˜¨ ê¸°ëŠ¥ì´ ì—†ëŠ” ìºë¦­í„°ëŠ” nullptr)
 	virtual AETCharacter* GetLockOnTarget() const { return nullptr; }
 	virtual void ResetGameStat();
 	void SetCapsuleHalfHeightKeepGround(const float InHalfHeight);
 	void ResetCapsuleHalfHeight();
 	float GetDefaultCapsuleHalfHeight() const;
 
-	// ¾×¼Ç µ¥ÀÌÅÍÀÇ Çã¿ë, Â÷´Ü »óÅÂ ±âÁØÀ¸·Î ÇöÀç »óÅÂ¿¡¼­ Çàµ¿ °¡´ÉÇÑÁö (µ¥ÀÌÅÍ¿¡ ¾ø´Â Çàµ¿Àº Á¦ÇÑ ¾øÀ½)
+	// ì•¡ì…˜ ë°ì´í„°ì˜ í—ˆìš©, ì°¨ë‹¨ ìƒíƒœ ê¸°ì¤€ìœ¼ë¡œ í˜„ì¬ ìƒíƒœì—ì„œ í–‰ë™ ê°€ëŠ¥í•œì§€ (ë°ì´í„°ì— ì—†ëŠ” í–‰ë™ì€ ì œí•œ ì—†ìŒ)
 	bool CanPlayAction(const FGameplayTag& InActionTag) const;
 
-	// ¾×¼Ç ÅÂ±×¿¡ ¸Â´Â Àç»ı °¡´ÉÇÑ ¸ùÅ¸ÁÖ°¡ ÀÖÀ¸¸é »óÅÂ ÀüÈ¯ ÈÄ Àç»ı (AI µî ¿ÜºÎ È£Ãâ¿ë)
+	// ì•¡ì…˜ íƒœê·¸ì— ë§ëŠ” ì¬ìƒ ê°€ëŠ¥í•œ ëª½íƒ€ì£¼ê°€ ìˆìœ¼ë©´ ìƒíƒœ ì „í™˜ í›„ ì¬ìƒ (AI ë“± ì™¸ë¶€ í˜¸ì¶œìš©)
 	bool PlayAction(const FGameplayTag& InActionTag, const int32 InIndex, const FGameplayTag& InStateTag);
 
 protected:
-	// true ÀÌ¸é µ¥¹ÌÁö ¹«½Ã (È¸ÇÇ, ÆĞ¸® µî / ÆÛÆåÆ® ÆÇÁ¤ Ã³¸® À§Ä¡)
+	// true ì´ë©´ ë°ë¯¸ì§€ ë¬´ì‹œ (íšŒí”¼, íŒ¨ë¦¬ ë“± / í¼í™íŠ¸ íŒì • ì²˜ë¦¬ ìœ„ì¹˜)
 	virtual bool TryAvoidDamage(AActor* InDamageCauser);
 	virtual void HitReact(AActor* InDamageCauser) {}
 	virtual void Die() {}
@@ -59,10 +59,10 @@ protected:
 		
 	const FETCharacterActionMontageData* FindPlayableActionMontageData(const FGameplayTag& InActionTag, const int32 InIndex) const;
 	
-	// Ã£Àº µ¥ÀÌÅÍ·Î »óÅÂ ÀüÈ¯ ¡æ Àç»ı ¡æ ºñ¿ë Â÷°¨, BlendingOut ½Ã »óÅÂ º¹±¸ (Ã£±â¿Í Àç»ı »çÀÌ¿¡ Ã³¸®°¡ ÇÊ¿äÇÑ °æ¿ì Á÷Á¢ »ç¿ë)
+	// ì°¾ì€ ë°ì´í„°ë¡œ ìƒíƒœ ì „í™˜ â†’ ì¬ìƒ â†’ ë¹„ìš© ì°¨ê°, BlendingOut ì‹œ ìƒíƒœ ë³µêµ¬ (ì°¾ê¸°ì™€ ì¬ìƒ ì‚¬ì´ì— ì²˜ë¦¬ê°€ í•„ìš”í•œ ê²½ìš° ì§ì ‘ ì‚¬ìš©)
 	bool PlayAction(const FETCharacterActionMontageData* InMontageData, const FGameplayTag& InStateTag);
 
-	// PlayAction À¸·Î Àç»ıÇÑ ¸ùÅ¸ÁÖÀÇ BlendingOut ½ÃÁ¡ (²÷±ä °æ¿ì Æ÷ÇÔ, »óÅÂ º¹±¸ Àü È£Ãâ)
+	// PlayAction ìœ¼ë¡œ ì¬ìƒí•œ ëª½íƒ€ì£¼ì˜ BlendingOut ì‹œì  (ëŠê¸´ ê²½ìš° í¬í•¨, ìƒíƒœ ë³µêµ¬ ì „ í˜¸ì¶œ)
 	virtual void OnActionMontageBlendingOut(const FGameplayTag& InStateTag, const bool bInterrupted) {}
 
 private:
@@ -88,6 +88,6 @@ protected:
 	TObjectPtr<UETCharacterActionDataAsset> CachedActionDataAsset;
 
 private:
-	// PlayAction È£Ãâ¸¶´Ù Áõ°¡, ÀÌÀü Çàµ¿ ¸ùÅ¸ÁÖÀÇ ´ÊÀº BlendingOut ÀÌ »õ Çàµ¿ »óÅÂ¸¦ µ¤¾î¾²Áö ¾Êµµ·Ï ±¸ºĞ
+	// PlayAction í˜¸ì¶œë§ˆë‹¤ ì¦ê°€, ì´ì „ í–‰ë™ ëª½íƒ€ì£¼ì˜ ëŠ¦ì€ BlendingOut ì´ ìƒˆ í–‰ë™ ìƒíƒœë¥¼ ë®ì–´ì“°ì§€ ì•Šë„ë¡ êµ¬ë¶„
 	uint32 ActionSerial = 0;
 };

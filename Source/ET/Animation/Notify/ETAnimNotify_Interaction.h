@@ -1,10 +1,10 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
 #include "ETAnimNotify_Interaction.generated.h"
 
-// »óÈ£ÀÛ¿ë ¸ùÅ¸ÁÖÀÇ ½ÇÁ¦ »óÈ£ÀÛ¿ë ½ÃÁ¡
+// ìƒí˜¸ì‘ìš© ëª½íƒ€ì£¼ì˜ ì‹¤ì œ ìƒí˜¸ì‘ìš© ì‹œì 
 UCLASS()
 class ET_API UETAnimNotify_Interaction : public UAnimNotify
 {

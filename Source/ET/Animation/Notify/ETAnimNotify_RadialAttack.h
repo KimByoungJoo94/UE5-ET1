@@ -1,10 +1,10 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
 #include "ETAnimNotify_RadialAttack.generated.h"
 
-// ³ëÆ¼ÆÄÀÌ ½ÃÁ¡¿¡ ¿À³Ê ±âÁØ ¿øÇü ¹üÀ§ ¾ÈÀÇ ¸ğµç Ä³¸¯ÅÍ °ø°İ
+// ë…¸í‹°íŒŒì´ ì‹œì ì— ì˜¤ë„ˆ ê¸°ì¤€ ì›í˜• ë²”ìœ„ ì•ˆì˜ ëª¨ë“  ìºë¦­í„° ê³µê²©
 UCLASS()
 class ET_API UETAnimNotify_RadialAttack : public UAnimNotify
 {

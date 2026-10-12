@@ -1,11 +1,11 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "ETSkillTableRowData.generated.h"
 
-// ½ÃÀüÀÚ ÁÖº¯ ¹İ°æ ¾È¿¡¼­ ½Ã¾ß(¿ø»Ô) ¾ÈÀÇ ´ë»óÀ» °¡±î¿î ¼øÀ¸·Î Á¤Áö
+// ì‹œì „ì ì£¼ë³€ ë°˜ê²½ ì•ˆì—ì„œ ì‹œì•¼(ì›ë¿”) ì•ˆì˜ ëŒ€ìƒì„ ê°€ê¹Œìš´ ìˆœìœ¼ë¡œ ì •ì§€
 USTRUCT()
 struct ET_API FETTimeFreezeTableRowData : public FTableRowBase
 {
@@ -17,15 +17,15 @@ public:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
 	float SearchRadius = 1500.f;
 
-	// Ä«¸Ş¶ó Á¤¸é ±âÁØ (Ä«¸Ş¶ó°¡ ¾øÀ¸¸é ½ÃÀüÀÚ Á¤¸é)
+	// ì¹´ë©”ë¼ ì •ë©´ ê¸°ì¤€ (ì¹´ë©”ë¼ê°€ ì—†ìœ¼ë©´ ì‹œì „ì ì •ë©´)
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0", ClampMax = "180.0"))
 	float ViewHalfAngle = 45.f;
 
-	// 0 ÀÌ¸é ¹üÀ§ ¾È ÀüÃ¼
+	// 0 ì´ë©´ ë²”ìœ„ ì•ˆ ì „ì²´
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0"))
 	int32 MaxTargetCount = 1;
 
-	// 0 ÀÌÇÏÀÌ¸é Unfreeze È£Ãâ Àü±îÁö Á¤Áö À¯Áö
+	// 0 ì´í•˜ì´ë©´ Unfreeze í˜¸ì¶œ ì „ê¹Œì§€ ì •ì§€ ìœ ì§€
 	UPROPERTY(EditAnywhere)
 	float FreezeDuration = 3.f;
 

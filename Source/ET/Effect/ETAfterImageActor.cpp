@@ -1,4 +1,4 @@
-#include "Effect/ETAfterImageActor.h"
+﻿#include "Effect/ETAfterImageActor.h"
 #include "Components/PoseableMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 

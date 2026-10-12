@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
@@ -17,7 +17,7 @@ public:
 	virtual void BeginPlay() override;
 
 public:
-	// ¿­·Á ÀÖ´Â µ¿¾È HUD ¼û±è, ÀÔ·ÂÀº UI ¿¡¼­¸¸ Ã³¸®
+	// ì—´ë ¤ ìˆëŠ” ë™ì•ˆ HUD ìˆ¨ê¹€, ì…ë ¥ì€ UI ì—ì„œë§Œ ì²˜ë¦¬
 	void OpenCheckpointWidget();
 	void CloseCheckpointWidget();
 

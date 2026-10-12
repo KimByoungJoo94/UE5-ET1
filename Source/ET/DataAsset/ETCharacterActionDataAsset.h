@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
@@ -17,7 +17,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> Montage;
 
-	// ½ÃÀü ½Ã ¼Ò¸ğµÇ´Â ½ºÅÈ°ú ¼öÄ¡ (0 ÀÌ¸é ºñ¿ë ¾øÀ½)
+	// ì‹œì „ ì‹œ ì†Œëª¨ë˜ëŠ” ìŠ¤íƒ¯ê³¼ ìˆ˜ì¹˜ (0 ì´ë©´ ë¹„ìš© ì—†ìŒ)
 	UPROPERTY(EditAnywhere)
 	EETGameStatType CostStatType = EETGameStatType::Mana;
 
@@ -34,11 +34,11 @@ public:
 	UPROPERTY(EditAnywhere)
 	TArray<FETCharacterActionMontageData> MontageDataArray;
 
-	// ºñ¾î ÀÖÁö ¾ÊÀ¸¸é ÇöÀç »óÅÂ°¡ ÀÌ Áß ÇÏ³ªÀÏ ¶§¸¸ Çàµ¿ °¡´É (Idle ¿¡¼­¸¸ °¡´É °°Àº Çàµ¿¿ë)
+	// ë¹„ì–´ ìˆì§€ ì•Šìœ¼ë©´ í˜„ì¬ ìƒíƒœê°€ ì´ ì¤‘ í•˜ë‚˜ì¼ ë•Œë§Œ í–‰ë™ ê°€ëŠ¥ (Idle ì—ì„œë§Œ ê°€ëŠ¥ ê°™ì€ í–‰ë™ìš©)
 	UPROPERTY(EditAnywhere)
 	FGameplayTagContainer AllowedStateContainer;
 
-	// ÇöÀç »óÅÂ°¡ ÀÌ Áß ÇÏ³ª¸é Çàµ¿ ºÒ°¡
+	// í˜„ì¬ ìƒíƒœê°€ ì´ ì¤‘ í•˜ë‚˜ë©´ í–‰ë™ ë¶ˆê°€
 	UPROPERTY(EditAnywhere)
 	FGameplayTagContainer BlockedStateContainer;
 };

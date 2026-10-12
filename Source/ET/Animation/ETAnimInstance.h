@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
@@ -33,11 +33,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ET")
 	bool bAccelerating;
 
-	// Actor forward ±âÁØ ÀÌµ¿ ¹æÇâ (-180 ~ 180)
+	// Actor forward ê¸°ì¤€ ì´ë™ ë°©í–¥ (-180 ~ 180)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ET")
 	float Direction;
 
-	// ÀÌµ¿ ¹æÇâÀ¸·Î È¸ÀüÇÏÁö ¾Ê´Â »óÅÂ (¶ô¿Â ¿·°ÉÀ½)
+	// ì´ë™ ë°©í–¥ìœ¼ë¡œ íšŒì „í•˜ì§€ ì•ŠëŠ” ìƒíƒœ (ë½ì˜¨ ì˜†ê±¸ìŒ)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ET")
 	bool bStrafe;
 

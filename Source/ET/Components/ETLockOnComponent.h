@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
@@ -6,7 +6,7 @@
 
 class AETCharacter;
 
-// ÈÙ ¹öÆ° ¶ô¿Â (´ë»ó °íÁ¤ Ä«¸Ş¶ó, ¶ô¿Â Áß ¿·°ÉÀ½)
+// íœ  ë²„íŠ¼ ë½ì˜¨ (ëŒ€ìƒ ê³ ì • ì¹´ë©”ë¼, ë½ì˜¨ ì¤‘ ì˜†ê±¸ìŒ)
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ET_API UETLockOnComponent : public UActorComponent
 {
@@ -26,7 +26,7 @@ public:
 	AETCharacter* GetLockOnTarget() const;
 
 protected:
-	// IETLockOnInterface ±¸Çö Ä³¸¯ÅÍ Áß Å½»ö ¹İ°æ, Ä«¸Ş¶ó ½Ã¾ß°¢, ½Ã¾ß Â÷´ÜÀ¸·Î °Å¸¥ µÚ È­¸é Áß¾Ó °¢µµ¿Í °Å¸® °¡ÁßÇÕÀÌ °¡Àå ³·Àº Ä³¸¯ÅÍ
+	// IETLockOnInterface êµ¬í˜„ ìºë¦­í„° ì¤‘ íƒìƒ‰ ë°˜ê²½, ì¹´ë©”ë¼ ì‹œì•¼ê°, ì‹œì•¼ ì°¨ë‹¨ìœ¼ë¡œ ê±°ë¥¸ ë’¤ í™”ë©´ ì¤‘ì•™ ê°ë„ì™€ ê±°ë¦¬ ê°€ì¤‘í•©ì´ ê°€ì¥ ë‚®ì€ ìºë¦­í„°
 	AETCharacter* FindLockOnTarget() const;
 
 	bool IsTargetDead(AETCharacter* InTarget) const;
@@ -40,24 +40,24 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "LockOn", meta = (ClampMin = "0.0"))
 	float SearchRadius = 1500.f;
 
-	// Ä«¸Ş¶ó Á¤¸é ±âÁØ ¹İ°¢
+	// ì¹´ë©”ë¼ ì •ë©´ ê¸°ì¤€ ë°˜ê°
 	UPROPERTY(EditAnywhere, Category = "LockOn", meta = (ClampMin = "1.0", ClampMax = "180.0"))
 	float ViewHalfAngle = 60.f;
 
-	// 1 ÀÌ¸é °¢µµ¸¸, 0 ÀÌ¸é °Å¸®¸¸ »ç¿ë
+	// 1 ì´ë©´ ê°ë„ë§Œ, 0 ì´ë©´ ê±°ë¦¬ë§Œ ì‚¬ìš©
 	UPROPERTY(EditAnywhere, Category = "LockOn", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float AngleWeight = 0.7f;
 
-	// ´ë»ó ¾×ÅÍ À§Ä¡(Ä¸½¶ Áß½É) ±âÁØ ¹Ù¶óº¼ ³ôÀÌ
+	// ëŒ€ìƒ ì•¡í„° ìœ„ì¹˜(ìº¡ìŠ ì¤‘ì‹¬) ê¸°ì¤€ ë°”ë¼ë³¼ ë†’ì´
 	UPROPERTY(EditAnywhere, Category = "LockOn")
 	float TargetHeightOffset = 50.f;
 
-	// ÀÌ ³ôÀÌ(Owner À§Ä¡ ±âÁØ)¿¡¼­ ´ë»óÀ» ¹Ù¶óº¸´Â È¸ÀüÀ¸·Î Ä«¸Ş¶ó¸¦ ¼³Á¤
-	// ´ë»óÀÌ °¡±î¿ï¼ö·Ï ´õ ³»·Á´Ùº¸°Ô µÇ¾î Ä«¸Ş¶ó°¡ À§·Î ¿Ã¶ó°¡°í ÇÃ·¹ÀÌ¾î¿¡ °¡·ÁÁöÁö ¾ÊÀ½
+	// ì´ ë†’ì´(Owner ìœ„ì¹˜ ê¸°ì¤€)ì—ì„œ ëŒ€ìƒì„ ë°”ë¼ë³´ëŠ” íšŒì „ìœ¼ë¡œ ì¹´ë©”ë¼ë¥¼ ì„¤ì •
+	// ëŒ€ìƒì´ ê°€ê¹Œìš¸ìˆ˜ë¡ ë” ë‚´ë ¤ë‹¤ë³´ê²Œ ë˜ì–´ ì¹´ë©”ë¼ê°€ ìœ„ë¡œ ì˜¬ë¼ê°€ê³  í”Œë ˆì´ì–´ì— ê°€ë ¤ì§€ì§€ ì•ŠìŒ
 	UPROPERTY(EditAnywhere, Category = "LockOn")
 	float ViewPivotHeightOffset = 150.f;
 
-	// ´ë»óÀ» ¾à°£ ³»·Á´Ùº¸µµ·Ï ´õÇÏ´Â Pitch
+	// ëŒ€ìƒì„ ì•½ê°„ ë‚´ë ¤ë‹¤ë³´ë„ë¡ ë”í•˜ëŠ” Pitch
 	UPROPERTY(EditAnywhere, Category = "LockOn")
 	float PitchOffset = -10.f;
 

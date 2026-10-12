@@ -1,4 +1,4 @@
-#include "Components/ETLockOnComponent.h"
+ï»¿#include "Components/ETLockOnComponent.h"
 #include "Character/ETCharacter.h"
 #include "Components/ETCharacterStateComponent.h"
 #include "Interface/ETLockOnInterface.h"
@@ -86,7 +86,7 @@ AETCharacter* UETLockOnComponent::FindLockOnTarget() const
 		return nullptr;
 	}
 
-	// ÇÃ·¹ÀÌ¾î ÄÁÆ®·Ñ·¯¸é Ä«¸Þ¶ó ½ÃÁ¡
+	// í”Œë ˆì´ì–´ ì»¨íŠ¸ë¡¤ëŸ¬ë©´ ì¹´ë©”ë¼ ì‹œì 
 	FVector ViewLocation;
 	FRotator ViewRotation;
 	OwnerController->GetPlayerViewPoint(ViewLocation, ViewRotation);
@@ -119,7 +119,7 @@ AETCharacter* UETLockOnComponent::FindLockOnTarget() const
 			continue;
 		}
 
-		// Ä«¸Þ¶ó¿Í ´ë»ó »çÀÌ°¡ ¸·Çô ÀÖÀ¸¸é Á¦¿Ü
+		// ì¹´ë©”ë¼ì™€ ëŒ€ìƒ ì‚¬ì´ê°€ ë§‰í˜€ ìžˆìœ¼ë©´ ì œì™¸
 		FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(ETLockOn), false);
 		QueryParams.AddIgnoredActor(OwnerPawn);
 		QueryParams.AddIgnoredActor(Candidate);
@@ -164,7 +164,7 @@ void UETLockOnComponent::UpdateControlRotation(const float InDeltaTime)
 		return;
 	}
 
-	// Ä«¸Þ¶ó°¡ ¾Æ´Ñ Owner ±âÁØ °íÁ¤ ÁöÁ¡¿¡¼­ °è»êÇØ¾ß Ä«¸Þ¶ó ÀÌµ¿¿¡ Èçµé¸®Áö ¾ÊÀ½
+	// ì¹´ë©”ë¼ê°€ ì•„ë‹Œ Owner ê¸°ì¤€ ê³ ì • ì§€ì ì—ì„œ ê³„ì‚°í•´ì•¼ ì¹´ë©”ë¼ ì´ë™ì— í”ë“¤ë¦¬ì§€ ì•ŠìŒ
 	const FVector ViewPivotLocation = OwnerPawn->GetActorLocation() + FVector(0.f, 0.f, ViewPivotHeightOffset);
 	FRotator TargetRotation = UKismetMathLibrary::FindLookAtRotation(ViewPivotLocation, GetTargetLookAtLocation(LockOnTarget.Get()));
 	TargetRotation.Pitch = FMath::Clamp(TargetRotation.Pitch + PitchOffset, MinPitch, MaxPitch);
@@ -181,7 +181,7 @@ void UETLockOnComponent::UpdateOwnerRotationMode()
 		return;
 	}
 
-	// È¸ÇÇ´Â ÀÔ·Â ¹æÇâÀ¸·Î µ¹¾Æ¼­ ±¼·¯¾ß ÇÏ¹Ç·Î È¸ÇÇ Áß¿¡´Â ´ë»ó ¹æÇâ È¸ÀüÀ» ²û
+	// íšŒí”¼ëŠ” ìž…ë ¥ ë°©í–¥ìœ¼ë¡œ ëŒì•„ì„œ êµ´ëŸ¬ì•¼ í•˜ë¯€ë¡œ íšŒí”¼ ì¤‘ì—ëŠ” ëŒ€ìƒ ë°©í–¥ íšŒì „ì„ ë”
 	const bool bDodging = OwnerCharacter->GetCharacterStateComponent()->IsCurrentState(ETGameplayTags::Character_State_Dodging);
 	OwnerCharacter->GetCharacterMovement()->bUseControllerDesiredRotation = bDodging == false;
 }
@@ -194,7 +194,7 @@ void UETLockOnComponent::SetStrafeMode(const bool bInStrafe)
 		return;
 	}
 
-	// ÄÁÆ®·Ñ È¸ÀüÀÌ ´ë»óÀ» ÇâÇÏ¹Ç·Î ÄÁÆ®·Ñ È¸ÀüÀ» µû¶ó µ¹¸é ´ë»óÀ» ¹Ù¶óº» Ã¤ ¿·°ÉÀ½
+	// ì»¨íŠ¸ë¡¤ íšŒì „ì´ ëŒ€ìƒì„ í–¥í•˜ë¯€ë¡œ ì»¨íŠ¸ë¡¤ íšŒì „ì„ ë”°ë¼ ëŒë©´ ëŒ€ìƒì„ ë°”ë¼ë³¸ ì±„ ì˜†ê±¸ìŒ
 	if (UCharacterMovementComponent* CharacterMovementComponent = OwnerCharacter->GetCharacterMovement())
 	{
 		CharacterMovementComponent->bOrientRotationToMovement = bInStrafe == false;

@@ -1,4 +1,4 @@
-#include "Character/ETMonster.h"
+ï»¿#include "Character/ETMonster.h"
 #include "Components/WidgetComponent.h"
 #include "UI/ETStatWidget.h"
 #include "Common/ETCommonSettings.h"
@@ -23,7 +23,7 @@ void AETMonster::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	// À§Á¬ ÄÄÆ÷³ÍÆ®°¡ BeginPlay ¿¡¼­ À§Á¬À» »ı¼ºÇÏ¹Ç·Î ±× Àü¿¡ ÁöÁ¤ (BP ¿¡¼­ ÁöÁ¤ÇÑ °ªÀÌ ¿ì¼±)
+	// ìœ„ì ¯ ì»´í¬ë„ŒíŠ¸ê°€ BeginPlay ì—ì„œ ìœ„ì ¯ì„ ìƒì„±í•˜ë¯€ë¡œ ê·¸ ì „ì— ì§€ì • (BP ì—ì„œ ì§€ì •í•œ ê°’ì´ ìš°ì„ )
 	if (HealthBarWidgetComponent->GetWidgetClass() == nullptr)
 	{
 		HealthBarWidgetComponent->SetWidgetClass(GetDefault<UETCommonSettings>()->UI.HealthBarWidgetClass.LoadSynchronous());
@@ -39,14 +39,14 @@ void AETMonster::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// À§Á¬Àº WidgetComponent::BeginPlay ¿¡¼­ »ı¼ºµÇ°í Ã¹ Tick ¿¡ Construct µÇ¹Ç·Î ±× Àü¿¡ ¼ÒÀ¯ Ä³¸¯ÅÍ ÁöÁ¤
+	// ìœ„ì ¯ì€ WidgetComponent::BeginPlay ì—ì„œ ìƒì„±ë˜ê³  ì²« Tick ì— Construct ë˜ë¯€ë¡œ ê·¸ ì „ì— ì†Œìœ  ìºë¦­í„° ì§€ì •
 	if (UETStatWidget* HealthBarWidget = Cast<UETStatWidget>(HealthBarWidgetComponent->GetUserWidgetObject()))
 	{
 		HealthBarWidget->SetOwningETCharacter(this);
 		HealthBarWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
 		HealthBarWidget->SetUseStatText(false);
 
-		// ¼ÒÀ¯ Ä³¸¯ÅÍ ÁöÁ¤ ÈÄ ¹Ù·Î ¹ÙÀÎµùÇØ¼­ Ã¹ °ª °»½Å (Construct ½Ã ´Ù½Ã ¹ÙÀÎµùÇØµµ ±âÁ¸ ¹ÙÀÎµùÀº ÇØÁ¦µÊ)
+		// ì†Œìœ  ìºë¦­í„° ì§€ì • í›„ ë°”ë¡œ ë°”ì¸ë”©í•´ì„œ ì²« ê°’ ê°±ì‹  (Construct ì‹œ ë‹¤ì‹œ ë°”ì¸ë”©í•´ë„ ê¸°ì¡´ ë°”ì¸ë”©ì€ í•´ì œë¨)
 		HealthBarWidget->SetGameStatType(EETGameStatType::Health);
 	}
 

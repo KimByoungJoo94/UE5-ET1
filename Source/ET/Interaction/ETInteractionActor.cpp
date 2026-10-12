@@ -1,4 +1,4 @@
-#include "Interaction/ETInteractionActor.h"
+ï»¿#include "Interaction/ETInteractionActor.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/WidgetComponent.h"
@@ -43,7 +43,7 @@ void AETInteractionActor::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	// À§Á¬ ÄÄÆ÷³ÍÆ®°¡ BeginPlay ¿¡¼­ À§Á¬À» »ý¼ºÇÏ¹Ç·Î ±× Àü¿¡ ¼³Á¤ (BP ¿¡¼­ ÁöÁ¤ÇÑ À§Á¬ ¿ì¼±)
+	// ìœ„ì ¯ ì»´í¬ë„ŒíŠ¸ê°€ BeginPlay ì—ì„œ ìœ„ì ¯ì„ ìƒì„±í•˜ë¯€ë¡œ ê·¸ ì „ì— ì„¤ì • (BP ì—ì„œ ì§€ì •í•œ ìœ„ì ¯ ìš°ì„ )
 	if (InteractionWidgetComponent->GetWidgetClass() == nullptr)
 	{
 		InteractionWidgetComponent->SetWidgetClass(GetDefault<UETCommonSettings>()->UI.InteractionWidgetClass.LoadSynchronous());
@@ -112,7 +112,7 @@ void AETInteractionActor::OnInteractionBoxEndOverlap(UPrimitiveComponent* Overla
 	{
 		if (UETInteractionComponent* InteractionComponent = Player->GetInteractionComponent())
 		{
-			// ´Ù¸¥ »óÈ£ÀÛ¿ë ¾×ÅÍ°¡ ´ë»óÀ¸·Î µî·ÏµÈ °æ¿ì À¯Áö (À§Á¬Àº ´ë»ó ±³Ã¼ ½Ã ÀÌ¹Ì ¼û±è)
+			// ë‹¤ë¥¸ ìƒí˜¸ìž‘ìš© ì•¡í„°ê°€ ëŒ€ìƒìœ¼ë¡œ ë“±ë¡ëœ ê²½ìš° ìœ ì§€ (ìœ„ì ¯ì€ ëŒ€ìƒ êµì²´ ì‹œ ì´ë¯¸ ìˆ¨ê¹€)
 			if (InteractionComponent->GetInteractionTarget() == this)
 			{
 				InteractionComponent->ClearInteractionTarget();

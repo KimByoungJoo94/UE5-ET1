@@ -1,9 +1,10 @@
-#include "Character/ETCharacter.h"
+ï»¿#include "Character/ETCharacter.h"
 #include "Components/ETCharacterStateComponent.h"
 #include "Components/ETGameStatComponent.h"
 #include "Components/ETAttackCollisionComponent.h"
 #include "Components/ETTimeFreezeComponent.h"
 #include "DataAsset/ETCharacterActionDataAsset.h"
+#include "DataAsset/ETCharacterTableRowData.h"
 #include "Subsystem/ETGameDataSubsystem.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -80,7 +81,7 @@ float AETCharacter::GetAttackDamage() const
 {
 	const float Attack = GameStatComponent->GetGameStat(EETGameStatType::Attack).GetCurrentValue();
 
-	// ±â¼¼ ÃÖ´ëÀÏ ¶§ MomentumAttackBonus ºñÀ²¸¸Å­ °ø°İ·Â Áõ°¡ (0.5 = +50%)
+	// ê¸°ì„¸ ìµœëŒ€ì¼ ë•Œ MomentumAttackBonus ë¹„ìœ¨ë§Œí¼ ê³µê²©ë ¥ ì¦ê°€ (0.5 = +50%)
 	const FETGameStat& MomentumStat = GameStatComponent->GetGameStat(EETGameStatType::Momentum);
 	const float MomentumRatio = MomentumStat.GetMaxValue() > 0.f ? MomentumStat.GetCurrentValue() / MomentumStat.GetMaxValue() : 0.f;
 	const float MomentumAttackBonus = GameStatComponent->GetGameStat(EETGameStatType::MomentumAttackBonus).GetCurrentValue();
@@ -92,7 +93,7 @@ void AETCharacter::ResetGameStat()
 {
 	GameStatComponent->ResetAllDepletedValue();
 
-	// ±â¼¼´Â 0 ¿¡¼­ ½ÃÀÛÇØ¼­ ½Ã°£¿¡ µû¶ó °¨¼Ò
+	// ê¸°ì„¸ëŠ” 0 ì—ì„œ ì‹œì‘í•´ì„œ ì‹œê°„ì— ë”°ë¼ ê°ì†Œ
 	GameStatComponent->EmptyCurrentValue(EETGameStatType::Momentum);
 }
 
@@ -103,13 +104,13 @@ void AETCharacter::SetCapsuleHalfHeightKeepGround(const float InHalfHeight)
 
 	Capsule->SetCapsuleHalfHeight(InHalfHeight);
 
-	// Ä¸½¶ ¹Ù´ÚÀ» Áö¸é¿¡ À¯ÁöÇÏµµ·Ï º¯°æµÈ ³ôÀÌ¸¸Å­ ÀÌµ¿ (¸Ş½Ãµµ ÇÔ²² ÀÌµ¿)
+	// ìº¡ìŠ ë°”ë‹¥ì„ ì§€ë©´ì— ìœ ì§€í•˜ë„ë¡ ë³€ê²½ëœ ë†’ì´ë§Œí¼ ì´ë™ (ë©”ì‹œë„ í•¨ê»˜ ì´ë™)
 	const float HeightOffset = Capsule->GetScaledCapsuleHalfHeight() - OldScaledHalfHeight;
 	if (FMath::IsNearlyZero(HeightOffset) == false)
 	{
 		AddActorWorldOffset(FVector(0.f, 0.f, HeightOffset));
 
-		// Ä«¸Ş¶ó ³ôÀÌ°¡ Ä¸½¶ ³ôÀÌ º¯È­¸¦ µû¶ó°¡Áö ¾Êµµ·Ï ¹İ´ë·Î º¸Á¤
+		// ì¹´ë©”ë¼ ë†’ì´ê°€ ìº¡ìŠ ë†’ì´ ë³€í™”ë¥¼ ë”°ë¼ê°€ì§€ ì•Šë„ë¡ ë°˜ëŒ€ë¡œ ë³´ì •
 		if (USpringArmComponent* SpringArmComponent = FindComponentByClass<USpringArmComponent>())
 		{
 			SpringArmComponent->AddRelativeLocation(FVector(0.f, 0.f, -HeightOffset));
@@ -200,7 +201,7 @@ bool AETCharacter::PlayAction(const FETCharacterActionMontageData* InMontageData
 
 	UAnimMontage* Montage = InMontageData->Montage;
 
-	// Àç»ı ÁßÀÌ´ø ¸ùÅ¸ÁÖÀÇ BlendingOut Àº PlayAnimMontage ¾È¿¡¼­ ¹Ù·Î È£ÃâµÇ¹Ç·Î ±× Àü¿¡ »õ Çàµ¿À¸·Î °»½Å
+	// ì¬ìƒ ì¤‘ì´ë˜ ëª½íƒ€ì£¼ì˜ BlendingOut ì€ PlayAnimMontage ì•ˆì—ì„œ ë°”ë¡œ í˜¸ì¶œë˜ë¯€ë¡œ ê·¸ ì „ì— ìƒˆ í–‰ë™ìœ¼ë¡œ ê°±ì‹ 
 	const uint32 CurrentActionSerial = ++ActionSerial;
 	CharacterStateComponent->ChangeState(InStateTag);
 
@@ -226,7 +227,7 @@ void AETCharacter::HandleActionMontageBlendingOut(UAnimMontage* InMontage, bool 
 {
 	OnActionMontageBlendingOut(InStateTag, bInterrupted);
 
-	// ´Ù¸¥ Çàµ¿ÀÌ ÀÌ¹Ì ½ÃÀÛµÆ°Å³ª (ÇÇ°İ µîÀ¸·Î) »óÅÂ°¡ ¹Ù²î¾úÀ¸¸é °Çµå¸®Áö ¾ÊÀ½
+	// ë‹¤ë¥¸ í–‰ë™ì´ ì´ë¯¸ ì‹œì‘ëê±°ë‚˜ (í”¼ê²© ë“±ìœ¼ë¡œ) ìƒíƒœê°€ ë°”ë€Œì—ˆìœ¼ë©´ ê±´ë“œë¦¬ì§€ ì•ŠìŒ
 	if (InActionSerial == ActionSerial && CharacterStateComponent->IsCurrentState(InStateTag))
 	{
 		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);

@@ -1,4 +1,4 @@
-#include "Animation/Notify/ETAnimNotifyState_CapsuleHalfHeight.h"
+ï»¿#include "Animation/Notify/ETAnimNotifyState_CapsuleHalfHeight.h"
 #include "Animation/AnimNotifyLibrary.h"
 #include "Character/ETCharacter.h"
 #include "Components/CapsuleComponent.h"
@@ -13,13 +13,13 @@ void UETAnimNotifyState_CapsuleHalfHeight::NotifyTick(USkeletalMeshComponent* Me
 		return;
 	}
 
-	// ÁÙ¾îµå´Â ±¸°£°ú º¹±¸ ±¸°£ÀÌ °ãÄ¡Áö ¾Êµµ·Ï º¸Á¤
+	// ì¤„ì–´ë“œëŠ” êµ¬ê°„ê³¼ ë³µêµ¬ êµ¬ê°„ì´ ê²¹ì¹˜ì§€ ì•Šë„ë¡ ë³´ì •
 	const float ClampedShrinkRatio = FMath::Min(ShrinkRatio, 1.f);
 	const float ClampedRestoreRatio = FMath::Min(RestoreRatio, 1.f - ClampedShrinkRatio);
 
 	const float TimeRatio = UAnimNotifyLibrary::GetCurrentAnimationNotifyStateTimeRatio(EventReference);
 
-	// 0 : ±âº» ³ôÀÌ, 1 : ¸ñÇ¥ ³ôÀÌ
+	// 0 : ê¸°ë³¸ ë†’ì´, 1 : ëª©í‘œ ë†’ì´
 	float Alpha = 1.f;
 	if (TimeRatio < ClampedShrinkRatio)
 	{

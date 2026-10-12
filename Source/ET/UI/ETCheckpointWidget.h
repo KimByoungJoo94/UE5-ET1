@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "UI/ETUserWidget.h"
@@ -7,7 +7,7 @@
 
 class UButton;
 
-// Ã¼Å©Æ÷ÀÎÆ® »óÈ£ÀÛ¿ë ½Ã HUD ¸¦ °¡¸®´Â ÀüÃ¼ È­¸é Ã¢
+// ì²´í¬í¬ì¸íŠ¸ ìƒí˜¸ì‘ìš© ì‹œ HUD ë¥¼ ê°€ë¦¬ëŠ” ì „ì²´ í™”ë©´ ì°½
 UCLASS()
 class ET_API UETCheckpointWidget : public UETUserWidget
 {

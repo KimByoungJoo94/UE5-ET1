@@ -1,11 +1,11 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "ETCollisionTableRowData.generated.h"
 
-// ¹«±â ¼ÒÄÏ »çÀÌ ½ºÀ¬ ÆÇÁ¤ (³ëÆ¼ÆÄÀÌ ½ºÅ×ÀÌÆ® ±¸°£ µ¿¾È ¸Å Æ½)
+// ë¬´ê¸° ì†Œì¼“ ì‚¬ì´ ìŠ¤ìœ• íŒì • (ë…¸í‹°íŒŒì´ ìŠ¤í…Œì´íŠ¸ êµ¬ê°„ ë™ì•ˆ ë§¤ í‹±)
 USTRUCT()
 struct ET_API FETWeaponCollisionTableRowData : public FTableRowBase
 {
@@ -33,7 +33,7 @@ public:
 	float DrawDebugTime = 2.f;
 };
 
-// ¿À³Ê ±âÁØ ¿øÇü ¹üÀ§ °ø°İ (³ëÆ¼ÆÄÀÌ ½ÃÁ¡ 1È¸ ÆÇÁ¤)
+// ì˜¤ë„ˆ ê¸°ì¤€ ì›í˜• ë²”ìœ„ ê³µê²© (ë…¸í‹°íŒŒì´ ì‹œì  1íšŒ íŒì •)
 USTRUCT()
 struct ET_API FETRadialAttackCollisionTableRowData : public FTableRowBase
 {
@@ -45,7 +45,7 @@ public:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
 	float Radius = 300.f;
 
-	// ¿À³Ê ·ÎÄÃ ±âÁØ ¿ÀÇÁ¼Â (X Àü¹æ, Y ¿ìÃø, Z À§)
+	// ì˜¤ë„ˆ ë¡œì»¬ ê¸°ì¤€ ì˜¤í”„ì…‹ (X ì „ë°©, Y ìš°ì¸¡, Z ìœ„)
 	UPROPERTY(EditAnywhere)
 	FVector LocationOffset = FVector::ZeroVector;
 

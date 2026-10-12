@@ -1,0 +1,5 @@
+﻿root = true
+
+# 소스 파일은 UTF-8 BOM 으로 저장 (한국어 Windows 에서 CP949 로 저장되는 것 방지)
+[*.{h,cpp,inl,cs}]
+charset = utf-8-bom

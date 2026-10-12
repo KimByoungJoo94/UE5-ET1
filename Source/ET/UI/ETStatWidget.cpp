@@ -1,4 +1,4 @@
-#include "UI/ETStatWidget.h"
+ï»¿#include "UI/ETStatWidget.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Components/ETGameStatComponent.h"
@@ -22,7 +22,7 @@ void UETStatWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
 
-	// µðÀÚÀÌ³Ê ¹Ì¸®º¸±â¿¡µµ ¹Ý¿µ
+	// ë””ìžì´ë„ˆ ë¯¸ë¦¬ë³´ê¸°ì—ë„ ë°˜ì˜
 	if (ValueProgressBar)
 	{
 		ValueProgressBar->SetFillColorAndOpacity(FLinearColor(GColorList.GetFColorByName(*ProgressBarColorName.ToString())));
@@ -47,7 +47,7 @@ void UETStatWidget::NativeDestruct()
 
 void UETStatWidget::BindGameStatComponent()
 {
-	// Å¸ÀÔÀÌ ¹Ù²î¾úÀ» ¼ö ÀÖÀ¸¹Ç·Î ±âÁ¸ ¹ÙÀÎµùÀº Ç×»ó ¸ÕÀú ÇØÁ¦
+	// íƒ€ìž…ì´ ë°”ë€Œì—ˆì„ ìˆ˜ ìžˆìœ¼ë¯€ë¡œ ê¸°ì¡´ ë°”ì¸ë”©ì€ í•­ìƒ ë¨¼ì € í•´ì œ
 	UnbindGameStatComponent();
 
 	if (GameStatType == EETGameStatType::Max)
@@ -66,7 +66,7 @@ void UETStatWidget::BindGameStatComponent()
 
 void UETStatWidget::UnbindGameStatComponent()
 {
-	// ¼ÒÀ¯ Ä³¸¯ÅÍ°¡ ¹Ù²î¾îµµ ±¸µ¶Çß´ø ÄÄÆ÷³ÍÆ®¿¡¼­ ÇØÁ¦
+	// ì†Œìœ  ìºë¦­í„°ê°€ ë°”ë€Œì–´ë„ êµ¬ë…í–ˆë˜ ì»´í¬ë„ŒíŠ¸ì—ì„œ í•´ì œ
 	if (UETGameStatComponent* GameStatComponent = BoundGameStatComponent.Get())
 	{
 		GameStatComponent->GetOnUpdateGameStatDelegate(GameStatType).Remove(OnUpdateGameStatHandle);

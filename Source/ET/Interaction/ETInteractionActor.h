@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -10,7 +10,7 @@ class UBoxComponent;
 class UWidgetComponent;
 class UArrowComponent;
 
-// »óÈ£ÀÛ¿ë ¾×ÅÍ °øÅë (¹Ú½º ¿À¹ö·¦ ½Ã ÇÃ·¹ÀÌ¾î »óÈ£ÀÛ¿ë ´ë»ó µî·Ï, Å° À§Á¬ Ç¥½Ã)
+// ìƒí˜¸ì‘ìš© ì•¡í„° ê³µí†µ (ë°•ìŠ¤ ì˜¤ë²„ë© ì‹œ í”Œë ˆì´ì–´ ìƒí˜¸ì‘ìš© ëŒ€ìƒ ë“±ë¡, í‚¤ ìœ„ì ¯ í‘œì‹œ)
 UCLASS(Abstract)
 class ET_API AETInteractionActor : public AActor, public IETInteractionInterface
 {

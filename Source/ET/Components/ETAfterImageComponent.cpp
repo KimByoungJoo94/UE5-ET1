@@ -1,4 +1,4 @@
-#include "Components/ETAfterImageComponent.h"
+﻿#include "Components/ETAfterImageComponent.h"
 #include "GameFramework/Character.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Effect/ETAfterImageActor.h"

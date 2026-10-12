@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "UI/ETUserWidget.h"
@@ -15,10 +15,10 @@ class ET_API UETStatWidget : public UETUserWidget
 	GENERATED_BODY()
 
 public:
-	// ¹ÙÀÎµùµÈ ½ºÅÈ ÄÄÆ÷³ÍÆ®°¡ ÀÖÀ¸¸é »õ Å¸ÀÔÀ¸·Î ´Ù½Ã ¹ÙÀÎµùÇÏ°í °»½Å
+	// ë°”ì¸ë”©ëœ ìŠ¤íƒ¯ ì»´í¬ë„ŒíŠ¸ê°€ ìˆìœ¼ë©´ ìƒˆ íƒ€ì…ìœ¼ë¡œ ë‹¤ì‹œ ë°”ì¸ë”©í•˜ê³  ê°±ì‹ 
 	void SetGameStatType(const EETGameStatType InGameStatType);
 
-	// ¼öÄ¡ ÅØ½ºÆ® Ç¥½Ã ¿©ºÎ (false ¸é Collapsed)
+	// ìˆ˜ì¹˜ í…ìŠ¤íŠ¸ í‘œì‹œ ì—¬ë¶€ (false ë©´ Collapsed)
 	void SetUseStatText(const bool bInUseStatText);
 
 protected:
@@ -36,7 +36,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Stat")
 	EETGameStatType GameStatType = EETGameStatType::Health;
 
-	// ¿£Áø GColorList ÀÇ »ö ÀÌ¸§
+	// ì—”ì§„ GColorList ì˜ ìƒ‰ ì´ë¦„
 	UPROPERTY(EditAnywhere, Category = "Stat", meta = (GetOptions = "GetColorNameOptions"))
 	FName ProgressBarColorName = TEXT("red");
 

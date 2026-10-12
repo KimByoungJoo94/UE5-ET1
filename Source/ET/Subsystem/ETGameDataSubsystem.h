@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Subsystem/ETGameSubsystem.h"
@@ -17,7 +17,7 @@ public:
 public:
 	static UETGameDataSubsystem* Get(const UObject* InWorldContextObject);
 
-	// ¿ùµå ÄÁÅØ½ºÆ®·Î ¼­ºê½Ã½ºÅÛÀ» Ã£¾Æ Á¶È¸ (¼­ºê½Ã½ºÅÛÀÌ³ª ÇàÀÌ ¾øÀ¸¸é nullptr)
+	// ì›”ë“œ ì»¨í…ìŠ¤íŠ¸ë¡œ ì„œë¸Œì‹œìŠ¤í…œì„ ì°¾ì•„ ì¡°íšŒ (ì„œë¸Œì‹œìŠ¤í…œì´ë‚˜ í–‰ì´ ì—†ìœ¼ë©´ nullptr)
 	template <typename T>
 	static const T* GetRow(const UObject* InWorldContextObject, const FName InRowName)
 	{
@@ -55,7 +55,7 @@ public:
 	}
 
 public:
-	// ¿¡µğÅÍ µå·Ó´Ù¿î(GetOptions) ¿ë RowName ¸ñ·Ï
+	// ì—ë””í„° ë“œë¡­ë‹¤ìš´(GetOptions) ìš© RowName ëª©ë¡
 	UFUNCTION()
 	static TArray<FName> GetGameStatRowNameOptions();
 
@@ -77,7 +77,7 @@ public:
 private:
 	static TArray<FName> GetRowNameOptions(const UScriptStruct* InRowStruct);
 
-	// /Game/ET/DataTable Æú´õ(ÇÏÀ§ Æ÷ÇÔ)ÀÇ ¸ğµç DataTable ·Îµå
+	// /Game/ET/DataTable í´ë”(í•˜ìœ„ í¬í•¨)ì˜ ëª¨ë“  DataTable ë¡œë“œ
 	static void LoadDataTablesInPath(OUT TArray<UDataTable*>& OutDataTableArray);
 
 private:

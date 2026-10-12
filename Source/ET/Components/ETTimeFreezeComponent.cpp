@@ -1,4 +1,4 @@
-#include "Components/ETTimeFreezeComponent.h"
+ï»¿#include "Components/ETTimeFreezeComponent.h"
 #include "Character/ETCharacter.h"
 #include "Components/ETCharacterStateComponent.h"
 #include "DataAsset/ETSkillTableRowData.h"
@@ -62,7 +62,7 @@ void UETTimeFreezeComponent::Freeze(const float InDuration)
 		ApplyTimeFreezeMaterial();
 	}
 
-	// ¾×ÅÍ CustomTimeDilation ¿µÇâÀ» ¹ÞÁö ¾Ê´Â ¿ùµå Å¸ÀÌ¸Ó·Î º¹±¸ (ÀüÃ¼ TimeDilation Àº Àû¿ëµÊ)
+	// ì•¡í„° CustomTimeDilation ì˜í–¥ì„ ë°›ì§€ ì•ŠëŠ” ì›”ë“œ íƒ€ì´ë¨¸ë¡œ ë³µêµ¬ (ì „ì²´ TimeDilation ì€ ì ìš©ë¨)
 	FTimerManager& TimerManager = GetWorld()->GetTimerManager();
 	TimerManager.ClearTimer(UnfreezeTimerHandle);
 
@@ -141,7 +141,7 @@ void UETTimeFreezeComponent::FindTimeFreezeTargets(const FETTimeFreezeTableRowDa
 
 	UKismetSystemLibrary::SphereOverlapActors(OwnerActor, OwnerLocation, InRowData.SearchRadius, InRowData.ObjectTypeArray, AETCharacter::StaticClass(), IgnoreActorArray, OverlapActorArray);
 
-	// ½Ã¾ß ±âÁØÀº Ä«¸Þ¶ó, Ä«¸Þ¶ó°¡ ¾øÀ¸¸é Owner Á¤¸é
+	// ì‹œì•¼ ê¸°ì¤€ì€ ì¹´ë©”ë¼, ì¹´ë©”ë¼ê°€ ì—†ìœ¼ë©´ Owner ì •ë©´
 	const UCameraComponent* CameraComponent = OwnerActor->FindComponentByClass<UCameraComponent>();
 	const FVector ViewLocation = CameraComponent ? CameraComponent->GetComponentLocation() : OwnerLocation;
 	const FVector ViewDirection = CameraComponent ? CameraComponent->GetForwardVector() : OwnerActor->GetActorForwardVector();
@@ -167,7 +167,7 @@ void UETTimeFreezeComponent::FindTimeFreezeTargets(const FETTimeFreezeTableRowDa
 		return FVector::DistSquared(OwnerLocation, InLeft.GetActorLocation()) < FVector::DistSquared(OwnerLocation, InRight.GetActorLocation());
 	});
 
-	// ¶ô¿Â ´ë»óÀÌ Á¶°ÇÀ» Åë°úÇßÀ¸¸é °Å¸®¿Í »ó°ü¾øÀÌ °¡Àå ¾ÕÀ¸·Î (´ë»ó ¼ö Á¦ÇÑ¿¡µµ ¿ì¼± Æ÷ÇÔ)
+	// ë½ì˜¨ ëŒ€ìƒì´ ì¡°ê±´ì„ í†µê³¼í–ˆìœ¼ë©´ ê±°ë¦¬ì™€ ìƒê´€ì—†ì´ ê°€ìž¥ ì•žìœ¼ë¡œ (ëŒ€ìƒ ìˆ˜ ì œí•œì—ë„ ìš°ì„  í¬í•¨)
 	if (const AETCharacter* OwnerCharacter = Cast<AETCharacter>(OwnerActor))
 	{
 		AETCharacter* LockOnTarget = OwnerCharacter->GetLockOnTarget();

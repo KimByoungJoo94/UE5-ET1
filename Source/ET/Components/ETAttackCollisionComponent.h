@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
@@ -29,7 +29,7 @@ protected:
 	void TraceWeaponCollision();
 
 private:
-	// µ¥ÀÌÅÍ Å×ÀÌºí Çà (Å×ÀÌºí ¿¡¼ÂÀÌ À¯ÁöµÇ´Â µ¿¾È À¯È¿)
+	// ë°ì´í„° í…Œì´ë¸” í–‰ (í…Œì´ë¸” ì—ì…‹ì´ ìœ ì§€ë˜ëŠ” ë™ì•ˆ ìœ íš¨)
 	const FETWeaponCollisionTableRowData* CachedWeaponCollisionRowData = nullptr;
 
 	TSet<TWeakObjectPtr<AActor>> AlreadHitActorSet;

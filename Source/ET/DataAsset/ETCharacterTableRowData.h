@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
@@ -14,7 +14,7 @@ enum class EETCharacterType : uint8
 	Max,
 };
 
-// Ä³¸¯ÅÍº° µ¥ÀÌÅÍ (Ä³¸¯ÅÍ´Â RowName ¸¸ °¡Áö°í Á¶È¸)
+// ìºë¦­í„°ë³„ ë°ì´í„° (ìºë¦­í„°ëŠ” RowName ë§Œ ê°€ì§€ê³  ì¡°íšŒ)
 USTRUCT()
 struct ET_API FETCharacterTableRowData : public FTableRowBase
 {
@@ -27,7 +27,7 @@ public:
 	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetGameStatRowNameOptions"))
 	FName BaseGameStatRowName;
 
-	// Å×ÀÌºíÀº °ÔÀÓ ½ÃÀÛ ½Ã ¸ğµÎ ·ÎµåµÇ¹Ç·Î ¸ùÅ¸ÁÖ±îÁö °°ÀÌ ¿Ã¶ó¿ÀÁö ¾Êµµ·Ï Soft ÂüÁ¶
+	// í…Œì´ë¸”ì€ ê²Œì„ ì‹œì‘ ì‹œ ëª¨ë‘ ë¡œë“œë˜ë¯€ë¡œ ëª½íƒ€ì£¼ê¹Œì§€ ê°™ì´ ì˜¬ë¼ì˜¤ì§€ ì•Šë„ë¡ Soft ì°¸ì¡°
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UETCharacterActionDataAsset> ActionDataAsset;
 };

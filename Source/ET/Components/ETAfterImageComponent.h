@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
@@ -15,7 +15,7 @@ public:
 	UETAfterImageComponent();
 
 public:
-	// InSourceMeshComponent °¡ nullptr ÀÌ¸é ¼ÒÀ¯ Ä³¸¯ÅÍÀÇ Mesh »ç¿ë
+	// InSourceMeshComponent ê°€ nullptr ì´ë©´ ì†Œìœ  ìºë¦­í„°ì˜ Mesh ì‚¬ìš©
 	void SpawnAfterImage(USkeletalMeshComponent* InSourceMeshComponent = nullptr);
 
 protected:

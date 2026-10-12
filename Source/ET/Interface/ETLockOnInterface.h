@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
@@ -10,7 +10,7 @@ class UETLockOnInterface : public UInterface
 	GENERATED_BODY()
 };
 
-// ¶ô¿Â ´ë»óÀÌ µÉ ¼ö ÀÖ´Â Ä³¸¯ÅÍ (UETLockOnComponent Å½»ö ´ë»ó)
+// ë½ì˜¨ ëŒ€ìƒì´ ë  ìˆ˜ ìˆëŠ” ìºë¦­í„° (UETLockOnComponent íƒìƒ‰ ëŒ€ìƒ)
 class ET_API IETLockOnInterface
 {
 	GENERATED_BODY()

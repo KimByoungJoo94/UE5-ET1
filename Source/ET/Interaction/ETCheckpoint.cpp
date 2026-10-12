@@ -1,4 +1,4 @@
-#include "Interaction/ETCheckpoint.h"
+ο»Ώ#include "Interaction/ETCheckpoint.h"
 #include "Character/ETPlayer.h"
 #include "Controller/ETPlayerController.h"
 
@@ -23,5 +23,5 @@ void AETCheckpoint::OnInteraction(AActor* InInteractor)
 		PlayerController->OpenCheckpointWidget();
 	}
 
-	// TODO : ΓΌΕ©ΖχΐΞΖ® ΐϊΐε
+	// TODO : μ²΄ν¬ν¬μΈνΈ μ €μ¥
 }

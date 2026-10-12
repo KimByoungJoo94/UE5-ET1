@@ -1,10 +1,10 @@
-#pragma once
+О╩©#pragma once
 
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
 #include "ETAnimNotify_UseItem.generated.h"
 
-// ╬фюлеш ╩Г©К ╦Ые╦ажюг ╫га╕ ╩Г©К ╫ца║
+// Л∙└Л²╢М┘° Л┌╛Л ╘ К╙╫М┐─Лё╪Л²≤ Л▀╓Л═° Л┌╛Л ╘ Л▀°Л═░
 UCLASS()
 class ET_API UETAnimNotify_UseItem : public UAnimNotify
 {

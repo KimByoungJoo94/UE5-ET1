@@ -1,4 +1,4 @@
-#include "Animation/Notify/ETAnimNotify_ResetHeavyAttack.h"
+﻿#include "Animation/Notify/ETAnimNotify_ResetHeavyAttack.h"
 #include "Character/ETPlayer.h"
 
 void UETAnimNotify_ResetHeavyAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference)

@@ -1,4 +1,4 @@
-#include "Subsystem/ETGameDataSubsystem.h"
+ï»¿#include "Subsystem/ETGameDataSubsystem.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
@@ -70,7 +70,7 @@ TArray<FName> UETGameDataSubsystem::GetCharacterRowNameOptions()
 
 TArray<FName> UETGameDataSubsystem::GetRowNameOptions(const UScriptStruct* InRowStruct)
 {
-	// ¿¡µğÅÍ¿¡´Â ¼­ºê½Ã½ºÅÛ ÀÎ½ºÅÏ½º°¡ ¾øÀ¸¹Ç·Î Æú´õÀÇ Å×ÀÌºíÀ» Á÷Á¢ ·Îµå
+	// ì—ë””í„°ì—ëŠ” ì„œë¸Œì‹œìŠ¤í…œ ì¸ìŠ¤í„´ìŠ¤ê°€ ì—†ìœ¼ë¯€ë¡œ í´ë”ì˜ í…Œì´ë¸”ì„ ì§ì ‘ ë¡œë“œ
 	TArray<UDataTable*> DataTableArray;
 	LoadDataTablesInPath(DataTableArray);
 
@@ -87,7 +87,7 @@ TArray<FName> UETGameDataSubsystem::GetRowNameOptions(const UScriptStruct* InRow
 
 void UETGameDataSubsystem::LoadDataTablesInPath(OUT TArray<UDataTable*>& OutDataTableArray)
 {
-	// ÀÌ Æú´õ¿¡ ÀÖ´Â DataTable Àº º°µµ µî·Ï ¾øÀÌ RowStruct º°·Î ÀÚµ¿ µî·Ï
+	// ì´ í´ë”ì— ìˆëŠ” DataTable ì€ ë³„ë„ ë“±ë¡ ì—†ì´ RowStruct ë³„ë¡œ ìë™ ë“±ë¡
 	const FName DataTablePath(TEXT("/Game/ET/DataTable"));
 
 	OutDataTableArray.Reset();
@@ -95,7 +95,7 @@ void UETGameDataSubsystem::LoadDataTablesInPath(OUT TArray<UDataTable*>& OutData
 	IAssetRegistry& AssetRegistry = FAssetRegistryModule::GetRegistry();
 
 #if WITH_EDITOR
-	// ¿¡µğÅÍ ½ÃÀÛ Á÷ÈÄ¿¡´Â ¹é±×¶ó¿îµå ½ºÄµÀÌ ³¡³ªÁö ¾Ê¾ÒÀ» ¼ö ÀÖÀ¸¹Ç·Î ÇØ´ç Æú´õ¸¸ µ¿±â ½ºÄµ
+	// ì—ë””í„° ì‹œì‘ ì§í›„ì—ëŠ” ë°±ê·¸ë¼ìš´ë“œ ìŠ¤ìº”ì´ ëë‚˜ì§€ ì•Šì•˜ì„ ìˆ˜ ìˆìœ¼ë¯€ë¡œ í•´ë‹¹ í´ë”ë§Œ ë™ê¸° ìŠ¤ìº”
 	AssetRegistry.ScanPathsSynchronous({ DataTablePath.ToString() });
 #endif
 

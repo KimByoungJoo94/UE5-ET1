@@ -128,6 +128,7 @@ void AETPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		EnhancedInputComponent->BindAction(PlayerInputData.ParryAction, ETriggerEvent::Completed, this, &ThisClass::OnParryActionCompleted);
 
 		EnhancedInputComponent->BindAction(PlayerInputData.UseItemAction, ETriggerEvent::Started, this, &ThisClass::OnUseItemActionStarted);
+		EnhancedInputComponent->BindAction(PlayerInputData.LockOnAction, ETriggerEvent::Started, this, &ThisClass::OnLockOnActionStarted);
 
 		for (int32 Index = 0; Index < PlayerInputData.ActiveSkillActionArray.Num(); ++Index)
 		{
@@ -162,11 +163,22 @@ void AETPlayer::OnMoveActionTriggered(const FInputActionValue& InValue)
 }
 
 void AETPlayer::OnLookActionTriggered(const FInputActionValue& InValue)
-{		
+{
+	// 락온 중에는 카메라가 대상을 따라가므로 시점 입력 무시
+	if (LockOnComponent->IsLockedOn())
+	{
+		return;
+	}
+
 	const FVector2D& LookDirection = InValue.Get<FVector2D>();
 	
 	AddControllerYawInput(LookDirection.X);
 	AddControllerPitchInput(LookDirection.Y);
+}
+
+void AETPlayer::OnLockOnActionStarted()
+{
+	LockOnComponent->ToggleLockOn();
 }
 
 void AETPlayer::OnAttackActionCompleted()

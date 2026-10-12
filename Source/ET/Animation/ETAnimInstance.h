@@ -33,6 +33,14 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ET")
 	bool bAccelerating;
 
+	// Actor forward 기준 이동 방향 (-180 ~ 180)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ET")
+	float Direction;
+
+	// 이동 방향으로 회전하지 않는 상태 (락온 옆걸음)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ET")
+	bool bStrafe;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ET")
 	TObjectPtr<AETCharacter> Character;
 

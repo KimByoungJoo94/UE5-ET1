@@ -37,7 +37,7 @@ void UETTimeFreezeComponent::CastTimeFreeze(const FName InRowName)
 
 	for (AETCharacter* TargetCharacter : TargetArray)
 	{
-		if (UETTimeFreezeComponent* TargetTimeFreezeComponent = TargetCharacter->FindComponentByClass<UETTimeFreezeComponent>())
+		if (UETTimeFreezeComponent* TargetTimeFreezeComponent = TargetCharacter->GetTimeFreezeComponent())
 		{
 			TargetTimeFreezeComponent->Freeze(RowData->FreezeDuration);
 		}

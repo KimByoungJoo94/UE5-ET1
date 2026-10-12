@@ -1,13 +1,14 @@
 #include "Animation/Notify/ETAnimNotify_TimeFreeze.h"
+#include "Character/ETCharacter.h"
 #include "Components/ETTimeFreezeComponent.h"
 
 void UETAnimNotify_TimeFreeze::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference)
 {
 	Super::Notify(MeshComp, Animation, EventReference);
 
-	if (AActor* OwnerActor = MeshComp->GetOwner())
+	if (AETCharacter* OwnerCharacter = Cast<AETCharacter>(MeshComp->GetOwner()))
 	{
-		if (UETTimeFreezeComponent* TimeFreezeComponent = OwnerActor->FindComponentByClass<UETTimeFreezeComponent>())
+		if (UETTimeFreezeComponent* TimeFreezeComponent = OwnerCharacter->GetTimeFreezeComponent())
 		{
 			TimeFreezeComponent->CastTimeFreeze(TimeFreezeRowName);
 		}

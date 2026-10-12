@@ -1,13 +1,14 @@
 #include "Animation/Notify/ETAnimNotifyState_WeaponCollision.h"
+#include "Character/ETCharacter.h"
 #include "Components/ETAttackCollisionComponent.h"
 
 void UETAnimNotifyState_WeaponCollision::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference)
 {
 	Super::NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
 
-	if (AActor* OwnerActor = MeshComp->GetOwner())
+	if (AETCharacter* OwnerCharacter = Cast<AETCharacter>(MeshComp->GetOwner()))
 	{
-		if (UETAttackCollisionComponent* AttackCollisionComponent = OwnerActor->FindComponentByClass<UETAttackCollisionComponent>())
+		if (UETAttackCollisionComponent* AttackCollisionComponent = OwnerCharacter->GetAttackCollisionComponent())
 		{
 			AttackCollisionComponent->StartWeaponCollision(WeaponCollisionRowName);
 		}
@@ -18,9 +19,9 @@ void UETAnimNotifyState_WeaponCollision::NotifyEnd(USkeletalMeshComponent* MeshC
 {
 	Super::NotifyEnd(MeshComp, Animation, EventReference);
 
-	if (AActor* OwnerActor = MeshComp->GetOwner())
+	if (AETCharacter* OwnerCharacter = Cast<AETCharacter>(MeshComp->GetOwner()))
 	{
-		if (UETAttackCollisionComponent* AttackCollisionComponent = OwnerActor->FindComponentByClass<UETAttackCollisionComponent>())
+		if (UETAttackCollisionComponent* AttackCollisionComponent = OwnerCharacter->GetAttackCollisionComponent())
 		{
 			AttackCollisionComponent->EndWeaponCollision();
 		}

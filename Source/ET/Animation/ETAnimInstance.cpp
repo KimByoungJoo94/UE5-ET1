@@ -31,10 +31,13 @@ void UETAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			RotationLastTick = CurrentRotation;
 		}		
 
+		Direction = Speed > KINDA_SMALL_NUMBER ? UKismetMathLibrary::NormalizedDeltaRotator(Character->GetVelocity().Rotation(), Character->GetActorRotation()).Yaw : 0.f;
+
 		if (UCharacterMovementComponent* CharacterMovementComponent = Character->GetCharacterMovement())
 		{
 			bInAir = CharacterMovementComponent->IsFalling();
 			bAccelerating = CharacterMovementComponent->GetCurrentAcceleration().Length() > 0.f;
+			bStrafe = CharacterMovementComponent->bOrientRotationToMovement == false;
 		}
 	}
 }

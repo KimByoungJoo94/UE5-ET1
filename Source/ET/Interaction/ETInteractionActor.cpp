@@ -4,6 +4,7 @@
 #include "Components/WidgetComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Components/ETInteractionComponent.h"
+#include "Components/ETLockOnComponent.h"
 #include "Character/ETPlayer.h"
 #include "UI/ETInteractionWidget.h"
 #include "Common/ETCommonSettings.h"
@@ -38,14 +39,19 @@ AETInteractionActor::AETInteractionActor()
 #endif
 }
 
-void AETInteractionActor::BeginPlay()
+void AETInteractionActor::PostInitializeComponents()
 {
-	// 위젯 컴포넌트가 BeginPlay 에서 위젯을 생성하므로 Super 전에 설정 (BP 에서 지정한 위젯 우선)
+	Super::PostInitializeComponents();
+
+	// 위젯 컴포넌트가 BeginPlay 에서 위젯을 생성하므로 그 전에 설정 (BP 에서 지정한 위젯 우선)
 	if (InteractionWidgetComponent->GetWidgetClass() == nullptr)
 	{
 		InteractionWidgetComponent->SetWidgetClass(GetDefault<UETCommonSettings>()->UI.InteractionWidgetClass.LoadSynchronous());
 	}
+}
 
+void AETInteractionActor::BeginPlay()
+{
 	Super::BeginPlay();
 
 	InteractionWidgetComponent->SetVisibility(false);
@@ -81,17 +87,21 @@ void AETInteractionActor::OnInteractionBoxBeginOverlap(UPrimitiveComponent* Over
 {
 	if (AETPlayer* Player = Cast<AETPlayer>(OtherActor))
 	{
-		if (UETInteractionComponent* InteractionComponent = Player->GetInteractionComponent())
+		const UETLockOnComponent* LockOnComponent = Player->GetLockOnComponent();
+		if (LockOnComponent && LockOnComponent->IsLockedOn() == false)
 		{
-			InteractionComponent->SetInteractionTarget(this);
-
-			UETInteractionWidget* InteractionWidget = Cast<UETInteractionWidget>(InteractionWidgetComponent->GetUserWidgetObject());
-			if (IsValid(InteractionWidget))
+			if (UETInteractionComponent* InteractionComponent = Player->GetInteractionComponent())
 			{
-				InteractionWidget->UpdateKeyText();
-			}
+				InteractionComponent->SetInteractionTarget(this);
 
-			InteractionWidgetComponent->SetVisibility(true);
+				UETInteractionWidget* InteractionWidget = Cast<UETInteractionWidget>(InteractionWidgetComponent->GetUserWidgetObject());
+				if (IsValid(InteractionWidget))
+				{
+					InteractionWidget->UpdateKeyText();
+				}
+
+				InteractionWidgetComponent->SetVisibility(true);
+			}
 		}
 	}
 }

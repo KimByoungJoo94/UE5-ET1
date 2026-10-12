@@ -1,8 +1,18 @@
 #include "UI/ETUserWidget.h"
 #include "Character/ETPlayer.h"
 
+void UETUserWidget::SetOwningETCharacter(AETCharacter* InCharacter)
+{
+	OwningETCharacter = InCharacter;
+}
+
 AETCharacter* UETUserWidget::GetOwningETCharacter() const
-{	
+{
+	if (AETCharacter* Character = OwningETCharacter.Get())
+	{
+		return Character;
+	}
+
 	if (APlayerController* PlayerController = GetOwningPlayer())
 	{		
 		if (AETCharacter* Character = Cast<AETCharacter>(PlayerController->GetPawn()))

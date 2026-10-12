@@ -7,6 +7,8 @@
 class UETPlayerHUDWidget;
 class UETInteractionWidget;
 class UETCheckpointWidget;
+class UETStatWidget;
+class UETUserWidget;
 class UMaterialInterface;
 
 USTRUCT()
@@ -23,6 +25,12 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSoftClassPtr<UETCheckpointWidget> CheckpointWidgetClass;
+
+	UPROPERTY(EditAnywhere)
+	TSoftClassPtr<UETStatWidget> HealthBarWidgetClass;
+
+	UPROPERTY(EditAnywhere)
+	TSoftClassPtr<UETUserWidget> LockOnWidgetClass;
 };
 
 USTRUCT()

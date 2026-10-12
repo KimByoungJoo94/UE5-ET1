@@ -2,9 +2,18 @@
 #include "Components/WidgetComponent.h"
 #include "UI/ETStatWidget.h"
 #include "Common/ETCommonSettings.h"
+#include "Controller/ETAIController.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 AETMonster::AETMonster()
 {
+	AIControllerClass = AETAIController::StaticClass();
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	// 추적, 귀환은 이동 방향으로 회전 (공격 시 회전은 공격 태스크에서 처리)
+	bUseControllerRotationYaw = false;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+
 	HealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidgetComponent"));
 	HealthBarWidgetComponent->SetupAttachment(GetRootComponent());
 	HealthBarWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 140.f));

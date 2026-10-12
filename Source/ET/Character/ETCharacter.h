@@ -13,6 +13,9 @@ class UAnimMontage;
 struct FETCharacterActionMontageData;
 struct FGameplayTag;
 
+// PlayAction 으로 재생한 몽타주의 BlendingOut 시점 (끊긴 경우 포함)
+DECLARE_DELEGATE_OneParam(FOnActionEnded, bool /* bInterrupted */);
+
 UCLASS()
 class ET_API AETCharacter : public ACharacter
 {
@@ -29,6 +32,7 @@ public:
 	FORCEINLINE UETGameStatComponent* GetGameStatComponent() { return GameStatComponent; }
 	FORCEINLINE UETAttackCollisionComponent* GetAttackCollisionComponent() { return AttackCollisionComponent; }
 	FORCEINLINE UETTimeFreezeComponent* GetTimeFreezeComponent() { return TimeFreezeComponent; }
+	FORCEINLINE FName GetCharacterRowName() const { return CharacterRowName; }
 
 public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
@@ -45,8 +49,8 @@ public:
 	// 액션 데이터의 허용, 차단 상태 기준으로 현재 상태에서 행동 가능한지 (데이터에 없는 행동은 제한 없음)
 	bool CanPlayAction(const FGameplayTag& InActionTag) const;
 
-	// 액션 태그에 맞는 재생 가능한 몽타주가 있으면 상태 전환 후 재생 (AI 등 외부 호출용)
-	bool PlayAction(const FGameplayTag& InActionTag, const int32 InIndex, const FGameplayTag& InStateTag);
+	// 액션 태그에 맞는 재생 가능한 몽타주가 있으면 상태 전환 후 재생 (AI 등 외부 호출용, InIndex 가 INDEX_NONE 이면 랜덤)
+	bool PlayAction(const FGameplayTag& InActionTag, const int32 InIndex, const FGameplayTag& InStateTag, const FOnActionEnded& InOnActionEnded = FOnActionEnded());
 
 protected:
 	// true 이면 데미지 무시 (회피, 패리 등 / 퍼펙트 판정 처리 위치)
@@ -60,13 +64,13 @@ protected:
 	const FETCharacterActionMontageData* FindPlayableActionMontageData(const FGameplayTag& InActionTag, const int32 InIndex) const;
 	
 	// 찾은 데이터로 상태 전환 → 재생 → 비용 차감, BlendingOut 시 상태 복구 (찾기와 재생 사이에 처리가 필요한 경우 직접 사용)
-	bool PlayAction(const FETCharacterActionMontageData* InMontageData, const FGameplayTag& InStateTag);
+	bool PlayAction(const FETCharacterActionMontageData* InMontageData, const FGameplayTag& InStateTag, const FOnActionEnded& InOnActionEnded = FOnActionEnded());
 
 	// PlayAction 으로 재생한 몽타주의 BlendingOut 시점 (끊긴 경우 포함, 상태 복구 전 호출)
 	virtual void OnActionMontageBlendingOut(const FGameplayTag& InStateTag, const bool bInterrupted) {}
 
 private:
-	void HandleActionMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted, FGameplayTag InStateTag, uint32 InActionSerial);
+	void HandleActionMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted, FGameplayTag InStateTag, uint32 InActionSerial, FOnActionEnded InOnActionEnded);
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "ET|Component")

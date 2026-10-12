@@ -12,7 +12,7 @@ public class ET : ModuleRules
 
         PublicDependencyModuleNames.AddRange(new string[] 
 		{ 
-			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "GameplayTags", "DeveloperSettings" 
+			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "GameplayTags", "DeveloperSettings", "AIModule", "GameplayTasks" 
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "AssetRegistry" });

@@ -182,17 +182,24 @@ bool AETCharacter::CanPlayAction(const FGameplayTag& InActionTag) const
 	return bAllowed && bBlocked == false;
 }
 
-bool AETCharacter::PlayAction(const FGameplayTag& InActionTag, const int32 InIndex, const FGameplayTag& InStateTag)
+bool AETCharacter::PlayAction(const FGameplayTag& InActionTag, const int32 InIndex, const FGameplayTag& InStateTag, const FOnActionEnded& InOnActionEnded)
 {
 	if (CanPlayAction(InActionTag) == false)
 	{
 		return false;
 	}
 
-	return PlayAction(FindPlayableActionMontageData(InActionTag, InIndex), InStateTag);
+	int32 MontageIndex = InIndex;
+	if (MontageIndex == INDEX_NONE && CachedActionDataAsset)
+	{
+		const int32 MontageNum = CachedActionDataAsset->GetActionMontageDataArray(InActionTag).Num();
+		MontageIndex = MontageNum > 0 ? FMath::RandRange(0, MontageNum - 1) : 0;
+	}
+
+	return PlayAction(FindPlayableActionMontageData(InActionTag, MontageIndex), InStateTag, InOnActionEnded);
 }
 
-bool AETCharacter::PlayAction(const FETCharacterActionMontageData* InMontageData, const FGameplayTag& InStateTag)
+bool AETCharacter::PlayAction(const FETCharacterActionMontageData* InMontageData, const FGameplayTag& InStateTag, const FOnActionEnded& InOnActionEnded)
 {
 	if (InMontageData == nullptr || InMontageData->Montage == nullptr)
 	{
@@ -216,14 +223,14 @@ bool AETCharacter::PlayAction(const FETCharacterActionMontageData* InMontageData
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
 		FOnMontageBlendingOutStarted BlendingOutDelegate;
-		BlendingOutDelegate.BindUObject(this, &ThisClass::HandleActionMontageBlendingOut, InStateTag, CurrentActionSerial);
+		BlendingOutDelegate.BindUObject(this, &ThisClass::HandleActionMontageBlendingOut, InStateTag, CurrentActionSerial, InOnActionEnded);
 		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, Montage);
 	}
 
 	return true;
 }
 
-void AETCharacter::HandleActionMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted, FGameplayTag InStateTag, uint32 InActionSerial)
+void AETCharacter::HandleActionMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted, FGameplayTag InStateTag, uint32 InActionSerial, FOnActionEnded InOnActionEnded)
 {
 	OnActionMontageBlendingOut(InStateTag, bInterrupted);
 
@@ -232,4 +239,6 @@ void AETCharacter::HandleActionMontageBlendingOut(UAnimMontage* InMontage, bool 
 	{
 		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
 	}
+
+	InOnActionEnded.ExecuteIfBound(bInterrupted);
 }

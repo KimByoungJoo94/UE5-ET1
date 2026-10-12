@@ -17,6 +17,9 @@ enum class EETGameStatType : uint8
 	Momentum,
 	MomentumDrain,
 	MomentumAttackBonus,
+	// AI : 대상 감지 거리, 공격 시작 거리
+	DetectRange,
+	AttackRange,
 	// Level,
 	// Stamina,
 	// MaxStamina,

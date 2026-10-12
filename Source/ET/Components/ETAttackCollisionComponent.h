@@ -30,7 +30,7 @@ protected:
 
 private:
 	// 데이터 테이블 행 (테이블 에셋이 유지되는 동안 유효)
-	const FETWeaponCollisionTableRowData* WeaponCollisionRowData = nullptr;
+	const FETWeaponCollisionTableRowData* CachedWeaponCollisionRowData = nullptr;
 
 	TSet<TWeakObjectPtr<AActor>> AlreadHitActorSet;
 

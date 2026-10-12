@@ -41,13 +41,12 @@ struct FETCharacterSettings
 public:
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UMaterialInterface> AfterImageMaterial;
-
-	// TODO : 시간 정지 대상에 덮어씌울 머터리얼 (ETTimeFreezeComponent)
+		
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UMaterialInterface> TimeFreezeMaterial;
 };
 
-// Project Settings > ET > Common (섹션별 구조체로 구분)
+// Project Settings > ET > Common > UI, Character...
 UCLASS(Config = Game, DefaultConfig, meta = (DisplayName = "Common"))
 class ET_API UETCommonSettings : public UDeveloperSettings
 {

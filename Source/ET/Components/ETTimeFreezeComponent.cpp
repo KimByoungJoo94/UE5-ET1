@@ -3,8 +3,10 @@
 #include "Components/ETCharacterStateComponent.h"
 #include "DataAsset/ETSkillTableRowData.h"
 #include "Subsystem/ETGameDataSubsystem.h"
+#include "Common/ETCommonSettings.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Materials/MaterialInterface.h"
 #include "Camera/CameraComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
 
@@ -25,8 +27,7 @@ void UETTimeFreezeComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void UETTimeFreezeComponent::CastTimeFreeze(const FName InRowName)
 {
-	const UETGameDataSubsystem* GameDataSubsystem = UGameInstance::GetSubsystem<UETGameDataSubsystem>(UGameplayStatics::GetGameInstance(this));
-	const FETTimeFreezeTableRowData* RowData = GameDataSubsystem ? GameDataSubsystem->GetRow<FETTimeFreezeTableRowData>(InRowName) : nullptr;
+	const FETTimeFreezeTableRowData* RowData = UETGameDataSubsystem::GetRow<FETTimeFreezeTableRowData>(this, InRowName);
 	if (RowData == nullptr)
 	{
 		return;
@@ -57,6 +58,8 @@ void UETTimeFreezeComponent::Freeze(const float InDuration)
 		OriginCustomTimeDilation = OwnerActor->CustomTimeDilation;
 		OwnerActor->CustomTimeDilation = 0.f;
 		bFrozen = true;
+
+		ApplyTimeFreezeMaterial();
 	}
 
 	// 액터 CustomTimeDilation 영향을 받지 않는 월드 타이머로 복구 (전체 TimeDilation 은 적용됨)
@@ -83,7 +86,43 @@ void UETTimeFreezeComponent::Unfreeze()
 		OwnerActor->CustomTimeDilation = OriginCustomTimeDilation;
 	}
 
+	RestoreOriginMaterials();
+
 	bFrozen = false;
+}
+
+void UETTimeFreezeComponent::ApplyTimeFreezeMaterial()
+{
+	AETCharacter* OwnerCharacter = Cast<AETCharacter>(GetOwner());
+	USkeletalMeshComponent* MeshComponent = OwnerCharacter ? OwnerCharacter->GetMesh() : nullptr;
+	UMaterialInterface* TimeFreezeMaterial = GetDefault<UETCommonSettings>()->Character.TimeFreezeMaterial.LoadSynchronous();
+	if (MeshComponent == nullptr || TimeFreezeMaterial == nullptr)
+	{
+		return;
+	}
+
+	const int32 MaterialNum = MeshComponent->GetNumMaterials();
+
+	OriginMaterialArray.Reset(MaterialNum);
+	for (int32 Index = 0; Index < MaterialNum; ++Index)
+	{
+		OriginMaterialArray.Add(MeshComponent->GetMaterial(Index));
+		MeshComponent->SetMaterial(Index, TimeFreezeMaterial);
+	}
+}
+
+void UETTimeFreezeComponent::RestoreOriginMaterials()
+{
+	AETCharacter* OwnerCharacter = Cast<AETCharacter>(GetOwner());
+	if (USkeletalMeshComponent* MeshComponent = OwnerCharacter ? OwnerCharacter->GetMesh() : nullptr)
+	{
+		for (int32 Index = 0; Index < OriginMaterialArray.Num(); ++Index)
+		{
+			MeshComponent->SetMaterial(Index, OriginMaterialArray[Index]);
+		}
+	}
+
+	OriginMaterialArray.Reset();
 }
 
 void UETTimeFreezeComponent::FindTimeFreezeTargets(const FETTimeFreezeTableRowData& InRowData, OUT TArray<AETCharacter*>& OutTargetArray) const
@@ -127,6 +166,16 @@ void UETTimeFreezeComponent::FindTimeFreezeTargets(const FETTimeFreezeTableRowDa
 	{
 		return FVector::DistSquared(OwnerLocation, InLeft.GetActorLocation()) < FVector::DistSquared(OwnerLocation, InRight.GetActorLocation());
 	});
+
+	// 락온 대상이 조건을 통과했으면 거리와 상관없이 가장 앞으로 (대상 수 제한에도 우선 포함)
+	if (const AETCharacter* OwnerCharacter = Cast<AETCharacter>(OwnerActor))
+	{
+		AETCharacter* LockOnTarget = OwnerCharacter->GetLockOnTarget();
+		if (LockOnTarget && OutTargetArray.Remove(LockOnTarget) > 0)
+		{
+			OutTargetArray.Insert(LockOnTarget, 0);
+		}
+	}
 
 	if (InRowData.MaxTargetCount > 0 && OutTargetArray.Num() > InRowData.MaxTargetCount)
 	{

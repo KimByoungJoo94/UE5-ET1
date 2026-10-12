@@ -64,12 +64,12 @@ public:
 	UETGameStatComponent();
 
 protected:
-	virtual void InitializeComponent() override;
 	virtual void BeginPlay() override;
 
-	void GenerateGameStat();
-
 public:	
+	// 기본 스탯 테이블 행으로 스탯 생성 (소유 캐릭터가 캐릭터 테이블 행의 값으로 호출)
+	void GenerateGameStat(const FName InBaseGameStatRowName);
+
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	const FETGameStat& GetGameStat(const EETGameStatType InGameStatType) const;
 	void AddDepletedValue(const EETGameStatType InGameStatType, const float InValue);
@@ -90,9 +90,6 @@ protected:
 	void BroadcastDirtyGameStat();
 
 protected:
-	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetGameStatRowNameOptions"))
-	FName BaseGameStatRowName;
-
 	UPROPERTY(VisibleAnywhere, Transient)
 	TMap<EETGameStatType, FETGameStat> GameStatMap;
 

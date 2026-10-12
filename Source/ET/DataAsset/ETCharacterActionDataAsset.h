@@ -33,6 +33,14 @@ struct FETCharacterActionData
 public:
 	UPROPERTY(EditAnywhere)
 	TArray<FETCharacterActionMontageData> MontageDataArray;
+
+	// 비어 있지 않으면 현재 상태가 이 중 하나일 때만 행동 가능 (Idle 에서만 가능 같은 행동용)
+	UPROPERTY(EditAnywhere)
+	FGameplayTagContainer AllowedStateContainer;
+
+	// 현재 상태가 이 중 하나면 행동 불가
+	UPROPERTY(EditAnywhere)
+	FGameplayTagContainer BlockedStateContainer;
 };
 
 UCLASS()

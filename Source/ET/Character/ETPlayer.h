@@ -13,8 +13,6 @@ class UETAfterImageComponent;
 class UETLockOnComponent;
 class UInputMappingContext;
 class UInputAction;
-class UETCharacterActionDataAsset;
-struct FETCharacterActionMontageData;
 class UAnimMontage;
 struct FInputActionValue;
 struct FGameplayTag;
@@ -134,6 +132,7 @@ public:
 	void ResetParry();
 
 	virtual float GetAttackDamage() const override;
+	virtual AETCharacter* GetLockOnTarget() const override;
 
 	UETInteractionComponent* GetInteractionComponent() { return InteractionComponent; }
 	UETChargeAttackComponent* GetChargeAttackComponent() { return ChargeAttackComponent; }
@@ -146,30 +145,10 @@ protected:
 	virtual void HitReact(AActor* InDamageCauser) override;
 	virtual void Die() override;
 
-	bool CanMove();
-	bool CanPlayComboAttack();
-	bool CanHeavyAttack();
-	bool CanDodge();
-	bool CanParry();
-	bool CanUseActiveSkill();
-	bool CanInteract();
-	bool CanUseItem();
-	bool HasEnoughActionCost(const FETCharacterActionMontageData& InMontageData) const;
-	void ConsumeActionCost(const FETCharacterActionMontageData& InMontageData);
+	virtual void OnActionMontageBlendingOut(const FGameplayTag& InStateTag, const bool bInterrupted) override;
 
-	// 몽타주가 있고 비용이 충분한 행동 데이터 (없으면 nullptr)
-	const FETCharacterActionMontageData* FindPlayableActionMontageData(const FGameplayTag& InActionTag, const int32 InIndex) const;
-	// 상태 변경 후 재생, 성공 시 비용 차감 및 BlendingOut 바인딩 (실패 시 Idle 복구)
-	bool PlayActionMontage(const FETCharacterActionMontageData& InMontageData, const FGameplayTag& InStateTag, void (ThisClass::*InBlendingOutFunc)(UAnimMontage*, bool));
 	void PlayComboAttack();
-
-	void OnDodgeMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
 	void PlayPerfectDodge();
-
-	void OnParryMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
-	void OnActiveSkillMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
-	void OnInteractionMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
-	void OnUseItemMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted);
 
 	void OnChargeCountChanged(const int32 InCurrentChargeCount, const int32 InMaxChargeCount);
 	
@@ -180,26 +159,23 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Component")
 	TObjectPtr<UCameraComponent> CameraComponent;
 
-	UPROPERTY(VisibleAnywhere, Category = "Component")
+	UPROPERTY(VisibleAnywhere, Category = "ET|Component")
 	TObjectPtr<UETInteractionComponent> InteractionComponent;
 
-	UPROPERTY(VisibleAnywhere, Category = "Component")
+	UPROPERTY(VisibleAnywhere, Category = "ET|Component")
 	TObjectPtr<UETChargeAttackComponent> ChargeAttackComponent;
 
-	UPROPERTY(VisibleAnywhere, Category = "Component")
+	UPROPERTY(VisibleAnywhere, Category = "ET|Component")
 	TObjectPtr<UETAfterImageComponent> AfterImageComponent;
 
-	UPROPERTY(VisibleAnywhere, Category = "Component")
+	UPROPERTY(VisibleAnywhere, Category = "ET|Component")
 	TObjectPtr<UETLockOnComponent> LockOnComponent;
 
 protected:
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UPROPERTY(EditDefaultsOnly, Category = "ET|Input")
 	FETPlayerInputData PlayerInputData;
 
-	UPROPERTY(EditDefaultsOnly, Category = "DataAsset")
-	TObjectPtr<UETCharacterActionDataAsset> ActionDataAsset;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
+	UPROPERTY(EditDefaultsOnly, Category = "ET|Dodge")
 	FETPlayerDodgeData PlayerDodgeData;
 
 protected:

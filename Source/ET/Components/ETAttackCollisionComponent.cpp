@@ -1,22 +1,7 @@
 #include "Components/ETAttackCollisionComponent.h"
 #include "Character/ETCharacter.h"
 #include "Subsystem/ETGameDataSubsystem.h"
-#include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
-
-namespace
-{
-	template <typename T>
-	const T* FindCollisionRowData(const UObject* InWorldContextObject, const FName InRowName)
-	{
-		if (const UETGameDataSubsystem* GameDataSubsystem = UGameInstance::GetSubsystem<UETGameDataSubsystem>(UGameplayStatics::GetGameInstance(InWorldContextObject)))
-		{
-			return GameDataSubsystem->GetRow<T>(InRowName);
-		}
-
-		return nullptr;
-	}
-}
 
 UETAttackCollisionComponent::UETAttackCollisionComponent()
 {
@@ -40,22 +25,22 @@ void UETAttackCollisionComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 void UETAttackCollisionComponent::StartWeaponCollision(const FName InRowName)
 {
-    WeaponCollisionRowData = FindCollisionRowData<FETWeaponCollisionTableRowData>(this, InRowName);
+    CachedWeaponCollisionRowData = UETGameDataSubsystem::GetRow<FETWeaponCollisionTableRowData>(this, InRowName);
 
     AlreadHitActorSet.Empty();
-    bWeaponCollisionTracing = WeaponCollisionRowData != nullptr;
+    bWeaponCollisionTracing = CachedWeaponCollisionRowData != nullptr;
 }
 
 void UETAttackCollisionComponent::EndWeaponCollision()
 {
     bWeaponCollisionTracing = false;
-    WeaponCollisionRowData = nullptr;
+    CachedWeaponCollisionRowData = nullptr;
 }
 
 void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowName)
 {
     AETCharacter* OwnerCharacter = Cast<AETCharacter>(GetOwner());
-    const FETRadialAttackCollisionTableRowData* RowData = FindCollisionRowData<FETRadialAttackCollisionTableRowData>(this, InRowName);
+    const FETRadialAttackCollisionTableRowData* RowData = UETGameDataSubsystem::GetRow<FETRadialAttackCollisionTableRowData>(this, InRowName);
     if (OwnerCharacter == nullptr || RowData == nullptr || RowData->Radius <= 0.f)
     {
         return;
@@ -96,7 +81,7 @@ void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowNa
 
 void UETAttackCollisionComponent::TraceWeaponCollision()
 {
-    if (WeaponCollisionRowData == nullptr)
+    if (CachedWeaponCollisionRowData == nullptr)
     {
         return;
     }
@@ -105,24 +90,24 @@ void UETAttackCollisionComponent::TraceWeaponCollision()
     {
         if (USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter->GetMesh())
         {
-            const FVector& StartLocation = SkeletalMeshComponent->GetSocketLocation(WeaponCollisionRowData->StartSocketName);
-            const FVector& EndLocation = SkeletalMeshComponent->GetSocketLocation(WeaponCollisionRowData->EndSocketName);
+            const FVector& StartLocation = SkeletalMeshComponent->GetSocketLocation(CachedWeaponCollisionRowData->StartSocketName);
+            const FVector& EndLocation = SkeletalMeshComponent->GetSocketLocation(CachedWeaponCollisionRowData->EndSocketName);
             TArray<FHitResult> HitResultArray;
 
             bool const bHit = UKismetSystemLibrary::SphereTraceMultiForObjects(
                 OwnerCharacter,
                 StartLocation,
                 EndLocation,
-                WeaponCollisionRowData->Radius,
-                WeaponCollisionRowData->ObjectTypeArray,
+                CachedWeaponCollisionRowData->Radius,
+                CachedWeaponCollisionRowData->ObjectTypeArray,
                 false,
                 TArray<AActor*>(),
-                WeaponCollisionRowData->DrawDebugType,
+                CachedWeaponCollisionRowData->DrawDebugType,
                 HitResultArray,
                 true,
                 FLinearColor::Red,
                 FLinearColor::Green,
-                WeaponCollisionRowData->DrawDebugTime);
+                CachedWeaponCollisionRowData->DrawDebugTime);
 
             if (bHit)
             {

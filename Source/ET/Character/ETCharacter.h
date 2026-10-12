@@ -8,6 +8,10 @@ class UETCharacterStateComponent;
 class UETGameStatComponent;
 class UETAttackCollisionComponent;
 class UETTimeFreezeComponent;
+class UETCharacterActionDataAsset;
+class UAnimMontage;
+struct FETCharacterActionMontageData;
+struct FGameplayTag;
 
 UCLASS()
 class ET_API AETCharacter : public ACharacter
@@ -18,27 +22,31 @@ public:
 	AETCharacter();
 
 protected:
-	virtual void BeginPlay() override;
+	virtual void PreInitializeComponents() override;
 
 public:
-	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	FORCEINLINE UETCharacterStateComponent* GetCharacterStateComponent() { return CharacterStateComponent; }
+	FORCEINLINE UETGameStatComponent* GetGameStatComponent() { return GameStatComponent; }
+	FORCEINLINE UETAttackCollisionComponent* GetAttackCollisionComponent() { return AttackCollisionComponent; }
+	FORCEINLINE UETTimeFreezeComponent* GetTimeFreezeComponent() { return TimeFreezeComponent; }
 
+public:
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void AttackTarget(AActor* InTarget, const FHitResult& InHitResult);
 	virtual float GetAttackDamage() const;
 
-	// 체력, 마나 최대 / 기세 0
+	// 락온 중인 대상 (락온 기능이 없는 캐릭터는 nullptr)
+	virtual AETCharacter* GetLockOnTarget() const { return nullptr; }
 	virtual void ResetGameStat();
-
-	UETCharacterStateComponent* GetCharacterStateComponent() { return CharacterStateComponent; }
-	UETGameStatComponent* GetGameStatComponent() { return GameStatComponent; }
-	UETAttackCollisionComponent* GetAttackCollisionComponent() { return AttackCollisionComponent; }
-	UETTimeFreezeComponent* GetTimeFreezeComponent() { return TimeFreezeComponent; }
-
 	void SetCapsuleHalfHeightKeepGround(const float InHalfHeight);
 	void ResetCapsuleHalfHeight();
 	float GetDefaultCapsuleHalfHeight() const;
+
+	// 액션 데이터의 허용, 차단 상태 기준으로 현재 상태에서 행동 가능한지 (데이터에 없는 행동은 제한 없음)
+	bool CanPlayAction(const FGameplayTag& InActionTag) const;
+
+	// 액션 태그에 맞는 재생 가능한 몽타주가 있으면 상태 전환 후 재생 (AI 등 외부 호출용)
+	bool PlayAction(const FGameplayTag& InActionTag, const int32 InIndex, const FGameplayTag& InStateTag);
 
 protected:
 	// true 이면 데미지 무시 (회피, 패리 등 / 퍼펙트 판정 처리 위치)
@@ -46,16 +54,40 @@ protected:
 	virtual void HitReact(AActor* InDamageCauser) {}
 	virtual void Die() {}
 
+	bool HasEnoughActionCost(const FETCharacterActionMontageData* InMontageData) const;
+	void ConsumeActionCost(const FETCharacterActionMontageData* InMontageData);
+		
+	const FETCharacterActionMontageData* FindPlayableActionMontageData(const FGameplayTag& InActionTag, const int32 InIndex) const;
+	
+	// 찾은 데이터로 상태 전환 → 재생 → 비용 차감, BlendingOut 시 상태 복구 (찾기와 재생 사이에 처리가 필요한 경우 직접 사용)
+	bool PlayAction(const FETCharacterActionMontageData* InMontageData, const FGameplayTag& InStateTag);
+
+	// PlayAction 으로 재생한 몽타주의 BlendingOut 시점 (끊긴 경우 포함, 상태 복구 전 호출)
+	virtual void OnActionMontageBlendingOut(const FGameplayTag& InStateTag, const bool bInterrupted) {}
+
+private:
+	void HandleActionMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted, FGameplayTag InStateTag, uint32 InActionSerial);
+
 protected:
-	UPROPERTY(VisibleAnywhere, Category = "ET")
+	UPROPERTY(VisibleAnywhere, Category = "ET|Component")
 	TObjectPtr<UETCharacterStateComponent> CharacterStateComponent;
 
-	UPROPERTY(VisibleAnywhere, Category = "ET")
+	UPROPERTY(VisibleAnywhere, Category = "ET|Component")
 	TObjectPtr<UETGameStatComponent> GameStatComponent;
 
-	UPROPERTY(VisibleAnywhere, Category = "ET")
+	UPROPERTY(VisibleAnywhere, Category = "ET|Component")
 	TObjectPtr<UETAttackCollisionComponent> AttackCollisionComponent;
 
-	UPROPERTY(VisibleAnywhere, Category = "ET")
+	UPROPERTY(VisibleAnywhere, Category = "ET|Component")
 	TObjectPtr<UETTimeFreezeComponent> TimeFreezeComponent;
+
+	UPROPERTY(EditDefaultsOnly, Category = "ET|Data", meta = (GetOptions = "ET.ETGameDataSubsystem.GetCharacterRowNameOptions"))
+	FName CharacterRowName;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UETCharacterActionDataAsset> CachedActionDataAsset;
+
+private:
+	// PlayAction 호출마다 증가, 이전 행동 몽타주의 늦은 BlendingOut 이 새 행동 상태를 덮어쓰지 않도록 구분
+	uint32 ActionSerial = 0;
 };

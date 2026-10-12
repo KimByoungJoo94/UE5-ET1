@@ -14,6 +14,8 @@ namespace ETGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_UsingItem);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Death);
 
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Move);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Jump);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_ComboAttack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_JumpAttack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_HeavyAttack);

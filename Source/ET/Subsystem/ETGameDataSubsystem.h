@@ -5,7 +5,7 @@
 #include "Engine/DataTable.h"
 #include "ETGameDataSubsystem.generated.h"
 
-UCLASS(Config = Game)
+UCLASS()
 class ET_API UETGameDataSubsystem : public UETGameSubsystem
 {
 	GENERATED_BODY()
@@ -15,6 +15,16 @@ public:
 	virtual void Deinitialize() override;
 
 public:
+	static UETGameDataSubsystem* Get(const UObject* InWorldContextObject);
+
+	// 월드 컨텍스트로 서브시스템을 찾아 조회 (서브시스템이나 행이 없으면 nullptr)
+	template <typename T>
+	static const T* GetRow(const UObject* InWorldContextObject, const FName InRowName)
+	{
+		const UETGameDataSubsystem* GameDataSubsystem = Get(InWorldContextObject);
+		return GameDataSubsystem ? GameDataSubsystem->GetRow<T>(InRowName) : nullptr;
+	}
+
 	template <typename T>
 	const T* GetRow(const FName InRowName) const
 	{
@@ -61,13 +71,16 @@ public:
 	UFUNCTION()
 	static TArray<FName> GetTimeFreezeRowNameOptions();
 
+	UFUNCTION()
+	static TArray<FName> GetCharacterRowNameOptions();
+
 private:
 	static TArray<FName> GetRowNameOptions(const UScriptStruct* InRowStruct);
 
-private:
-	UPROPERTY(Config)
-	TArray<TSoftObjectPtr<UDataTable>> DataTableAssetArray;
+	// /Game/ET/DataTable 폴더(하위 포함)의 모든 DataTable 로드
+	static void LoadDataTablesInPath(OUT TArray<UDataTable*>& OutDataTableArray);
 
+private:
 	UPROPERTY(Transient)
 	TMap<TObjectPtr<UScriptStruct>, TObjectPtr<UDataTable>> DataTableMap;
 };

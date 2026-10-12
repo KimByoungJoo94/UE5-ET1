@@ -1,7 +1,5 @@
 #include "Components/ETGameStatComponent.h"
 #include "Subsystem/ETGameDataSubsystem.h"
-#include "Engine/GameInstance.h"
-#include "Kismet/GameplayStatics.h"
 
 const FETGameStat FETGameStat::Invalid(EETGameStatType::Max);
 
@@ -9,14 +7,6 @@ UETGameStatComponent::UETGameStatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bStartWithTickEnabled = true;
-	bWantsInitializeComponent = true;
-}
-
-void UETGameStatComponent::InitializeComponent()
-{
-	Super::InitializeComponent();
-
-	GenerateGameStat();
 }
 
 void UETGameStatComponent::BeginPlay()
@@ -24,19 +14,18 @@ void UETGameStatComponent::BeginPlay()
 	Super::BeginPlay();
 }
 
-void UETGameStatComponent::GenerateGameStat()
+void UETGameStatComponent::GenerateGameStat(const FName InBaseGameStatRowName)
 {
-	if (UETGameDataSubsystem* GameDataSubsystem = UGameInstance::GetSubsystem<UETGameDataSubsystem>(UGameplayStatics::GetGameInstance(this)))
-	{
-		if (const FETGameStatTableRowData* GameStatRow = GameDataSubsystem->GetRow<FETGameStatTableRowData>(BaseGameStatRowName))
-		{
-			for (int32 Index = 0; Index < static_cast<int32>(EETGameStatType::Max); ++Index)
-			{
-				const EETGameStatType GameStatType = static_cast<EETGameStatType>(Index);
+	GameStatMap.Reset();
 
-				FETGameStat GameStat(GameStatType, GameStatRow->GetBaseGameStat(GameStatType));
-				GameStatMap.Add(GameStatType, GameStat);
-			}
+	if (const FETGameStatTableRowData* GameStatRow = UETGameDataSubsystem::GetRow<FETGameStatTableRowData>(this, InBaseGameStatRowName))
+	{
+		for (int32 Index = 0; Index < static_cast<int32>(EETGameStatType::Max); ++Index)
+		{
+			const EETGameStatType GameStatType = static_cast<EETGameStatType>(Index);
+
+			FETGameStat GameStat(GameStatType, GameStatRow->GetBaseGameStat(GameStatType));
+			GameStatMap.Add(GameStatType, GameStat);
 		}
 	}
 }

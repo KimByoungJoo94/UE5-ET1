@@ -3,7 +3,11 @@
 #include "Components/ETGameStatComponent.h"
 #include "Components/ETAttackCollisionComponent.h"
 #include "Components/ETTimeFreezeComponent.h"
+#include "DataAsset/ETCharacterActionDataAsset.h"
+#include "Subsystem/ETGameDataSubsystem.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Animation/AnimInstance.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/DamageType.h"
@@ -14,25 +18,24 @@ AETCharacter::AETCharacter()
 	PrimaryActorTick.bCanEverTick = false;
 
 	CharacterStateComponent = CreateDefaultSubobject<UETCharacterStateComponent>(TEXT("CharacterStateComponent"));
-	GameStatComponent = CreateDefaultSubobject<UETGameStatComponent>(TEXT("GameStatComponent"));
-	// BP 에 저장된 컴포넌트 설정 유지를 위해 서브오브젝트 이름은 기존 이름 유지
-	AttackCollisionComponent = CreateDefaultSubobject<UETAttackCollisionComponent>(TEXT("WeaponCollisionComponent"));
+	GameStatComponent = CreateDefaultSubobject<UETGameStatComponent>(TEXT("GameStatComponent"));	
+	AttackCollisionComponent = CreateDefaultSubobject<UETAttackCollisionComponent>(TEXT("AttackCollisionComponent"));
 	TimeFreezeComponent = CreateDefaultSubobject<UETTimeFreezeComponent>(TEXT("TimeFreezeComponent"));
 }
 
-void AETCharacter::BeginPlay()
+void AETCharacter::PreInitializeComponents()
 {
-	Super::BeginPlay();
-}
+	Super::PreInitializeComponents();
 
-void AETCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-}
+	const FETCharacterTableRowData* CharacterRowData = UETGameDataSubsystem::GetRow<FETCharacterTableRowData>(this, CharacterRowName);
+	if (ensureMsgf(CharacterRowData, TEXT("Invalid CharacterRowName. Character: %s, RowName: %s"), *GetName(), *CharacterRowName.ToString()) == false)
+	{
+		return;
+	}
 
-void AETCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	GameStatComponent->GenerateGameStat(CharacterRowData->BaseGameStatRowName);
+
+	CachedActionDataAsset = CharacterRowData->ActionDataAsset.LoadSynchronous();
 }
 
 float AETCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -123,4 +126,109 @@ float AETCharacter::GetDefaultCapsuleHalfHeight() const
 {
 	const ACharacter* DefaultCharacter = GetClass()->GetDefaultObject<ACharacter>();
 	return DefaultCharacter->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
+}
+
+bool AETCharacter::HasEnoughActionCost(const FETCharacterActionMontageData* InMontageData) const
+{
+	if (InMontageData == nullptr)
+	{
+		return false;
+	}
+
+	if (InMontageData->CostValue <= 0.f)
+	{
+		return true;
+	}
+
+	return GameStatComponent->HasEnoughCurrentValue(InMontageData->CostStatType, InMontageData->CostValue);
+}
+
+void AETCharacter::ConsumeActionCost(const FETCharacterActionMontageData* InMontageData)
+{
+	if (InMontageData && InMontageData->CostValue > 0.f)
+	{
+		GameStatComponent->AddDepletedValue(InMontageData->CostStatType, -InMontageData->CostValue);
+	}
+}
+
+const FETCharacterActionMontageData* AETCharacter::FindPlayableActionMontageData(const FGameplayTag& InActionTag, const int32 InIndex) const
+{
+	if (CachedActionDataAsset == nullptr)
+	{
+		return nullptr;
+	}
+
+	const FETCharacterActionMontageData* MontageData = CachedActionDataAsset->GetActionMontageData(InActionTag, InIndex);
+	if (MontageData == nullptr || MontageData->Montage == nullptr || HasEnoughActionCost(MontageData) == false)
+	{
+		return nullptr;
+	}
+
+	return MontageData;
+}
+
+bool AETCharacter::CanPlayAction(const FGameplayTag& InActionTag) const
+{
+	const FETCharacterActionData* ActionData = CachedActionDataAsset ? CachedActionDataAsset->GetActionData(InActionTag) : nullptr;
+	if (ActionData == nullptr)
+	{
+		return true;
+	}
+
+	const bool bAllowed = ActionData->AllowedStateContainer.IsEmpty() || CharacterStateComponent->HasCurrentState(ActionData->AllowedStateContainer);
+	const bool bBlocked = CharacterStateComponent->HasCurrentState(ActionData->BlockedStateContainer);
+
+	return bAllowed && bBlocked == false;
+}
+
+bool AETCharacter::PlayAction(const FGameplayTag& InActionTag, const int32 InIndex, const FGameplayTag& InStateTag)
+{
+	if (CanPlayAction(InActionTag) == false)
+	{
+		return false;
+	}
+
+	return PlayAction(FindPlayableActionMontageData(InActionTag, InIndex), InStateTag);
+}
+
+bool AETCharacter::PlayAction(const FETCharacterActionMontageData* InMontageData, const FGameplayTag& InStateTag)
+{
+	if (InMontageData == nullptr || InMontageData->Montage == nullptr)
+	{
+		return false;
+	}
+
+	UAnimMontage* Montage = InMontageData->Montage;
+
+	// 재생 중이던 몽타주의 BlendingOut 은 PlayAnimMontage 안에서 바로 호출되므로 그 전에 새 행동으로 갱신
+	const uint32 CurrentActionSerial = ++ActionSerial;
+	CharacterStateComponent->ChangeState(InStateTag);
+
+	if (PlayAnimMontage(Montage) <= 0.f)
+	{
+		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
+		return false;
+	}
+
+	ConsumeActionCost(InMontageData);
+
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		FOnMontageBlendingOutStarted BlendingOutDelegate;
+		BlendingOutDelegate.BindUObject(this, &ThisClass::HandleActionMontageBlendingOut, InStateTag, CurrentActionSerial);
+		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, Montage);
+	}
+
+	return true;
+}
+
+void AETCharacter::HandleActionMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted, FGameplayTag InStateTag, uint32 InActionSerial)
+{
+	OnActionMontageBlendingOut(InStateTag, bInterrupted);
+
+	// 다른 행동이 이미 시작됐거나 (피격 등으로) 상태가 바뀌었으면 건드리지 않음
+	if (InActionSerial == ActionSerial && CharacterStateComponent->IsCurrentState(InStateTag))
+	{
+		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
+	}
 }

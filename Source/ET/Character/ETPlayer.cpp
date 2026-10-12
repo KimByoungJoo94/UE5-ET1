@@ -98,11 +98,7 @@ void AETPlayer::Tick(float DeltaTime)
 
 bool AETPlayer::CanJumpInternal_Implementation() const
 {
-	// 스킬 시전 중에는 점프 불가
-	return Super::CanJumpInternal_Implementation() &&
-		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_UsingSkill) == false &&
-		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Interacting) == false &&
-		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_UsingItem) == false;
+	return Super::CanJumpInternal_Implementation() && CanPlayAction(ETGameplayTags::Character_Action_Jump);
 }
 
 void AETPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -142,7 +138,7 @@ void AETPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AETPlayer::OnMoveActionTriggered(const FInputActionValue& InValue)
 {
-	if (CanMove() == false)
+	if (CanPlayAction(ETGameplayTags::Character_Action_Move) == false)
 	{
 		return;
 	}
@@ -195,10 +191,10 @@ void AETPlayer::OnAttackActionCompleted()
 
 void AETPlayer::OnHeavyAttackActionStarted()
 {
-	if (CanHeavyAttack() && ActionDataAsset)
+	if (CanPlayAction(ETGameplayTags::Character_Action_HeavyAttack) && CachedActionDataAsset)
 	{
-		const FETCharacterActionMontageData* HeavyAttackMontageData = ActionDataAsset->GetActionMontageData(ETGameplayTags::Character_Action_HeavyAttack, 0);
-		if (HeavyAttackMontageData && HeavyAttackMontageData->Montage && HasEnoughActionCost(*HeavyAttackMontageData))
+		const FETCharacterActionMontageData* HeavyAttackMontageData = CachedActionDataAsset->GetActionMontageData(ETGameplayTags::Character_Action_HeavyAttack, 0);
+		if (HeavyAttackMontageData && HeavyAttackMontageData->Montage && HasEnoughActionCost(HeavyAttackMontageData))
 		{
 			HeavyAttackMontage = HeavyAttackMontageData->Montage;
 			bPlayHeavyAttack = false;
@@ -206,7 +202,7 @@ void AETPlayer::OnHeavyAttackActionStarted()
 
 			if (PlayAnimMontage(HeavyAttackMontage, 1.f, TEXT("Intro")) > 0.f)
 			{
-				ConsumeActionCost(*HeavyAttackMontageData);
+				ConsumeActionCost(HeavyAttackMontageData);
 			}
 		}
 	}
@@ -235,29 +231,25 @@ void AETPlayer::OnHeavyAttackActionCompleted()
 
 void AETPlayer::OnPrimaryActionCompleted()
 {
-	if (CanInteract() == false || InteractionComponent->GetInteractionTarget() == nullptr)
+	if (CanPlayAction(ETGameplayTags::Character_Action_Interaction) == false ||
+		GetCharacterMovement()->IsFalling() ||
+		InteractionComponent->GetInteractionTarget() == nullptr)
 	{
 		return;
 	}
 
-	if (const FETCharacterActionMontageData* InteractionMontageData = FindPlayableActionMontageData(ETGameplayTags::Character_Action_Interaction, 0))
-	{
-		PlayActionMontage(*InteractionMontageData, ETGameplayTags::Character_State_Interacting, &ThisClass::OnInteractionMontageBlendingOut);
-	}
+	PlayAction(ETGameplayTags::Character_Action_Interaction, 0, ETGameplayTags::Character_State_Interacting);
 }
 
 void AETPlayer::OnUseItemActionStarted()
 {
-	if (CanUseItem() == false)
+	if (CanPlayAction(ETGameplayTags::Character_Action_UseItem) == false || GetCharacterMovement()->IsFalling())
 	{
 		return;
 	}
 
 	// 실제 아이템 사용은 몽타주의 ETAnimNotify_UseItem 시점에 처리
-	if (const FETCharacterActionMontageData* UseItemMontageData = FindPlayableActionMontageData(ETGameplayTags::Character_Action_UseItem, 0))
-	{
-		PlayActionMontage(*UseItemMontageData, ETGameplayTags::Character_State_UsingItem, &ThisClass::OnUseItemMontageBlendingOut);
-	}
+	PlayAction(ETGameplayTags::Character_Action_UseItem, 0, ETGameplayTags::Character_State_UsingItem);
 }
 
 void AETPlayer::UseItem()
@@ -268,7 +260,7 @@ void AETPlayer::UseItem()
 
 void AETPlayer::OnDodgeActionStarted()
 {
-	if (CanDodge() == false)
+	if (CanPlayAction(ETGameplayTags::Character_Action_Dodge) == false || GetCharacterMovement()->IsFalling())
 	{
 		return;
 	}
@@ -295,7 +287,7 @@ void AETPlayer::OnDodgeActionStarted()
 	ResetComboAttack();
 	ResetHeavyAttack();
 
-	if (PlayActionMontage(*DodgeMontageData, ETGameplayTags::Character_State_Dodging, &ThisClass::OnDodgeMontageBlendingOut) == false)
+	if (PlayAction(DodgeMontageData, ETGameplayTags::Character_State_Dodging) == false)
 	{
 		return;
 	}
@@ -317,7 +309,7 @@ void AETPlayer::OnDodgeActionStarted()
 
 void AETPlayer::OnParryActionStarted()
 {
-	if (CanParry() == false)
+	if (CanPlayAction(ETGameplayTags::Character_Action_Parry) == false || GetCharacterMovement()->IsFalling())
 	{
 		return;
 	}
@@ -335,7 +327,7 @@ void AETPlayer::OnParryActionStarted()
 
 	ParryMontage = ParryMontageData->Montage;
 
-	if (PlayActionMontage(*ParryMontageData, ETGameplayTags::Character_State_Parrying, &ThisClass::OnParryMontageBlendingOut) == false)
+	if (PlayAction(ParryMontageData, ETGameplayTags::Character_State_Parrying) == false)
 	{
 		ResetParry();
 	}
@@ -371,24 +363,24 @@ void AETPlayer::OnActiveSkillActionStarted(const int32 InSkillIndex)
 bool AETPlayer::TryPayActiveSkillCost(const int32 InSkillIndex)
 {
 	// 몽타주 없는 스킬용 : 몽타주 항목의 비용만 확인 후 차감
-	if (CanUseActiveSkill() == false || ActionDataAsset == nullptr)
+	if (CanPlayAction(ETGameplayTags::Character_Action_ActiveSkill) == false || GetCharacterMovement()->IsFalling() || CachedActionDataAsset == nullptr)
 	{
 		return false;
 	}
 
-	const FETCharacterActionMontageData* SkillMontageData = ActionDataAsset->GetActionMontageData(ETGameplayTags::Character_Action_ActiveSkill, InSkillIndex);
-	if (SkillMontageData == nullptr || HasEnoughActionCost(*SkillMontageData) == false)
+	const FETCharacterActionMontageData* SkillMontageData = CachedActionDataAsset->GetActionMontageData(ETGameplayTags::Character_Action_ActiveSkill, InSkillIndex);
+	if (SkillMontageData == nullptr || HasEnoughActionCost(SkillMontageData) == false)
 	{
 		return false;
 	}
 
-	ConsumeActionCost(*SkillMontageData);
+	ConsumeActionCost(SkillMontageData);
 	return true;
 }
 
 void AETPlayer::PlayActiveSkill(const int32 InSkillIndex)
 {
-	if (CanUseActiveSkill() == false)
+	if (CanPlayAction(ETGameplayTags::Character_Action_ActiveSkill) == false || GetCharacterMovement()->IsFalling())
 	{
 		return;
 	}
@@ -404,7 +396,7 @@ void AETPlayer::PlayActiveSkill(const int32 InSkillIndex)
 	ResetComboAttack();
 	ResetHeavyAttack();
 
-	PlayActionMontage(*SkillMontageData, ETGameplayTags::Character_State_UsingSkill, &ThisClass::OnActiveSkillMontageBlendingOut);
+	PlayAction(SkillMontageData, ETGameplayTags::Character_State_UsingSkill);
 }
 
 void AETPlayer::AdvanceComboAttack()
@@ -511,6 +503,11 @@ float AETPlayer::GetAttackDamage() const
 	return Super::GetAttackDamage() * ChargeAttackComponent->GetDamageMultiplier();
 }
 
+AETCharacter* AETPlayer::GetLockOnTarget() const
+{
+	return LockOnComponent->GetLockOnTarget();
+}
+
 bool AETPlayer::TryAvoidDamage(AActor* InDamageCauser)
 {
 	if (Super::TryAvoidDamage(InDamageCauser))
@@ -535,7 +532,7 @@ bool AETPlayer::TryAvoidDamage(AActor* InDamageCauser)
 
 void AETPlayer::HitReact(AActor* InDamageCauser)
 {
-	if (IsValid(InDamageCauser) == false || ActionDataAsset == nullptr)
+	if (IsValid(InDamageCauser) == false || CachedActionDataAsset == nullptr)
 	{
 		return;
 	}
@@ -565,10 +562,10 @@ void AETPlayer::HitReact(AActor* InDamageCauser)
 		HitMontageIndex = 3;
 	}
 
-	UAnimMontage* HitMontage = ActionDataAsset->GetAnimMontage(ETGameplayTags::Character_Action_Hit, HitMontageIndex);
+	UAnimMontage* HitMontage = CachedActionDataAsset->GetAnimMontage(ETGameplayTags::Character_Action_Hit, HitMontageIndex);
 	if (HitMontage == nullptr)
 	{
-		HitMontage = ActionDataAsset->GetAnimMontage(ETGameplayTags::Character_Action_Hit, 0);
+		HitMontage = CachedActionDataAsset->GetAnimMontage(ETGameplayTags::Character_Action_Hit, 0);
 	}
 
 	if (HitMontage == nullptr)
@@ -620,166 +617,18 @@ const FText& AETPlayer::GetPrimaryActionKeyText() const
 	return Keys[0].GetDisplayName();
 }
 
-bool AETPlayer::CanMove()
-{
-	FGameplayTagContainer CheckContainer;
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Idle);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Attacking);
-
-	return CharacterStateComponent->HasCurrentState(CheckContainer);
-}
-
-bool AETPlayer::CanPlayComboAttack()
-{
-	FGameplayTagContainer CheckContainer;
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Death);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_HeavyAttacking);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Interacting);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingItem);
-
-	return CharacterStateComponent->HasCurrentState(CheckContainer) == false;
-}
-
-bool AETPlayer::CanDodge()
-{
-	FGameplayTagContainer CheckContainer;
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Death);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Dodging);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Interacting);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingItem);
-
-	return CharacterStateComponent->HasCurrentState(CheckContainer) == false &&
-		GetCharacterMovement()->IsFalling() == false;
-}
-
-bool AETPlayer::CanParry()
-{
-	FGameplayTagContainer CheckContainer;
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Death);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Dodging);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Parrying);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Interacting);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingItem);
-
-	return CharacterStateComponent->HasCurrentState(CheckContainer) == false &&
-		GetCharacterMovement()->IsFalling() == false;
-}
-
-bool AETPlayer::CanUseActiveSkill()
-{
-	FGameplayTagContainer CheckContainer;
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Death);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Dodging);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Parrying);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Interacting);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingItem);
-
-	return CharacterStateComponent->HasCurrentState(CheckContainer) == false &&
-		GetCharacterMovement()->IsFalling() == false;
-}
-
-bool AETPlayer::CanInteract()
-{
-	return CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Idle) &&
-		GetCharacterMovement()->IsFalling() == false;
-}
-
-bool AETPlayer::CanUseItem()
-{
-	return CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Idle) &&
-		GetCharacterMovement()->IsFalling() == false;
-}
-
-bool AETPlayer::CanHeavyAttack()
-{
-	FGameplayTagContainer CheckContainer;
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Death);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Attacking);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingSkill);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_Interacting);
-	CheckContainer.AddTag(ETGameplayTags::Character_State_UsingItem);
-
-	return CharacterStateComponent->HasCurrentState(CheckContainer) == false;
-}
-
-bool AETPlayer::HasEnoughActionCost(const FETCharacterActionMontageData& InMontageData) const
-{
-	if (InMontageData.CostValue <= 0.f)
-	{
-		return true;
-	}
-
-	return GameStatComponent->HasEnoughCurrentValue(InMontageData.CostStatType, InMontageData.CostValue);
-}
-
-void AETPlayer::ConsumeActionCost(const FETCharacterActionMontageData& InMontageData)
-{
-	if (InMontageData.CostValue > 0.f)
-	{
-		GameStatComponent->AddDepletedValue(InMontageData.CostStatType, -InMontageData.CostValue);
-	}
-}
-
-const FETCharacterActionMontageData* AETPlayer::FindPlayableActionMontageData(const FGameplayTag& InActionTag, const int32 InIndex) const
-{
-	if (ActionDataAsset == nullptr)
-	{
-		return nullptr;
-	}
-
-	const FETCharacterActionMontageData* MontageData = ActionDataAsset->GetActionMontageData(InActionTag, InIndex);
-	if (MontageData == nullptr || MontageData->Montage == nullptr || HasEnoughActionCost(*MontageData) == false)
-	{
-		return nullptr;
-	}
-
-	return MontageData;
-}
-
-bool AETPlayer::PlayActionMontage(const FETCharacterActionMontageData& InMontageData, const FGameplayTag& InStateTag, void (ThisClass::*InBlendingOutFunc)(UAnimMontage*, bool))
-{
-	UAnimMontage* Montage = InMontageData.Montage;
-
-	CharacterStateComponent->ChangeState(InStateTag);
-
-	if (PlayAnimMontage(Montage) <= 0.f)
-	{
-		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
-		return false;
-	}
-
-	ConsumeActionCost(InMontageData);
-
-	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
-	{
-		FOnMontageBlendingOutStarted BlendingOutDelegate;
-		BlendingOutDelegate.BindUObject(this, InBlendingOutFunc);
-		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, Montage);
-	}
-
-	return true;
-}
-
 void AETPlayer::PlayComboAttack()
 {	
-	if (CanPlayComboAttack() && ActionDataAsset)
-	{
-		FGameplayTag AttackGameplayTag;
-		if (UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement())
-		{
-			AttackGameplayTag = CharacterMovementComponent->IsFalling() ? 
-				ETGameplayTags::Character_Action_JumpAttack : ETGameplayTags::Character_Action_ComboAttack;
-		}
+	const FGameplayTag AttackGameplayTag = GetCharacterMovement()->IsFalling() ?
+		ETGameplayTags::Character_Action_JumpAttack : ETGameplayTags::Character_Action_ComboAttack;
 
+	if (CanPlayAction(AttackGameplayTag) && CachedActionDataAsset)
+	{
 		const int32 CurrentIndex = ComboAttackIndex;
 
-		const TArray<FETCharacterActionMontageData>& AttackMontageDataArray = ActionDataAsset->GetActionMontageDataArray(AttackGameplayTag);
+		const TArray<FETCharacterActionMontageData>& AttackMontageDataArray = CachedActionDataAsset->GetActionMontageDataArray(AttackGameplayTag);
 		if (AttackMontageDataArray.IsValidIndex(CurrentIndex) &&
-			HasEnoughActionCost(AttackMontageDataArray[CurrentIndex]))
+			HasEnoughActionCost(&AttackMontageDataArray[CurrentIndex]))
 		{
 			ComboAttackIndex = (ComboAttackIndex + 1) % AttackMontageDataArray.Num();
 
@@ -787,7 +636,7 @@ void AETPlayer::PlayComboAttack()
 
 			if (PlayAnimMontage(AttackMontageDataArray[CurrentIndex].Montage) > 0.f)
 			{
-				ConsumeActionCost(AttackMontageDataArray[CurrentIndex]);
+				ConsumeActionCost(&AttackMontageDataArray[CurrentIndex]);
 			}
 		}
 	}
@@ -803,14 +652,6 @@ void AETPlayer::OnChargeCountChanged(const int32 InCurrentChargeCount, const int
 	// TODO : 충전 파티클 출력
 }
 
-void AETPlayer::OnDodgeMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted)
-{
-	if (bInterrupted == false)
-	{
-		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
-	}
-}
-
 void AETPlayer::PlayPerfectDodge()
 {
 	AfterImageComponent->SpawnAfterImage();
@@ -821,36 +662,14 @@ void AETPlayer::PlayPerfectDodge()
 	}
 }
 
-void AETPlayer::OnParryMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted)
+void AETPlayer::OnActionMontageBlendingOut(const FGameplayTag& InStateTag, const bool bInterrupted)
 {
-	ResetParry();
+	Super::OnActionMontageBlendingOut(InStateTag, bInterrupted);
 
-	if (bInterrupted == false)
+	// 패리는 끊긴 경우에도 유지 상태(마나 소모) 정리
+	if (InStateTag == ETGameplayTags::Character_State_Parrying)
 	{
-		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
+		ResetParry();
 	}
 }
 
-void AETPlayer::OnActiveSkillMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted)
-{
-	if (bInterrupted == false)
-	{
-		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
-	}
-}
-
-void AETPlayer::OnInteractionMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted)
-{
-	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Interacting))
-	{
-		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
-	}
-}
-
-void AETPlayer::OnUseItemMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted)
-{
-	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_UsingItem))
-	{
-		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
-	}
-}

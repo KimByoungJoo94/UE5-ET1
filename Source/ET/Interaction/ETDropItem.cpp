@@ -3,7 +3,6 @@
 #include "Components/ETGameStatComponent.h"
 #include "DataAsset/ETDropItemTableRowData.h"
 #include "Subsystem/ETGameDataSubsystem.h"
-#include "Kismet/GameplayStatics.h"
 
 AETDropItem::AETDropItem()
 {
@@ -19,8 +18,7 @@ void AETDropItem::OnInteraction(AActor* InInteractor)
 		return;
 	}
 
-	const UETGameDataSubsystem* GameDataSubsystem = UGameInstance::GetSubsystem<UETGameDataSubsystem>(UGameplayStatics::GetGameInstance(this));
-	const FETDropItemTableRowData* DropItemRowData = GameDataSubsystem ? GameDataSubsystem->GetRow<FETDropItemTableRowData>(DropItemRowName) : nullptr;
+	const FETDropItemTableRowData* DropItemRowData = UETGameDataSubsystem::GetRow<FETDropItemTableRowData>(this, DropItemRowName);
 	if (DropItemRowData == nullptr)
 	{
 		return;

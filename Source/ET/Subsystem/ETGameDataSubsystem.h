@@ -74,6 +74,9 @@ public:
 	UFUNCTION()
 	static TArray<FName> GetCharacterRowNameOptions();
 
+	UFUNCTION()
+	static TArray<FName> GetCameraShakeRowNameOptions();
+
 private:
 	static TArray<FName> GetRowNameOptions(const UScriptStruct* InRowStruct);
 

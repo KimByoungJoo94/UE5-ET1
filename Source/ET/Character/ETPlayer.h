@@ -11,9 +11,11 @@ class UETInteractionComponent;
 class UETChargeAttackComponent;
 class UETAfterImageComponent;
 class UETLockOnComponent;
+class UETDamageTextComponent;
 class UInputMappingContext;
 class UInputAction;
 class UAnimMontage;
+class UParticleSystem;
 struct FInputActionValue;
 struct FGameplayTag;
 
@@ -84,6 +86,30 @@ public:
 	float PerfectDodgeSlowDuration = 0.5f;
 };
 
+USTRUCT()
+struct FETPlayerParryData
+{
+	GENERATED_BODY()
+
+public:
+	// 패리로 막은 충돌 지점에 출력
+	UPROPERTY(EditDefaultsOnly)
+	TSoftObjectPtr<UParticleSystem> ParryParticle;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSoftObjectPtr<UParticleSystem> PerfectParryParticle;
+
+	// 패리 시 플레이어와 공격자를 잠깐 느리게
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0"))
+	float ParryHitStopDuration = 0.05f;
+
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0"))
+	float PerfectParryHitStopDuration = 0.12f;
+
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float HitStopTimeDilation = 0.05f;
+};
+
 
 UCLASS()
 class ET_API AETPlayer : public AETCharacter
@@ -130,7 +156,9 @@ public:
 	void PauseParry();
 	void ReleaseParry();
 	void ResetParry();
+	void SetPerfectTiming(const bool bInPerfectTiming);
 
+	virtual float AttackTarget(AActor* InTarget, const FHitResult& InHitResult) override;
 	virtual float GetAttackDamage() const override;
 	virtual AActor* GetAttackTarget() const override;
 
@@ -141,7 +169,7 @@ public:
 	const FText& GetPrimaryActionKeyText() const;
 
 protected:
-	virtual bool TryAvoidDamage(AActor* InDamageCauser) override;
+	virtual bool TryAvoidDamage(const FDamageEvent& InDamageEvent, AActor* InDamageCauser) override;
 	virtual void HitReact(AActor* InDamageCauser) override;
 	virtual void Die() override;
 
@@ -149,6 +177,9 @@ protected:
 
 	void PlayComboAttack();
 	void PlayPerfectDodge();
+	void PlayParryParticle(const FDamageEvent& InDamageEvent, const bool bInPerfect);
+	void PlayCameraShake(const FName InCameraShakeRowName);
+	void GainPerfectMomentum();
 
 	void OnChargeCountChanged(const int32 InCurrentChargeCount, const int32 InMaxChargeCount);
 	
@@ -171,12 +202,18 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "ET|Component")
 	TObjectPtr<UETLockOnComponent> LockOnComponent;
 
+	UPROPERTY(VisibleAnywhere, Category = "ET|Component")
+	TObjectPtr<UETDamageTextComponent> DamageTextComponent;
+
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ET|Input")
 	FETPlayerInputData PlayerInputData;
 
 	UPROPERTY(EditDefaultsOnly, Category = "ET|Dodge")
 	FETPlayerDodgeData PlayerDodgeData;
+
+	UPROPERTY(EditDefaultsOnly, Category = "ET|Parry")
+	FETPlayerParryData PlayerParryData;
 
 protected:
 	bool bComboAttackReserved = false;	
@@ -192,6 +229,9 @@ protected:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UAnimMontage> ParryMontage;
+
+	// 회피, 패리 몽타주의 ETAnimNotifyState_PerfectTiming 구간 (이 구간에 공격이 닿으면 퍼펙트)
+	bool bPerfectTiming = false;
 
 private:
 	FDelegateHandle OnChargeCountChangedHandle;

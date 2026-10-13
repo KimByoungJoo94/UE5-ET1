@@ -30,6 +30,7 @@ public:
 protected:
 	void TraceWeaponCollision();
 	void SweepWeaponCollision(AETCharacter* OwnerCharacter, const FVector& StartLocation, const FVector& EndLocation);
+	void SpawnParticle(const TSoftObjectPtr<UParticleSystem>& InParticle, const FVector& InLocation, const float InScale);
 
 private:
 	// 데이터 테이블 행 (테이블 에셋이 유지되는 동안 유효)

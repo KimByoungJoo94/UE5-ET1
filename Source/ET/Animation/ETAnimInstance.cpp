@@ -2,11 +2,10 @@
 #include "Character/ETCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Common/ETNames.h"
 
 namespace
 {
-	const FName FullBodyCurveName = TEXT("FullBody");
-
 	// Lean 세기 (클수록 약하게)
 	constexpr float LeanIntensityScaling = 7.f;
 	constexpr float YawDeltaInterpSpeed = 6.f;
@@ -58,7 +57,7 @@ void UETAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	}
 	RotationLastTick = ActorRotation;
 
-	bIsFullbody = GetCurveValue(FullBodyCurveName) > 0.f;
+	bIsFullbody = GetCurveValue(ETNames::AnimCurve::FullBody) > 0.f;
 
 	Direction = FMath::IsNearlyZero(Speed, UE_KINDA_SMALL_NUMBER) == false ? UKismetMathLibrary::NormalizedDeltaRotator(Velocity.Rotation(), ActorRotation).Yaw : 0.f;
 	bStrafe = CharacterMovementComponent->bOrientRotationToMovement == false;

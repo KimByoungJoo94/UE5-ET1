@@ -41,6 +41,5 @@ private:
 	TArray<TObjectPtr<UMaterialInterface>> OriginMaterialArray;
 
 	bool bFrozen = false;
-	float OriginCustomTimeDilation = 1.f;
 	FTimerHandle UnfreezeTimerHandle;
 };

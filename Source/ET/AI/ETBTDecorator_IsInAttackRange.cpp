@@ -3,6 +3,7 @@
 #include "Components/ETGameStatComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
+#include "Common/ETNames.h"
 
 UETBTDecorator_IsInAttackRange::UETBTDecorator_IsInAttackRange()
 {
@@ -12,7 +13,7 @@ UETBTDecorator_IsInAttackRange::UETBTDecorator_IsInAttackRange()
 	// 공격 중에는 사거리를 벗어나도 끊지 않고, 추적 중 사거리에 들어오면 공격으로 전환
 	FlowAbortMode = EBTFlowAbortMode::LowerPriority;
 
-	TargetActorKey.SelectedKeyName = TEXT("TargetActor");
+	TargetActorKey.SelectedKeyName = ETNames::BlackboardKey::TargetActor;
 	TargetActorKey.AddObjectFilter(this, GET_MEMBER_NAME_CHECKED(ThisClass, TargetActorKey), AActor::StaticClass());
 }
 

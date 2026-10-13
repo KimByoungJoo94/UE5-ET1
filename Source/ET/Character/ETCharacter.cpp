@@ -14,6 +14,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
 
 AETCharacter::AETCharacter()
 {
@@ -45,7 +46,7 @@ void AETCharacter::PreInitializeComponents()
 
 float AETCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (TryAvoidDamage(DamageCauser))
+	if (TryAvoidDamage(DamageEvent, DamageCauser))
 	{
 		return 0.f;
 	}
@@ -71,14 +72,42 @@ float AETCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 	return ActualDamage;
 }
 
-bool AETCharacter::TryAvoidDamage(AActor* InDamageCauser)
+bool AETCharacter::TryAvoidDamage(const FDamageEvent& InDamageEvent, AActor* InDamageCauser)
 {
 	return CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death);
 }
 
-void AETCharacter::AttackTarget(AActor* InTarget, const FHitResult& InHitResult)
+void AETCharacter::Die()
 {
-	UGameplayStatics::ApplyDamage(InTarget, GetAttackDamage(), GetController(), this, UDamageType::StaticClass());
+	AttackCollisionComponent->EndWeaponCollision();
+
+	GetCharacterMovement()->StopMovementImmediately();
+	GetCharacterMovement()->DisableMovement();
+
+	// 사망 후에는 맞지도 길을 막지도 않도록
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// 상태 컴포넌트가 Death 에서 다른 상태로 바뀌지 않으므로 몽타주가 끝나도 Death 유지
+	if (PlayAction(ETGameplayTags::Character_Action_Death, INDEX_NONE, ETGameplayTags::Character_State_Death) == false)
+	{
+		return;
+	}
+
+	// 에셋 설정과 상관없이 마지막 프레임(쓰러진 자세)에서 정지
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		if (FAnimMontageInstance* MontageInstance = AnimInstance->GetActiveMontageInstance())
+		{
+			MontageInstance->bEnableAutoBlendOut = false;
+		}
+	}
+}
+
+float AETCharacter::AttackTarget(AActor* InTarget, const FHitResult& InHitResult)
+{
+	// 대상의 TakeDamage 반환값 (포인트 데미지로 충돌 정보를 대상에게 전달)
+	const FVector HitFromDirection = (InTarget->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+	return UGameplayStatics::ApplyPointDamage(InTarget, GetAttackDamage(), HitFromDirection, InHitResult, GetController(), this, UDamageType::StaticClass());
 }
 
 float AETCharacter::GetAttackDamage() const
@@ -245,4 +274,29 @@ void AETCharacter::HandleActionMontageBlendingOut(UAnimMontage* InMontage, bool 
 	}
 
 	InOnActionEnded.ExecuteIfBound(bInterrupted);
+}
+
+void AETCharacter::StartHitStop(const float InDuration, const float InTimeDilation)
+{
+	// 시간 정지가 우선
+	if (InDuration <= 0.f || TimeFreezeComponent->IsFrozen())
+	{
+		return;
+	}
+
+	CustomTimeDilation = InTimeDilation;
+
+	// 액터 CustomTimeDilation 영향을 받지 않는 월드 타이머로 복구 (연속 호출 시 마지막 기준으로 연장)
+	GetWorld()->GetTimerManager().SetTimer(HitStopTimerHandle, this, &ThisClass::EndHitStop, InDuration, false);
+}
+
+void AETCharacter::EndHitStop()
+{
+	// 히트 스톱 중 시간 정지가 걸렸으면 시간 정지가 복구
+	if (TimeFreezeComponent->IsFrozen())
+	{
+		return;
+	}
+
+	CustomTimeDilation = 1.f;
 }

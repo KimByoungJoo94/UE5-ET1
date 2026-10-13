@@ -7,6 +7,8 @@
 #include "DataAsset/ETDropItemTableRowData.h"
 #include "DataAsset/ETSkillTableRowData.h"
 #include "DataAsset/ETCharacterTableRowData.h"
+#include "DataAsset/ETCameraShakeTableRowData.h"
+#include "Common/ETNames.h"
 
 void UETGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -68,6 +70,11 @@ TArray<FName> UETGameDataSubsystem::GetCharacterRowNameOptions()
 	return GetRowNameOptions(FETCharacterTableRowData::StaticStruct());
 }
 
+TArray<FName> UETGameDataSubsystem::GetCameraShakeRowNameOptions()
+{
+	return GetRowNameOptions(FETCameraShakeTableRowData::StaticStruct());
+}
+
 TArray<FName> UETGameDataSubsystem::GetRowNameOptions(const UScriptStruct* InRowStruct)
 {
 	// 에디터에는 서브시스템 인스턴스가 없으므로 폴더의 테이블을 직접 로드
@@ -87,20 +94,17 @@ TArray<FName> UETGameDataSubsystem::GetRowNameOptions(const UScriptStruct* InRow
 
 void UETGameDataSubsystem::LoadDataTablesInPath(OUT TArray<UDataTable*>& OutDataTableArray)
 {
-	// 이 폴더에 있는 DataTable 은 별도 등록 없이 RowStruct 별로 자동 등록
-	const FName DataTablePath(TEXT("/Game/ET/DataTable"));
-
 	OutDataTableArray.Reset();
 
 	IAssetRegistry& AssetRegistry = FAssetRegistryModule::GetRegistry();
 
 #if WITH_EDITOR
 	// 에디터 시작 직후에는 백그라운드 스캔이 끝나지 않았을 수 있으므로 해당 폴더만 동기 스캔
-	AssetRegistry.ScanPathsSynchronous({ DataTablePath.ToString() });
+	AssetRegistry.ScanPathsSynchronous({ ETNames::Path::DataTable.ToString() });
 #endif
 
 	FARFilter Filter;
-	Filter.PackagePaths.Add(DataTablePath);
+	Filter.PackagePaths.Add(ETNames::Path::DataTable);
 	Filter.bRecursivePaths = true;
 	Filter.ClassPaths.Add(UDataTable::StaticClass()->GetClassPathName());
 	Filter.bRecursiveClasses = true;

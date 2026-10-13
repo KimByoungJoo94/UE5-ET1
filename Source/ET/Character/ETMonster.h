@@ -18,6 +18,7 @@ public:
 protected:
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
+	virtual void Die() override;
 
 public:
 	virtual AActor* GetAttackTarget() const override;

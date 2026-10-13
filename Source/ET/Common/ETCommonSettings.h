@@ -9,6 +9,7 @@ class UETInteractionWidget;
 class UETCheckpointWidget;
 class UETStatWidget;
 class UETUserWidget;
+class UETDamageTextWidget;
 class UMaterialInterface;
 
 USTRUCT()
@@ -31,6 +32,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSoftClassPtr<UETUserWidget> LockOnWidgetClass;
+
+	UPROPERTY(EditAnywhere)
+	TSoftClassPtr<UETDamageTextWidget> DamageTextWidgetClass;
 };
 
 USTRUCT()

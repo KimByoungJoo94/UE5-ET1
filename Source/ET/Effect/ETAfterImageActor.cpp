@@ -1,11 +1,7 @@
 ﻿#include "Effect/ETAfterImageActor.h"
 #include "Components/PoseableMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
-
-namespace
-{
-	const FName OpacityParameterName(TEXT("Opacity"));
-}
+#include "Common/ETNames.h"
 
 AETAfterImageActor::AETAfterImageActor()
 {
@@ -26,7 +22,7 @@ void AETAfterImageActor::Tick(float DeltaTime)
 	const float Opacity = StartOpacity * (1.f - FMath::Clamp(ElapsedTime / LifeTime, 0.f, 1.f));
 	for (UMaterialInstanceDynamic* MaterialInstance : MaterialInstanceArray)
 	{
-		MaterialInstance->SetScalarParameterValue(OpacityParameterName, Opacity);
+		MaterialInstance->SetScalarParameterValue(ETNames::MaterialParameter::Opacity, Opacity);
 	}
 
 	if (ElapsedTime >= LifeTime)
@@ -54,7 +50,7 @@ void AETAfterImageActor::InitAfterImage(USkeletalMeshComponent* InSourceMeshComp
 	for (int32 Index = 0; Index < PoseableMeshComponent->GetNumMaterials(); ++Index)
 	{
 		UMaterialInstanceDynamic* MaterialInstance = UMaterialInstanceDynamic::Create(InMaterial, this);
-		MaterialInstance->SetScalarParameterValue(OpacityParameterName, StartOpacity);
+		MaterialInstance->SetScalarParameterValue(ETNames::MaterialParameter::Opacity, StartOpacity);
 
 		PoseableMeshComponent->SetMaterial(Index, MaterialInstance);
 		MaterialInstanceArray.Add(MaterialInstance);

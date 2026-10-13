@@ -3,6 +3,7 @@
 #include "Components/ETCharacterStateComponent.h"
 #include "Components/ETGameStatComponent.h"
 #include "Common/ETGameplayTags.h"
+#include "Common/ETNames.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
 #include "Kismet/GameplayStatics.h"
@@ -13,7 +14,7 @@ UETBTService_FindTarget::UETBTService_FindTarget()
 	Interval = 0.3f;
 	RandomDeviation = 0.05f;
 
-	TargetActorKey.SelectedKeyName = TEXT("TargetActor");
+	TargetActorKey.SelectedKeyName = ETNames::BlackboardKey::TargetActor;
 	TargetActorKey.AddObjectFilter(this, GET_MEMBER_NAME_CHECKED(ThisClass, TargetActorKey), AActor::StaticClass());
 }
 

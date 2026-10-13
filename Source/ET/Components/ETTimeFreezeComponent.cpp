@@ -55,7 +55,6 @@ void UETTimeFreezeComponent::Freeze(const float InDuration)
 
 	if (bFrozen == false)
 	{
-		OriginCustomTimeDilation = OwnerActor->CustomTimeDilation;
 		OwnerActor->CustomTimeDilation = 0.f;
 		bFrozen = true;
 
@@ -83,7 +82,8 @@ void UETTimeFreezeComponent::Unfreeze()
 
 	if (AActor* OwnerActor = GetOwner())
 	{
-		OwnerActor->CustomTimeDilation = OriginCustomTimeDilation;
+		// 히트 스톱과 겹쳐도 항상 정상 속도로 복구
+		OwnerActor->CustomTimeDilation = 1.f;
 	}
 
 	RestoreOriginMaterials();

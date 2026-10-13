@@ -3,9 +3,11 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/RootMotionSource.h"
 #include "Camera/CameraComponent.h"
+#include "Camera/CameraShakeBase.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "DataAsset/ETCharacterActionDataAsset.h"
+#include "DataAsset/ETCameraShakeTableRowData.h"
 #include "Components/ETCharacterStateComponent.h"
 #include "Components/ETGameStatComponent.h"
 #include "Components/ETAttackCollisionComponent.h"
@@ -13,12 +15,13 @@
 #include "Components/ETInteractionComponent.h"
 #include "Components/ETAfterImageComponent.h"
 #include "Components/ETLockOnComponent.h"
+#include "Components/ETDamageTextComponent.h"
 #include "Subsystem/ETTimeDilationSubsystem.h"
-
-namespace
-{
-	const FName DodgeRootMotionSourceName(TEXT("ETDodge"));
-}
+#include "Subsystem/ETGameDataSubsystem.h"
+#include "Common/ETNames.h"
+#include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystem.h"
+#include "Engine/DamageEvents.h"
 
 AETPlayer::AETPlayer()
 {
@@ -50,6 +53,7 @@ AETPlayer::AETPlayer()
 	ChargeAttackComponent = CreateDefaultSubobject<UETChargeAttackComponent>(TEXT("ChargeAttackComponent"));
 	AfterImageComponent = CreateDefaultSubobject<UETAfterImageComponent>(TEXT("AfterImageComponent"));
 	LockOnComponent = CreateDefaultSubobject<UETLockOnComponent>(TEXT("LockOnComponent"));
+	DamageTextComponent = CreateDefaultSubobject<UETDamageTextComponent>(TEXT("DamageTextComponent"));
 }
 
 void AETPlayer::BeginPlay()
@@ -295,16 +299,13 @@ void AETPlayer::OnDodgeActionStarted()
 	const FVector DodgeDirection = DodgeMontageIndex == 0 ? GetActorForwardVector() : -GetActorForwardVector();
 
 	TSharedPtr<FRootMotionSource_ConstantForce> DodgeForce = MakeShared<FRootMotionSource_ConstantForce>();
-	DodgeForce->InstanceName = DodgeRootMotionSourceName;
+	DodgeForce->InstanceName = ETNames::RootMotionSource::Dodge;
 	DodgeForce->AccumulateMode = ERootMotionAccumulateMode::Override;
 	DodgeForce->Force = DodgeDirection * (PlayerDodgeData.DodgeDistance / PlayerDodgeData.DodgeDuration);
 	DodgeForce->Duration = PlayerDodgeData.DodgeDuration;
 	DodgeForce->FinishVelocityParams.Mode = ERootMotionFinishVelocityMode::SetVelocity;
 	DodgeForce->FinishVelocityParams.SetVelocity = FVector::ZeroVector;
 	GetCharacterMovement()->ApplyRootMotionSource(DodgeForce);
-
-	// TODO : 적 공격의 회피 가능 구간에서만 호출
-	PlayPerfectDodge();
 }
 
 void AETPlayer::OnParryActionStarted()
@@ -498,6 +499,28 @@ void AETPlayer::ResetParry()
 	ParryMontage = nullptr;
 }
 
+void AETPlayer::SetPerfectTiming(const bool bInPerfectTiming)
+{
+	bPerfectTiming = bInPerfectTiming;
+}
+
+void AETPlayer::GainPerfectMomentum()
+{
+	GameStatComponent->AddDepletedValue(EETGameStatType::Momentum, GameStatComponent->GetGameStat(EETGameStatType::MomentumGain).GetCurrentValue());
+}
+
+float AETPlayer::AttackTarget(AActor* InTarget, const FHitResult& InHitResult)
+{
+	const float ActualDamage = Super::AttackTarget(InTarget, InHitResult);
+	if (ActualDamage > 0.f)
+	{
+		DamageTextComponent->ShowDamageText(InHitResult.ImpactPoint, ActualDamage);
+		PlayCameraShake(ETNames::RowName::CameraShakeHit);
+	}
+
+	return ActualDamage;
+}
+
 float AETPlayer::GetAttackDamage() const
 {
 	return Super::GetAttackDamage() * ChargeAttackComponent->GetDamageMultiplier();
@@ -509,22 +532,43 @@ AActor* AETPlayer::GetAttackTarget() const
 	return LockOnComponent->GetLockOnTarget();
 }
 
-bool AETPlayer::TryAvoidDamage(AActor* InDamageCauser)
+bool AETPlayer::TryAvoidDamage(const FDamageEvent& InDamageEvent, AActor* InDamageCauser)
 {
-	if (Super::TryAvoidDamage(InDamageCauser))
+	if (Super::TryAvoidDamage(InDamageEvent, InDamageCauser))
 	{
 		return true;
 	}
 
 	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Dodging))
 	{
-		// TODO : 퍼펙트 회피 구간이면 PlayPerfectDodge + 기세 획득
+		// 한 번의 회피에서 여러 공격이 닿아도 퍼펙트는 1회만
+		if (bPerfectTiming)
+		{
+			bPerfectTiming = false;
+			PlayPerfectDodge();
+			GainPerfectMomentum();
+		}
 		return true;
 	}
 
 	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Parrying))
 	{
-		// TODO : 퍼펙트 패리 구간이면 퍼펙트 패리 + 기세 획득
+		const bool bPerfect = bPerfectTiming;
+		if (bPerfect)
+		{
+			bPerfectTiming = false;
+			GainPerfectMomentum();
+		}
+
+		PlayParryParticle(InDamageEvent, bPerfect);
+		PlayCameraShake(bPerfect ? ETNames::RowName::CameraShakePerfectParry : ETNames::RowName::CameraShakeParry);
+
+		const float HitStopDuration = bPerfect ? PlayerParryData.PerfectParryHitStopDuration : PlayerParryData.ParryHitStopDuration;
+		StartHitStop(HitStopDuration, PlayerParryData.HitStopTimeDilation);
+		if (AETCharacter* AttackerCharacter = Cast<AETCharacter>(InDamageCauser))
+		{
+			AttackerCharacter->StartHitStop(HitStopDuration, PlayerParryData.HitStopTimeDilation);
+		}
 		return true;
 	}
 
@@ -574,7 +618,7 @@ void AETPlayer::HitReact(AActor* InDamageCauser)
 		return;
 	}
 
-	GetCharacterMovement()->RemoveRootMotionSource(DodgeRootMotionSourceName);
+	GetCharacterMovement()->RemoveRootMotionSource(ETNames::RootMotionSource::Dodge);
 	AttackCollisionComponent->EndWeaponCollision();
 	ResetComboAttack();
 	ResetHeavyAttack();
@@ -584,7 +628,14 @@ void AETPlayer::HitReact(AActor* InDamageCauser)
 
 void AETPlayer::Die()
 {
-	// TODO
+	GetCharacterMovement()->RemoveRootMotionSource(ETNames::RootMotionSource::Dodge);
+	ResetComboAttack();
+	ResetHeavyAttack();
+	ResetParry();
+	bPerfectTiming = false;
+	LockOnComponent->EndLockOn();
+
+	Super::Die();
 }
 
 const FText& AETPlayer::GetPrimaryActionKeyText() const
@@ -650,7 +701,41 @@ void AETPlayer::OnChargeCountChanged(const int32 InCurrentChargeCount, const int
 		return;
 	}
 
-	// TODO : 충전 파티클 출력
+	// 충전 단계가 오를 때마다 범위 공격 (판정, 파티클은 범위 공격 테이블 행 기준)
+	AttackCollisionComponent->StartRadialAttackCollision(ETNames::RowName::RadialAttackCharge);
+}
+
+void AETPlayer::PlayCameraShake(const FName InCameraShakeRowName)
+{
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	const FETCameraShakeTableRowData* RowData = UETGameDataSubsystem::GetRow<FETCameraShakeTableRowData>(this, InCameraShakeRowName);
+	if (PlayerController == nullptr || RowData == nullptr || RowData->Scale <= 0.f)
+	{
+		return;
+	}
+
+	if (const TSubclassOf<UCameraShakeBase> CameraShakeClass = RowData->CameraShakeClass.LoadSynchronous())
+	{
+		PlayerController->ClientStartCameraShake(CameraShakeClass, RowData->Scale);
+	}
+}
+
+void AETPlayer::PlayParryParticle(const FDamageEvent& InDamageEvent, const bool bInPerfect)
+{
+	UParticleSystem* ParryParticle = bInPerfect ? PlayerParryData.PerfectParryParticle.LoadSynchronous() : PlayerParryData.ParryParticle.LoadSynchronous();
+	if (ParryParticle == nullptr)
+	{
+		return;
+	}
+
+	// 포인트 데미지면 무기가 닿은 지점, 아니면 캐릭터 위치
+	FVector ParryLocation = GetActorLocation();
+	if (InDamageEvent.IsOfType(FPointDamageEvent::ClassID))
+	{
+		ParryLocation = static_cast<const FPointDamageEvent&>(InDamageEvent).HitInfo.ImpactPoint;
+	}
+
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ParryParticle, ParryLocation);
 }
 
 void AETPlayer::PlayPerfectDodge()

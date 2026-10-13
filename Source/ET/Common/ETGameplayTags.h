@@ -20,6 +20,7 @@ namespace ETGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_JumpAttack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_HeavyAttack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Hit);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Death);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Dodge);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Parry);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_ActiveSkill);

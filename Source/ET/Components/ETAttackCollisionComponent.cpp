@@ -2,11 +2,18 @@
 #include "Character/ETCharacter.h"
 #include "Subsystem/ETGameDataSubsystem.h"
 #include "DrawDebugHelpers.h"
+#include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "TimerManager.h"
 
 namespace
 {
     // 한 틱에 나눠서 스윕하는 최대 횟수 (히치로 이동 거리가 커져도 비용 제한)
     constexpr int32 MaxWeaponCollisionStepCount = 16;
+
+    // 루프 파티클 최대 재생 시간
+    constexpr float LoopParticleLifeTime = 5.f;
 }
 
 UETAttackCollisionComponent::UETAttackCollisionComponent()
@@ -67,12 +74,17 @@ void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowNa
         IgnoreActorArray,
         OverlapActorArray);
 
+    SpawnParticle(RowData->CenterParticle, Origin, RowData->CenterParticleScale);
+
     for (AActor* OverlapActor : OverlapActorArray)
     {
         const FVector TargetLocation = OverlapActor->GetActorLocation();
         const FHitResult HitResult(OverlapActor, nullptr, TargetLocation, (TargetLocation - Origin).GetSafeNormal());
 
-        OwnerCharacter->AttackTarget(OverlapActor, HitResult);
+        if (OwnerCharacter->AttackTarget(OverlapActor, HitResult) > 0.f)
+        {
+            SpawnParticle(RowData->HitParticle, TargetLocation, RowData->HitParticleScale);
+        }
     }
 
 #if ENABLE_DRAW_DEBUG
@@ -161,9 +173,37 @@ void UETAttackCollisionComponent::SweepWeaponCollision(AETCharacter* OwnerCharac
                 {
                     AlreadHitActorSet.Add(HitActor);
 
-                    OwnerCharacter->AttackTarget(HitActor, HitResult);
+                    if (OwnerCharacter->AttackTarget(HitActor, HitResult) > 0.f)
+                    {
+                        SpawnParticle(CachedWeaponCollisionRowData->HitParticle, HitResult.ImpactPoint, CachedWeaponCollisionRowData->HitParticleScale);
+                    }
                 }
             }
         }
+    }
+}
+
+void UETAttackCollisionComponent::SpawnParticle(const TSoftObjectPtr<UParticleSystem>& InParticle, const FVector& InLocation, const float InScale)
+{
+    UParticleSystem* Particle = InParticle.LoadSynchronous();
+    if (Particle == nullptr)
+    {
+        return;
+    }
+
+    UParticleSystemComponent* ParticleSystemComponent = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Particle, InLocation, FRotator::ZeroRotator, FVector(InScale));
+
+    // 루프 파티클은 끝나지 않아 자동 제거되지 않으므로 일정 시간 뒤 정지 (남은 입자가 사라지면 자동 제거)
+    if (ParticleSystemComponent && Particle->IsLooping())
+    {
+        FTimerHandle DeactivateTimerHandle;
+        GetWorld()->GetTimerManager().SetTimer(
+            DeactivateTimerHandle,
+            FTimerDelegate::CreateWeakLambda(ParticleSystemComponent, [ParticleSystemComponent]()
+            {
+                ParticleSystemComponent->DeactivateSystem();
+            }),
+            LoopParticleLifeTime,
+            false);
     }
 }

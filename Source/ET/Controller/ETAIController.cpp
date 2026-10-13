@@ -4,6 +4,7 @@
 #include "Subsystem/ETGameDataSubsystem.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Common/ETNames.h"
 
 void AETAIController::OnPossess(APawn* InPawn)
 {
@@ -18,6 +19,5 @@ void AETAIController::OnPossess(APawn* InPawn)
 	}
 
 	// 대상을 놓치면 돌아올 위치
-	const FName HomeLocationKeyName(TEXT("HomeLocation"));
-	GetBlackboardComponent()->SetValueAsVector(HomeLocationKeyName, InPawn->GetActorLocation());
+	GetBlackboardComponent()->SetValueAsVector(ETNames::BlackboardKey::HomeLocation, InPawn->GetActorLocation());
 }

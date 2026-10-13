@@ -2,9 +2,11 @@
 #include "Components/WidgetComponent.h"
 #include "UI/ETStatWidget.h"
 #include "Common/ETCommonSettings.h"
+#include "Common/ETNames.h"
 #include "Controller/ETAIController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "BrainComponent.h"
 
 AETMonster::AETMonster()
 {
@@ -63,6 +65,23 @@ void AETMonster::BeginPlay()
 	LockOnWidgetComponent->SetVisibility(false);
 }
 
+void AETMonster::Die()
+{
+	// BT 공격 태스크가 중단되며 몽타주를 멈추므로 사망 몽타주 재생 전에 먼저 정지
+	if (const AAIController* AIController = Cast<AAIController>(GetController()))
+	{
+		if (UBrainComponent* BrainComponent = AIController->GetBrainComponent())
+		{
+			BrainComponent->StopLogic(TEXT("Death"));
+		}
+	}
+
+	Super::Die();
+
+	HealthBarWidgetComponent->SetVisibility(false);
+	LockOnWidgetComponent->SetVisibility(false);
+}
+
 AActor* AETMonster::GetAttackTarget() const
 {
 	const AAIController* AIController = Cast<AAIController>(GetController());
@@ -72,8 +91,7 @@ AActor* AETMonster::GetAttackTarget() const
 		return nullptr;
 	}
 
-	const FName TargetActorKeyName(TEXT("TargetActor"));
-	return Cast<AActor>(BlackboardComponent->GetValueAsObject(TargetActorKeyName));
+	return Cast<AActor>(BlackboardComponent->GetValueAsObject(ETNames::BlackboardKey::TargetActor));
 }
 
 void AETMonster::OnLockOnTargeted()

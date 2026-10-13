@@ -1,6 +1,7 @@
 ﻿#include "AI/ETBTTask_Attack.h"
 #include "Character/ETCharacter.h"
 #include "Common/ETGameplayTags.h"
+#include "Common/ETNames.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
 
@@ -11,7 +12,7 @@ UETBTTask_Attack::UETBTTask_Attack()
 	// 몽타주 종료 콜백에서 BT 컴포넌트를 찾아야 하므로 AI 별 인스턴스 생성
 	bCreateNodeInstance = true;
 
-	TargetActorKey.SelectedKeyName = TEXT("TargetActor");
+	TargetActorKey.SelectedKeyName = ETNames::BlackboardKey::TargetActor;
 	TargetActorKey.AddObjectFilter(this, GET_MEMBER_NAME_CHECKED(ThisClass, TargetActorKey), AActor::StaticClass());
 
 	ActionTag = ETGameplayTags::Character_Action_ComboAttack;

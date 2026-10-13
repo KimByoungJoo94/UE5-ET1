@@ -5,6 +5,8 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "ETCollisionTableRowData.generated.h"
 
+class UParticleSystem;
+
 // 무기 소켓 사이 스윕 판정 (노티파이 스테이트 구간 동안 매 틱)
 USTRUCT()
 struct ET_API FETWeaponCollisionTableRowData : public FTableRowBase
@@ -33,8 +35,15 @@ public:
 	UPROPERTY(EditAnywhere)
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypeArray;
 
+	// 실제 데미지가 들어갔을 때 충돌 지점에 출력
 	UPROPERTY(EditAnywhere)
-	TEnumAsByte<EDrawDebugTrace::Type> DrawDebugType = EDrawDebugTrace::ForDuration;
+	TSoftObjectPtr<UParticleSystem> HitParticle;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
+	float HitParticleScale = 1.f;
+
+	UPROPERTY(EditAnywhere)
+	TEnumAsByte<EDrawDebugTrace::Type> DrawDebugType = EDrawDebugTrace::None;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
 	float DrawDebugTime = 2.f;
@@ -59,8 +68,22 @@ public:
 	UPROPERTY(EditAnywhere)
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypeArray;
 
+	// 판정할 때마다 판정 중심에 출력 (맞은 대상이 없어도)
 	UPROPERTY(EditAnywhere)
-	TEnumAsByte<EDrawDebugTrace::Type> DrawDebugType = EDrawDebugTrace::ForDuration;
+	TSoftObjectPtr<UParticleSystem> CenterParticle;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
+	float CenterParticleScale = 1.f;
+
+	// 실제 데미지가 들어갔을 때 대상 위치에 출력
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UParticleSystem> HitParticle;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
+	float HitParticleScale = 1.f;
+
+	UPROPERTY(EditAnywhere)
+	TEnumAsByte<EDrawDebugTrace::Type> DrawDebugType = EDrawDebugTrace::None;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
 	float DrawDebugTime = 2.f;

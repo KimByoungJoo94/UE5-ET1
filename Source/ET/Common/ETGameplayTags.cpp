@@ -19,6 +19,7 @@ namespace ETGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_JumpAttack, "Character.Action.JumpAttack");	
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_HeavyAttack, "Character.Action.HeavyAttack");
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Hit, "Character.Action.Hit");
+	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Death, "Character.Action.Death");
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Dodge, "Character.Action.Dodge");
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Parry, "Character.Action.Parry");
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_ActiveSkill, "Character.Action.ActiveSkill");

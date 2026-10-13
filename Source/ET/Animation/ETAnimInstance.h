@@ -5,12 +5,14 @@
 #include "ETAnimInstance.generated.h"
 
 class AETCharacter;
+class UCharacterMovementComponent;
 
+// 원본 Paragon ABP 이벤트 그래프와 동일한 로직 (애님 그래프에서 읽는 값만 BlueprintReadOnly 로 노출)
 UCLASS()
 class ET_API UETAnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
-	
+
 public:
 	UETAnimInstance();
 
@@ -18,49 +20,48 @@ public:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ET")
-	FRotator RotationLastTick;
+	UPROPERTY(Transient)
+	TObjectPtr<AETCharacter> OwnerCharacter;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ET")
-	float YawDelta;
+	UPROPERTY(Transient)
+	TObjectPtr<UCharacterMovementComponent> CharacterMovementComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ET")
-	float Speed;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ET")
-	bool bInAir;
+	UPROPERTY(BlueprintReadOnly, Category = "ET")
+	float Speed = 0.f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ET")
-	bool bAccelerating;
+	UPROPERTY(BlueprintReadOnly, Category = "ET")
+	bool bIsInAir = false;
 
+	UPROPERTY(BlueprintReadOnly, Category = "ET")
+	bool bIsAccelerating = false;
+
+	// 에임 회전 - 액터 회전 (AimOffset)
+	UPROPERTY(BlueprintReadOnly, Category = "ET")
+	float Roll = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "ET")
+	float Pitch = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "ET")
+	float Yaw = 0.f;
+
+	// 초당 회전량 기반 Lean
+	UPROPERTY(BlueprintReadOnly, Category = "ET")
+	float YawDelta = 0.f;
+
+	// 몽타주의 FullBody 커브가 켜진 구간
+	UPROPERTY(BlueprintReadOnly, Category = "ET")
+	bool bIsFullbody = false;
+
+	// TODO : 락온 옆걸음 블렌드 스페이스 추가 시 사용
 	// Actor forward 기준 이동 방향 (-180 ~ 180)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ET")
-	float Direction;
+	UPROPERTY(BlueprintReadOnly, Category = "ET")
+	float Direction = 0.f;
 
 	// 이동 방향으로 회전하지 않는 상태 (락온 옆걸음)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ET")
-	bool bStrafe;
+	UPROPERTY(BlueprintReadOnly, Category = "ET")
+	bool bStrafe = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ET")
-	TObjectPtr<AETCharacter> Character;
-
-
-	
-	/*
-	float Yaw;
-	float Pitch;
-	float Roll;
-	
-	
-
-	
-	
-
-	
-
-	bool bAttacking;
-	int32 CurrentAttack;
-	bool bFullBody;
-	*/
-
+private:
+	FRotator RotationLastTick = FRotator::ZeroRotator;
 };

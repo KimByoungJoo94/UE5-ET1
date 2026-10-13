@@ -99,7 +99,7 @@ AETCharacter* UETLockOnComponent::FindLockOnTarget() const
 	UKismetSystemLibrary::SphereOverlapActors(OwnerPawn, OwnerLocation, SearchRadius, ObjectTypeArray, AETCharacter::StaticClass(), IgnoreActorArray, OverlapActorArray);
 
 	const float CosViewHalfAngle = FMath::Cos(FMath::DegreesToRadians(ViewHalfAngle));
-	const float SafeSearchRadius = FMath::Max(SearchRadius, KINDA_SMALL_NUMBER);
+	const float SafeSearchRadius = FMath::Max(SearchRadius, UE_KINDA_SMALL_NUMBER);
 
 	AETCharacter* BestTarget = nullptr;
 	float BestScore = TNumericLimits<float>::Max();

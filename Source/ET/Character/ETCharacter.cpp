@@ -11,6 +11,7 @@
 #include "Animation/AnimInstance.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/DamageType.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -22,6 +23,9 @@ AETCharacter::AETCharacter()
 	GameStatComponent = CreateDefaultSubobject<UETGameStatComponent>(TEXT("GameStatComponent"));	
 	AttackCollisionComponent = CreateDefaultSubobject<UETAttackCollisionComponent>(TEXT("AttackCollisionComponent"));
 	TimeFreezeComponent = CreateDefaultSubobject<UETTimeFreezeComponent>(TEXT("TimeFreezeComponent"));
+
+	// 경로 이동(AI MoveTo)도 가속도로 처리 (기본값이면 경로 이동 중 CurrentAcceleration 이 0 이라 애님이 이동으로 전환되지 않음)
+	GetCharacterMovement()->GetNavMovementProperties()->bUseAccelerationForPaths = true;
 }
 
 void AETCharacter::PreInitializeComponents()

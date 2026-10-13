@@ -43,7 +43,7 @@ void AETAfterImageActor::InitAfterImage(USkeletalMeshComponent* InSourceMeshComp
 		return;
 	}
 
-	LifeTime = FMath::Max(InLifeTime, KINDA_SMALL_NUMBER);
+	LifeTime = FMath::Max(InLifeTime, UE_KINDA_SMALL_NUMBER);
 	StartOpacity = InOpacity;
 
 	PoseableMeshComponent->SetSkinnedAssetAndUpdate(InSourceMeshComponent->GetSkeletalMeshAsset());

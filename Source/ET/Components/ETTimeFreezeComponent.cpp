@@ -167,13 +167,13 @@ void UETTimeFreezeComponent::FindTimeFreezeTargets(const FETTimeFreezeTableRowDa
 		return FVector::DistSquared(OwnerLocation, InLeft.GetActorLocation()) < FVector::DistSquared(OwnerLocation, InRight.GetActorLocation());
 	});
 
-	// 락온 대상이 조건을 통과했으면 거리와 상관없이 가장 앞으로 (대상 수 제한에도 우선 포함)
+	// 공격 대상(플레이어는 락온 대상)이 조건을 통과했으면 거리와 상관없이 가장 앞으로 (대상 수 제한에도 우선 포함)
 	if (const AETCharacter* OwnerCharacter = Cast<AETCharacter>(OwnerActor))
 	{
-		AETCharacter* LockOnTarget = OwnerCharacter->GetLockOnTarget();
-		if (LockOnTarget && OutTargetArray.Remove(LockOnTarget) > 0)
+		AETCharacter* AttackTarget = Cast<AETCharacter>(OwnerCharacter->GetAttackTarget());
+		if (AttackTarget && OutTargetArray.Remove(AttackTarget) > 0)
 		{
-			OutTargetArray.Insert(LockOnTarget, 0);
+			OutTargetArray.Insert(AttackTarget, 0);
 		}
 	}
 

@@ -20,6 +20,13 @@ public:
 	UPROPERTY(EditAnywhere)
 	FName EndSocketName;
 
+	// Start → End 소켓 위치를 잇는 무기 축 방향 길이 보정 (+ 늘림, - 줄임, 소켓 회전은 사용하지 않음)
+	UPROPERTY(EditAnywhere)
+	float StartLengthOffset = 0.f;
+
+	UPROPERTY(EditAnywhere)
+	float EndLengthOffset = 0.f;
+
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
 	float Radius = 20.f;
 

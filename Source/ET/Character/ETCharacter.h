@@ -14,7 +14,7 @@ struct FETCharacterActionMontageData;
 struct FGameplayTag;
 
 // PlayAction 으로 재생한 몽타주의 BlendingOut 시점 (끊긴 경우 포함)
-DECLARE_DELEGATE_OneParam(FOnActionEnded, bool /* bInterrupted */);
+DECLARE_DELEGATE_OneParam(FOnActionEnded, bool bInterrupted);
 
 UCLASS()
 class ET_API AETCharacter : public ACharacter
@@ -39,8 +39,8 @@ public:
 	virtual void AttackTarget(AActor* InTarget, const FHitResult& InHitResult);
 	virtual float GetAttackDamage() const;
 
-	// 락온 중인 대상 (락온 기능이 없는 캐릭터는 nullptr)
-	virtual AETCharacter* GetLockOnTarget() const { return nullptr; }
+	// 공격 시 바라볼 대상 (플레이어는 락온 대상, AI 는 블랙보드 대상)
+	virtual AActor* GetAttackTarget() const { return nullptr; }
 	virtual void ResetGameStat();
 	void SetCapsuleHalfHeightKeepGround(const float InHalfHeight);
 	void ResetCapsuleHalfHeight();

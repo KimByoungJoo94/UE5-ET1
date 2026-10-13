@@ -3,6 +3,12 @@
 #include "Subsystem/ETGameDataSubsystem.h"
 #include "DrawDebugHelpers.h"
 
+namespace
+{
+    // 한 틱에 나눠서 스윕하는 최대 횟수 (히치로 이동 거리가 커져도 비용 제한)
+    constexpr int32 MaxWeaponCollisionStepCount = 16;
+}
+
 UETAttackCollisionComponent::UETAttackCollisionComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -29,12 +35,14 @@ void UETAttackCollisionComponent::StartWeaponCollision(const FName InRowName)
 
     AlreadHitActorSet.Empty();
     bWeaponCollisionTracing = CachedWeaponCollisionRowData != nullptr;
+    bHasLastLocation = false;
 }
 
 void UETAttackCollisionComponent::EndWeaponCollision()
 {
     bWeaponCollisionTracing = false;
     CachedWeaponCollisionRowData = nullptr;
+    bHasLastLocation = false;
 }
 
 void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowName)
@@ -86,42 +94,74 @@ void UETAttackCollisionComponent::TraceWeaponCollision()
         return;
     }
 
-    if (AETCharacter* OwnerCharacter = Cast<AETCharacter>(GetOwner()))
+    AETCharacter* OwnerCharacter = Cast<AETCharacter>(GetOwner());
+    USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter ? OwnerCharacter->GetMesh() : nullptr;
+    if (SkeletalMeshComponent == nullptr)
     {
-        if (USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter->GetMesh())
+        return;
+    }
+
+    const FVector StartSocketLocation = SkeletalMeshComponent->GetSocketLocation(CachedWeaponCollisionRowData->StartSocketName);
+    const FVector EndSocketLocation = SkeletalMeshComponent->GetSocketLocation(CachedWeaponCollisionRowData->EndSocketName);
+
+    // 무기 축 방향으로 양 끝 길이 보정
+    const FVector WeaponDirection = (EndSocketLocation - StartSocketLocation).GetSafeNormal();
+    const FVector StartLocation = StartSocketLocation - WeaponDirection * CachedWeaponCollisionRowData->StartLengthOffset;
+    const FVector EndLocation = EndSocketLocation + WeaponDirection * CachedWeaponCollisionRowData->EndLengthOffset;
+
+    // 빠르게 휘두르면 틱 사이 궤적에 틈이 생기므로 이전 틱 위치부터 Radius 간격으로 나눠서 스윕
+    int32 StepCount = 1;
+    if (bHasLastLocation)
+    {
+        const float MoveDistance = FMath::Max(FVector::Dist(LastStartLocation, StartLocation), FVector::Dist(LastEndLocation, EndLocation));
+        const float StepLength = FMath::Max(CachedWeaponCollisionRowData->Radius, 1.f);
+        StepCount = FMath::Clamp(FMath::CeilToInt32(MoveDistance / StepLength), 1, MaxWeaponCollisionStepCount);
+    }
+
+    for (int32 StepIndex = 1; StepIndex <= StepCount; ++StepIndex)
+    {
+        const float Alpha = bHasLastLocation ? static_cast<float>(StepIndex) / StepCount : 1.f;
+        SweepWeaponCollision(
+            OwnerCharacter,
+            FMath::Lerp(LastStartLocation, StartLocation, Alpha),
+            FMath::Lerp(LastEndLocation, EndLocation, Alpha));
+    }
+
+    LastStartLocation = StartLocation;
+    LastEndLocation = EndLocation;
+    bHasLastLocation = true;
+}
+
+void UETAttackCollisionComponent::SweepWeaponCollision(AETCharacter* OwnerCharacter, const FVector& StartLocation, const FVector& EndLocation)
+{
+    TArray<FHitResult> HitResultArray;
+
+    bool const bHit = UKismetSystemLibrary::SphereTraceMultiForObjects(
+        OwnerCharacter,
+        StartLocation,
+        EndLocation,
+        CachedWeaponCollisionRowData->Radius,
+        CachedWeaponCollisionRowData->ObjectTypeArray,
+        false,
+        TArray<AActor*>(),
+        CachedWeaponCollisionRowData->DrawDebugType,
+        HitResultArray,
+        true,
+        FLinearColor::Red,
+        FLinearColor::Green,
+        CachedWeaponCollisionRowData->DrawDebugTime);
+
+    if (bHit)
+    {
+        for (const FHitResult& HitResult : HitResultArray)
         {
-            const FVector& StartLocation = SkeletalMeshComponent->GetSocketLocation(CachedWeaponCollisionRowData->StartSocketName);
-            const FVector& EndLocation = SkeletalMeshComponent->GetSocketLocation(CachedWeaponCollisionRowData->EndSocketName);
-            TArray<FHitResult> HitResultArray;
-
-            bool const bHit = UKismetSystemLibrary::SphereTraceMultiForObjects(
-                OwnerCharacter,
-                StartLocation,
-                EndLocation,
-                CachedWeaponCollisionRowData->Radius,
-                CachedWeaponCollisionRowData->ObjectTypeArray,
-                false,
-                TArray<AActor*>(),
-                CachedWeaponCollisionRowData->DrawDebugType,
-                HitResultArray,
-                true,
-                FLinearColor::Red,
-                FLinearColor::Green,
-                CachedWeaponCollisionRowData->DrawDebugTime);
-
-            if (bHit)
+            if (AActor* HitActor = HitResult.GetActor())
             {
-                for (const FHitResult& HitResult : HitResultArray)
+                if (AlreadHitActorSet.Contains(HitActor) == false)
                 {
-                    if (AActor* HitActor = HitResult.GetActor())
-                    {
-                        if (AlreadHitActorSet.Contains(HitActor) == false)
-                        {
-                            AlreadHitActorSet.Add(HitActor);
+                    AlreadHitActorSet.Add(HitActor);
 
-                            OwnerCharacter->AttackTarget(HitActor, HitResult);
-                        }
-                    }
+                    OwnerCharacter->AttackTarget(HitActor, HitResult);
                 }
             }
         }

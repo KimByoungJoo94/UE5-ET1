@@ -20,6 +20,8 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
+	virtual AActor* GetAttackTarget() const override;
+
 	// IETLockOnInterface
 	virtual void OnLockOnTargeted() override;
 	virtual void OnLockOnTargetReleased() override;

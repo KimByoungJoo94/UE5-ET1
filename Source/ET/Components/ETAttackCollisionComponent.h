@@ -5,6 +5,8 @@
 #include "DataAsset/ETCollisionTableRowData.h"
 #include "ETAttackCollisionComponent.generated.h"
 
+class AETCharacter;
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ET_API UETAttackCollisionComponent : public UActorComponent
 {
@@ -27,6 +29,7 @@ public:
 
 protected:
 	void TraceWeaponCollision();
+	void SweepWeaponCollision(AETCharacter* OwnerCharacter, const FVector& StartLocation, const FVector& EndLocation);
 
 private:
 	// 데이터 테이블 행 (테이블 에셋이 유지되는 동안 유효)
@@ -35,4 +38,9 @@ private:
 	TSet<TWeakObjectPtr<AActor>> AlreadHitActorSet;
 
 	bool bWeaponCollisionTracing = false;
+
+	// 이전 틱 소켓 위치 (프레임 사이 무기 궤적 보간용)
+	FVector LastStartLocation = FVector::ZeroVector;
+	FVector LastEndLocation = FVector::ZeroVector;
+	bool bHasLastLocation = false;
 };

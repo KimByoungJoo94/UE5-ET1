@@ -132,7 +132,7 @@ public:
 	void ResetParry();
 
 	virtual float GetAttackDamage() const override;
-	virtual AETCharacter* GetLockOnTarget() const override;
+	virtual AActor* GetAttackTarget() const override;
 
 	UETInteractionComponent* GetInteractionComponent() { return InteractionComponent; }
 	UETChargeAttackComponent* GetChargeAttackComponent() { return ChargeAttackComponent; }

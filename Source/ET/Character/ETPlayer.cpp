@@ -503,8 +503,9 @@ float AETPlayer::GetAttackDamage() const
 	return Super::GetAttackDamage() * ChargeAttackComponent->GetDamageMultiplier();
 }
 
-AETCharacter* AETPlayer::GetLockOnTarget() const
+AActor* AETPlayer::GetAttackTarget() const
 {
+	// 락온 중에만 공격 방향 보정
 	return LockOnComponent->GetLockOnTarget();
 }
 

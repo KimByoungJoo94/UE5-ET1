@@ -4,6 +4,7 @@
 #include "Common/ETCommonSettings.h"
 #include "Controller/ETAIController.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 AETMonster::AETMonster()
 {
@@ -60,6 +61,19 @@ void AETMonster::BeginPlay()
 	}
 
 	LockOnWidgetComponent->SetVisibility(false);
+}
+
+AActor* AETMonster::GetAttackTarget() const
+{
+	const AAIController* AIController = Cast<AAIController>(GetController());
+	const UBlackboardComponent* BlackboardComponent = AIController ? AIController->GetBlackboardComponent() : nullptr;
+	if (BlackboardComponent == nullptr)
+	{
+		return nullptr;
+	}
+
+	const FName TargetActorKeyName(TEXT("TargetActor"));
+	return Cast<AActor>(BlackboardComponent->GetValueAsObject(TargetActorKeyName));
 }
 
 void AETMonster::OnLockOnTargeted()

@@ -1,8 +1,6 @@
 ﻿#include "AI/ETBTTask_Attack.h"
 #include "Character/ETCharacter.h"
 #include "Common/ETGameplayTags.h"
-#include "Common/ETNames.h"
-#include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
 
 UETBTTask_Attack::UETBTTask_Attack()
@@ -11,9 +9,6 @@ UETBTTask_Attack::UETBTTask_Attack()
 
 	// 몽타주 종료 콜백에서 BT 컴포넌트를 찾아야 하므로 AI 별 인스턴스 생성
 	bCreateNodeInstance = true;
-
-	TargetActorKey.SelectedKeyName = ETNames::BlackboardKey::TargetActor;
-	TargetActorKey.AddObjectFilter(this, GET_MEMBER_NAME_CHECKED(ThisClass, TargetActorKey), AActor::StaticClass());
 
 	ActionTag = ETGameplayTags::Character_Action_ComboAttack;
 	StateTag = ETGameplayTags::Character_State_Attacking;
@@ -28,19 +23,7 @@ EBTNodeResult::Type UETBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerC
 		return EBTNodeResult::Failed;
 	}
 
-	// TODO : 회전 연출이 필요하면 보간 회전으로 교체
-	if (const UBlackboardComponent* BlackboardComponent = OwnerComp.GetBlackboardComponent())
-	{
-		if (const AActor* TargetActor = Cast<AActor>(BlackboardComponent->GetValueAsObject(TargetActorKey.SelectedKeyName)))
-		{
-			const FVector ToTarget = (TargetActor->GetActorLocation() - OwnerCharacter->GetActorLocation()).GetSafeNormal2D();
-			if (ToTarget.IsNearlyZero() == false)
-			{
-				OwnerCharacter->SetActorRotation(ToTarget.Rotation());
-			}
-		}
-	}
-
+	// 타겟 방향 회전은 공격 몽타주의 ETAnimNotifyState_RotateToTarget 구간에서 처리
 	OwnerComponent = &OwnerComp;
 	bWaitingActionEnd = true;
 

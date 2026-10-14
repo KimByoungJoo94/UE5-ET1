@@ -21,9 +21,6 @@ protected:
 	void OnActionEnded(bool bInterrupted);
 
 protected:
-	UPROPERTY(EditAnywhere, Category = "Blackboard")
-	FBlackboardKeySelector TargetActorKey;
-
 	UPROPERTY(EditAnywhere, Category = "Action", meta = (Categories = "Character.Action"))
 	FGameplayTag ActionTag;
 

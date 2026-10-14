@@ -8,6 +8,9 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BrainComponent.h"
+#include "Subsystem/ETJobSubsystem.h"
+#include "Job/ETWidgetJobs.h"
+#include "Kismet/GameplayStatics.h"
 
 AETMonster::AETMonster()
 {
@@ -85,6 +88,11 @@ void AETMonster::Die()
 
 	HealthBarWidgetComponent->SetVisibility(false);
 	LockOnWidgetComponent->SetVisibility(false);
+
+	if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0))
+	{
+		ETSubsystem::Get<UETJobSubsystem>(this).Run(PlayerController, MakeUnique<FETShowNoticeWidgetJob>(PlayerController, ETNames::RowName::NoticeWin));
+	}
 }
 
 void AETMonster::Disappear()

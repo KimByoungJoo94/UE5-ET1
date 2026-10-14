@@ -3,7 +3,7 @@
 
 #include "GameMode/ETGameModeBase.h"
 #include "Interaction/ETCheckpoint.h"
-#include "Subsystem/ETLevelSubsystem.h"
+#include "Subsystem/ETSaveSubsystem.h"
 #include "EngineUtils.h"
 
 void AETGameModeBase::RestartPlayer(AController* NewPlayer)
@@ -20,7 +20,7 @@ void AETGameModeBase::RestartPlayer(AController* NewPlayer)
 
 AETCheckpoint* AETGameModeBase::FindLastCheckpoint() const
 {
-	const FName LastCheckpointRowName = ETSubsystem::Get<UETLevelSubsystem>(this).GetLastCheckpointRowName();
+	const FName LastCheckpointRowName = ETSubsystem::Get<UETSaveSubsystem>(this).GetWorldSaveData().CheckpointRowName;
 	if (LastCheckpointRowName.IsNone())
 	{
 		return nullptr;

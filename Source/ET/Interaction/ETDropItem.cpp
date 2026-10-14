@@ -1,6 +1,5 @@
 ﻿#include "Interaction/ETDropItem.h"
-#include "Character/ETCharacter.h"
-#include "Components/ETGameStatComponent.h"
+#include "Character/ETPlayer.h"
 #include "DataAsset/ETDropItemTableRowData.h"
 #include "Subsystem/ETGameDataSubsystem.h"
 
@@ -12,8 +11,8 @@ void AETDropItem::OnInteraction(AActor* InInteractor)
 {
 	Super::OnInteraction(InInteractor);
 
-	AETCharacter* InteractorCharacter = Cast<AETCharacter>(InInteractor);
-	if (InteractorCharacter == nullptr)
+	AETPlayer* Player = Cast<AETPlayer>(InInteractor);
+	if (Player == nullptr)
 	{
 		return;
 	}
@@ -24,10 +23,9 @@ void AETDropItem::OnInteraction(AActor* InInteractor)
 		return;
 	}
 
-	UETGameStatComponent* GameStatComponent = InteractorCharacter->GetGameStatComponent();
 	for (const TPair<EETGameStatType, float>& PermanentGameStatPair : DropItemRowData->PermanentGameStatMap)
 	{
-		GameStatComponent->AddPermanentValue(PermanentGameStatPair.Key, PermanentGameStatPair.Value);
+		Player->AddPermanentGameStat(PermanentGameStatPair.Key, PermanentGameStatPair.Value);
 	}
 
 	Destroy();

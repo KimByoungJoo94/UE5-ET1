@@ -8,6 +8,7 @@
 #include "DataAsset/ETCameraShakeTableRowData.h"
 #include "DataAsset/ETLevelTableRowData.h"
 #include "DataAsset/ETCheckpointTableRowData.h"
+#include "DataAsset/ETNoticeWidgetTableRowData.h"
 #include "Common/ETNames.h"
 
 void UETGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -78,6 +79,11 @@ TArray<FName> UETGameDataSubsystem::GetLevelRowNameOptions()
 TArray<FName> UETGameDataSubsystem::GetCheckpointRowNameOptions()
 {
 	return GetRowNameOptions(FETCheckpointTableRowData::StaticStruct());
+}
+
+TArray<FName> UETGameDataSubsystem::GetNoticeWidgetRowNameOptions()
+{
+	return GetRowNameOptions(FETNoticeWidgetTableRowData::StaticStruct());
 }
 
 TArray<FName> UETGameDataSubsystem::GetRowNameOptions(const UScriptStruct* InRowStruct)

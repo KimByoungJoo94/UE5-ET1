@@ -74,6 +74,9 @@ public:
 	UFUNCTION()
 	static TArray<FName> GetCheckpointRowNameOptions();
 
+	UFUNCTION()
+	static TArray<FName> GetNoticeWidgetRowNameOptions();
+
 private:
 	static TArray<FName> GetRowNameOptions(const UScriptStruct* InRowStruct);
 

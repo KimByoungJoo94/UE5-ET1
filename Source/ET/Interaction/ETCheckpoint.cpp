@@ -1,7 +1,7 @@
 ﻿#include "Interaction/ETCheckpoint.h"
 #include "Character/ETPlayer.h"
 #include "Controller/ETPlayerController.h"
-#include "Subsystem/ETLevelSubsystem.h"
+#include "Subsystem/ETSaveSubsystem.h"
 
 AETCheckpoint::AETCheckpoint()
 {
@@ -32,9 +32,9 @@ void AETCheckpoint::OnInteraction(AActor* InInteractor)
 		PlayerController->OpenCheckpointWidget();
 	}
 
-	ETSubsystem::Get<UETLevelSubsystem>(this).SetLastCheckpointRowName(CheckpointRowName);
-
-	// TODO : 세이브 게임 저장
+	UETSaveSubsystem& SaveSubsystem = ETSubsystem::Get<UETSaveSubsystem>(this);
+	SaveSubsystem.GetWorldSaveData().CheckpointRowName = CheckpointRowName;
+	SaveSubsystem.Save();
 }
 
 FTransform AETCheckpoint::GetRespawnTransform() const

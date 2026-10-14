@@ -18,7 +18,11 @@
 #include "Components/ETDamageTextComponent.h"
 #include "Subsystem/ETTimeDilationSubsystem.h"
 #include "Subsystem/ETGameDataSubsystem.h"
-#include "Subsystem/ETLevelSubsystem.h"
+#include "Subsystem/ETJobSubsystem.h"
+#include "Subsystem/ETSaveSubsystem.h"
+#include "Job/ETCameraJobs.h"
+#include "Job/ETWidgetJobs.h"
+#include "Job/ETLevelJobs.h"
 #include "Common/ETNames.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
@@ -63,6 +67,8 @@ void AETPlayer::BeginPlay()
 
 	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
 
+	// 최대값이 바뀌므로 현재값을 채우기 전에 적용
+	ApplySavedPermanentGameStat();
 	ResetGameStat();
 
 	GameStatComponent->StartIncreaseOverTime(EETGameStatType::Mana, EETGameStatType::ManaRegen);
@@ -164,9 +170,9 @@ void AETPlayer::OnMoveActionTriggered(const FInputActionValue& InValue)
 }
 
 void AETPlayer::OnLookActionTriggered(const FInputActionValue& InValue)
-{
-	// 락온 중에는 카메라가 대상을 따라가므로 시점 입력 무시, 사망 후에도 무시
-	if (LockOnComponent->IsLockedOn() || CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death))
+{	
+	if (LockOnComponent->IsLockedOn() || 
+		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death))
 	{
 		return;
 	}
@@ -638,16 +644,38 @@ void AETPlayer::Die()
 	LockOnComponent->EndLockOn();
 
 	Super::Die();
+
+	// 재시작 전 게임이 꺼져도 사망 전까지 얻은 진행이 남도록
+	ETSubsystem::Get<UETSaveSubsystem>(this).Save();
+}
+
+void AETPlayer::AddPermanentGameStat(const EETGameStatType InGameStatType, const float InValue)
+{
+	GameStatComponent->AddPermanentValue(InGameStatType, InValue);
+
+	ETSubsystem::Get<UETSaveSubsystem>(this).GetPlayerSaveData().PermanentGameStatMap.FindOrAdd(InGameStatType) += InValue;
+}
+
+void AETPlayer::ApplySavedPermanentGameStat()
+{
+	for (const TPair<EETGameStatType, float>& PermanentGameStatPair : ETSubsystem::Get<UETSaveSubsystem>(this).GetPlayerSaveData().PermanentGameStatMap)
+	{
+		GameStatComponent->AddPermanentValue(PermanentGameStatPair.Key, PermanentGameStatPair.Value);
+	}
 }
 
 void AETPlayer::OnDefeated()
 {
-	// 임시 : 쓰러짐 연출(페이드, UI) 추가 전까지 일정 시간 후 재시작
-	FTimerHandle RestartTimerHandle;
-	GetWorldTimerManager().SetTimer(RestartTimerHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
-	{
-		ETSubsystem::Get<UETLevelSubsystem>(this).RestartLevel();
-	}), DefeatRestartDelay, false);
+	// 카메라 줌 아웃과 쓰러짐 알림을 동시에 진행하고 둘 다 끝나면 레벨 재시작
+	TUniquePtr<FETJobChain> DefeatJob = MakeUnique<FETJobChain>();
+
+	FETJobParallel& PresentationJob = DefeatJob->Add<FETJobParallel>();
+	PresentationJob.Add<FETCameraZoomJob>(SpringArmComponent);
+	PresentationJob.Add<FETShowNoticeWidgetJob>(Cast<APlayerController>(GetController()), ETNames::RowName::NoticeDefeat);
+
+	DefeatJob->Add<FETRestartLevelJob>();
+
+	ETSubsystem::Get<UETJobSubsystem>(this).Run(this, MoveTemp(DefeatJob));
 }
 
 const FText& AETPlayer::GetPrimaryActionKeyText() const

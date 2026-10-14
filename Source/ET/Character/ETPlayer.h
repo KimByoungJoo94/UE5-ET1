@@ -6,6 +6,8 @@
 #include "Interface/ETDefeatInterface.h"
 #include "ETPlayer.generated.h"
 
+enum class EETGameStatType : uint8;
+
 class USpringArmComponent;
 class UCameraComponent;
 class UETInteractionComponent;
@@ -149,6 +151,9 @@ public:
 	// ~Key Input
 
 	void UseItem();
+
+	// 영구 스탯 증감 (스탯 컴포넌트와 세이브 데이터에 함께 반영, 디스크 저장은 체크포인트 / 사망 / 게임 종료 시)
+	void AddPermanentGameStat(const EETGameStatType InGameStatType, const float InValue);
 	void AdvanceComboAttack();
 	void ResetComboAttack();
 	void PauseHeavyAttack();
@@ -185,6 +190,9 @@ protected:
 	void PlayCameraShake(const FName InCameraShakeRowName);
 	void GainPerfectMomentum();
 
+	// 스폰 시 세이브 데이터의 영구 스탯을 스탯 컴포넌트에 적용
+	void ApplySavedPermanentGameStat();
+
 	void OnChargeCountChanged(const int32 InCurrentChargeCount, const int32 InMaxChargeCount);
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Component")
@@ -217,10 +225,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "ET|Parry")
 	FETPlayerParryData PlayerParryData;
-
-	// 쓰러짐(ETAnimNotify_Defeat) 후 레벨 재시작까지 대기 시간
-	UPROPERTY(EditDefaultsOnly, Category = "ET|Defeat", meta = (ClampMin = "0.01"))
-	float DefeatRestartDelay = 3.f;
 
 protected:
 	bool bComboAttackReserved = false;	

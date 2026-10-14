@@ -12,6 +12,9 @@ namespace ETNames
 		inline const FName CameraShakeHit(TEXT("Hit"));
 		inline const FName CameraShakeParry(TEXT("Parry"));
 		inline const FName CameraShakePerfectParry(TEXT("PerfectParry"));
+
+		inline const FName NoticeDefeat(TEXT("Defeat"));
+		inline const FName NoticeWin(TEXT("Win"));
 	}
 
 	namespace BlackboardKey
@@ -37,6 +40,12 @@ namespace ETNames
 	namespace RootMotionSource
 	{
 		inline const FName Dodge(TEXT("ETDodge"));
+	}
+
+	namespace SaveSlot
+	{
+		inline const FString Default(TEXT("ETSaveSlot"));
+		inline constexpr int32 UserIndex = 0;
 	}
 
 	namespace Path

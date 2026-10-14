@@ -18,6 +18,7 @@
 #include "Components/ETDamageTextComponent.h"
 #include "Subsystem/ETTimeDilationSubsystem.h"
 #include "Subsystem/ETGameDataSubsystem.h"
+#include "Subsystem/ETLevelSubsystem.h"
 #include "Common/ETNames.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
@@ -164,8 +165,8 @@ void AETPlayer::OnMoveActionTriggered(const FInputActionValue& InValue)
 
 void AETPlayer::OnLookActionTriggered(const FInputActionValue& InValue)
 {
-	// 락온 중에는 카메라가 대상을 따라가므로 시점 입력 무시
-	if (LockOnComponent->IsLockedOn())
+	// 락온 중에는 카메라가 대상을 따라가므로 시점 입력 무시, 사망 후에도 무시
+	if (LockOnComponent->IsLockedOn() || CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death))
 	{
 		return;
 	}
@@ -637,6 +638,16 @@ void AETPlayer::Die()
 	LockOnComponent->EndLockOn();
 
 	Super::Die();
+}
+
+void AETPlayer::OnDefeated()
+{
+	// 임시 : 쓰러짐 연출(페이드, UI) 추가 전까지 일정 시간 후 재시작
+	FTimerHandle RestartTimerHandle;
+	GetWorldTimerManager().SetTimer(RestartTimerHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
+	{
+		ETSubsystem::Get<UETLevelSubsystem>(this).RestartLevel();
+	}), DefeatRestartDelay, false);
 }
 
 const FText& AETPlayer::GetPrimaryActionKeyText() const

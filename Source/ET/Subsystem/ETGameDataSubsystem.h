@@ -68,6 +68,12 @@ public:
 	UFUNCTION()
 	static TArray<FName> GetCameraShakeRowNameOptions();
 
+	UFUNCTION()
+	static TArray<FName> GetLevelRowNameOptions();
+
+	UFUNCTION()
+	static TArray<FName> GetCheckpointRowNameOptions();
+
 private:
 	static TArray<FName> GetRowNameOptions(const UScriptStruct* InRowStruct);
 

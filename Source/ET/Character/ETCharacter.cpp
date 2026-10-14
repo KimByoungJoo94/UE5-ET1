@@ -26,13 +26,23 @@ AETCharacter::AETCharacter()
 
 	// 경로 이동(AI MoveTo)도 가속도로 처리 (기본값이면 경로 이동 중 CurrentAcceleration 이 0 이라 애님이 이동으로 전환되지 않음)
 	GetCharacterMovement()->GetNavMovementProperties()->bUseAccelerationForPaths = true;
+
+	// 카메라 스프링암이 캐릭터에 걸려 당겨지지 않도록 (지형에만 반응)
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 }
 
 void AETCharacter::PreInitializeComponents()
 {
 	Super::PreInitializeComponents();
 
-	const FETCharacterTableRowData* CharacterRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETCharacterTableRowData>(CharacterRowName);
+	const UETGameDataSubsystem* GameDataSubsystem = ETSubsystem::GetPtr<UETGameDataSubsystem>(this);
+	if (GameDataSubsystem == nullptr)
+	{
+		return;
+	}
+
+	const FETCharacterTableRowData* CharacterRowData = GameDataSubsystem->GetRow<FETCharacterTableRowData>(CharacterRowName);
 	if (ensureMsgf(CharacterRowData, TEXT("Invalid CharacterRowName. Character: %s, RowName: %s"), *GetName(), *CharacterRowName.ToString()) == false)
 	{
 		return;

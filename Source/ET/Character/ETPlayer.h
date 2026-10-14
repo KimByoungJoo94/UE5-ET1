@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Character/ETCharacter.h"
 #include "Interface/ETInteractionInterface.h"
+#include "Interface/ETDefeatInterface.h"
 #include "ETPlayer.generated.h"
 
 class USpringArmComponent;
@@ -112,7 +113,7 @@ public:
 
 
 UCLASS()
-class ET_API AETPlayer : public AETCharacter
+class ET_API AETPlayer : public AETCharacter, public IETDefeatInterface
 {
 	GENERATED_BODY()
 	
@@ -148,7 +149,6 @@ public:
 	// ~Key Input
 
 	void UseItem();
-
 	void AdvanceComboAttack();
 	void ResetComboAttack();
 	void PauseHeavyAttack();
@@ -168,6 +168,10 @@ public:
 	UETLockOnComponent* GetLockOnComponent() { return LockOnComponent; }
 	const FText& GetPrimaryActionKeyText() const;
 
+	// IETDefeatInterface
+	virtual void OnDefeated() override;
+	// ~IETDefeatInterface
+
 protected:
 	virtual bool TryAvoidDamage(const FDamageEvent& InDamageEvent, AActor* InDamageCauser) override;
 	virtual void HitReact(AActor* InDamageCauser) override;
@@ -182,7 +186,6 @@ protected:
 	void GainPerfectMomentum();
 
 	void OnChargeCountChanged(const int32 InCurrentChargeCount, const int32 InMaxChargeCount);
-	
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Component")
 	TObjectPtr<USpringArmComponent> SpringArmComponent;
@@ -215,6 +218,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ET|Parry")
 	FETPlayerParryData PlayerParryData;
 
+	// 쓰러짐(ETAnimNotify_Defeat) 후 레벨 재시작까지 대기 시간
+	UPROPERTY(EditDefaultsOnly, Category = "ET|Defeat", meta = (ClampMin = "0.01"))
+	float DefeatRestartDelay = 3.f;
+
 protected:
 	bool bComboAttackReserved = false;	
 	int32 ComboAttackIndex = 0;
@@ -234,5 +241,4 @@ protected:
 	bool bPerfectTiming = false;
 
 private:
-	FDelegateHandle OnChargeCountChangedHandle;
-};
+	FDelegateHandle OnChargeCountChangedHandle;};

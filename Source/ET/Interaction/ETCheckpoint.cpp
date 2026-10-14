@@ -1,9 +1,18 @@
 ﻿#include "Interaction/ETCheckpoint.h"
 #include "Character/ETPlayer.h"
 #include "Controller/ETPlayerController.h"
+#include "Subsystem/ETLevelSubsystem.h"
 
 AETCheckpoint::AETCheckpoint()
 {
+	RespawnPointComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RespawnPointComponent"));
+	RespawnPointComponent->SetupAttachment(GetRootComponent());
+	RespawnPointComponent->SetRelativeLocation(FVector(300.f, 0.f, 100.f));
+
+#if WITH_EDITORONLY_DATA
+	// 플레이어 스폰 시점(셀 스트리밍 전)에 찾을 수 있도록 상시 로드 (PlayerStart 와 동일)
+	bIsSpatiallyLoaded = false;
+#endif
 }
 
 void AETCheckpoint::OnInteraction(AActor* InInteractor)
@@ -23,5 +32,16 @@ void AETCheckpoint::OnInteraction(AActor* InInteractor)
 		PlayerController->OpenCheckpointWidget();
 	}
 
-	// TODO : 체크포인트 저장
+	ETSubsystem::Get<UETLevelSubsystem>(this).SetLastCheckpointRowName(CheckpointRowName);
+
+	// TODO : 세이브 게임 저장
+}
+
+FTransform AETCheckpoint::GetRespawnTransform() const
+{
+	// 부활 위치를 옮겨도 항상 체크포인트를 바라보도록 방향 계산
+	const FVector RespawnLocation = RespawnPointComponent->GetComponentLocation();
+	const FVector LookDirection = GetActorLocation() - RespawnLocation;
+
+	return FTransform(FRotator(0.f, LookDirection.Rotation().Yaw, 0.f), RespawnLocation);
 }

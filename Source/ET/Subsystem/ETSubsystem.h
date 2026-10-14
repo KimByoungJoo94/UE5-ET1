@@ -32,6 +32,7 @@ namespace ETSubsystem
 	}
 
 	// 기본 조회 (서브시스템이 반드시 있는 곳에서 사용, 없으면 check)
+	// 썸네일, BP 에디터 등 프리뷰 월드나 서브시스템이 아직 생성되지 않은 시점(액터 생성 단계 등)에는 GetPtr 로 nullptr 체크 후 사용
 	template <typename T>
 	T& Get(const UObject* InWorldContextObject)
 	{

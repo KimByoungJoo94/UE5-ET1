@@ -18,7 +18,7 @@ void UETGameStatComponent::GenerateGameStat(const FName InBaseGameStatRowName)
 {
 	GameStatMap.Reset();
 
-	if (const FETGameStatTableRowData* GameStatRow = UETGameDataSubsystem::GetRow<FETGameStatTableRowData>(this, InBaseGameStatRowName))
+	if (const FETGameStatTableRowData* GameStatRow = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETGameStatTableRowData>(InBaseGameStatRowName))
 	{
 		for (int32 Index = 0; Index < static_cast<int32>(EETGameStatType::Max); ++Index)
 		{

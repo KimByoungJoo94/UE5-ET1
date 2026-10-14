@@ -14,7 +14,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Kismet/GameplayStatics.h"
-#include "TimerManager.h"
 
 AETCharacter::AETCharacter()
 {
@@ -33,7 +32,7 @@ void AETCharacter::PreInitializeComponents()
 {
 	Super::PreInitializeComponents();
 
-	const FETCharacterTableRowData* CharacterRowData = UETGameDataSubsystem::GetRow<FETCharacterTableRowData>(this, CharacterRowName);
+	const FETCharacterTableRowData* CharacterRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETCharacterTableRowData>(CharacterRowName);
 	if (ensureMsgf(CharacterRowData, TEXT("Invalid CharacterRowName. Character: %s, RowName: %s"), *GetName(), *CharacterRowName.ToString()) == false)
 	{
 		return;
@@ -274,29 +273,4 @@ void AETCharacter::HandleActionMontageBlendingOut(UAnimMontage* InMontage, bool 
 	}
 
 	InOnActionEnded.ExecuteIfBound(bInterrupted);
-}
-
-void AETCharacter::StartHitStop(const float InDuration, const float InTimeDilation)
-{
-	// 시간 정지가 우선
-	if (InDuration <= 0.f || TimeFreezeComponent->IsFrozen())
-	{
-		return;
-	}
-
-	CustomTimeDilation = InTimeDilation;
-
-	// 액터 CustomTimeDilation 영향을 받지 않는 월드 타이머로 복구 (연속 호출 시 마지막 기준으로 연장)
-	GetWorld()->GetTimerManager().SetTimer(HitStopTimerHandle, this, &ThisClass::EndHitStop, InDuration, false);
-}
-
-void AETCharacter::EndHitStop()
-{
-	// 히트 스톱 중 시간 정지가 걸렸으면 시간 정지가 복구
-	if (TimeFreezeComponent->IsFrozen())
-	{
-		return;
-	}
-
-	CustomTimeDilation = 1.f;
 }

@@ -18,7 +18,7 @@ void AETDropItem::OnInteraction(AActor* InInteractor)
 		return;
 	}
 
-	const FETDropItemTableRowData* DropItemRowData = UETGameDataSubsystem::GetRow<FETDropItemTableRowData>(this, DropItemRowName);
+	const FETDropItemTableRowData* DropItemRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETDropItemTableRowData>(DropItemRowName);
 	if (DropItemRowData == nullptr)
 	{
 		return;

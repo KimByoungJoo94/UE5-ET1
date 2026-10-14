@@ -38,7 +38,7 @@ void UETAttackCollisionComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 void UETAttackCollisionComponent::StartWeaponCollision(const FName InRowName)
 {
-    CachedWeaponCollisionRowData = UETGameDataSubsystem::GetRow<FETWeaponCollisionTableRowData>(this, InRowName);
+    CachedWeaponCollisionRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETWeaponCollisionTableRowData>(InRowName);
 
     AlreadHitActorSet.Empty();
     bWeaponCollisionTracing = CachedWeaponCollisionRowData != nullptr;
@@ -55,7 +55,7 @@ void UETAttackCollisionComponent::EndWeaponCollision()
 void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowName)
 {
     AETCharacter* OwnerCharacter = Cast<AETCharacter>(GetOwner());
-    const FETRadialAttackCollisionTableRowData* RowData = UETGameDataSubsystem::GetRow<FETRadialAttackCollisionTableRowData>(this, InRowName);
+    const FETRadialAttackCollisionTableRowData* RowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETRadialAttackCollisionTableRowData>(InRowName);
     if (OwnerCharacter == nullptr || RowData == nullptr || RowData->Radius <= 0.f)
     {
         return;

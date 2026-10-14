@@ -1,12 +1,13 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "Subsystem/ETGameSubsystem.h"
+#include "Subsystems/GameInstanceSubsystem.h"
+#include "Subsystem/ETSubsystem.h"
 #include "Engine/DataTable.h"
 #include "ETGameDataSubsystem.generated.h"
 
 UCLASS()
-class ET_API UETGameDataSubsystem : public UETGameSubsystem
+class ET_API UETGameDataSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 
@@ -15,16 +16,6 @@ public:
 	virtual void Deinitialize() override;
 
 public:
-	static UETGameDataSubsystem* Get(const UObject* InWorldContextObject);
-
-	// 월드 컨텍스트로 서브시스템을 찾아 조회 (서브시스템이나 행이 없으면 nullptr)
-	template <typename T>
-	static const T* GetRow(const UObject* InWorldContextObject, const FName InRowName)
-	{
-		const UETGameDataSubsystem* GameDataSubsystem = Get(InWorldContextObject);
-		return GameDataSubsystem ? GameDataSubsystem->GetRow<T>(InRowName) : nullptr;
-	}
-
 	template <typename T>
 	const T* GetRow(const FName InRowName) const
 	{

@@ -53,9 +53,6 @@ public:
 	// 액션 태그에 맞는 재생 가능한 몽타주가 있으면 상태 전환 후 재생 (AI 등 외부 호출용, InIndex 가 INDEX_NONE 이면 랜덤)
 	bool PlayAction(const FGameplayTag& InActionTag, const int32 InIndex, const FGameplayTag& InStateTag, const FOnActionEnded& InOnActionEnded = FOnActionEnded());
 
-	// 잠깐 이 캐릭터만 느리게 (타격감 연출, 시간 정지 중이면 무시)
-	void StartHitStop(const float InDuration, const float InTimeDilation);
-
 protected:
 	// true 이면 데미지 무시 (회피, 패리 등 / 퍼펙트 판정 처리 위치)
 	virtual bool TryAvoidDamage(const FDamageEvent& InDamageEvent, AActor* InDamageCauser);
@@ -76,7 +73,6 @@ protected:
 
 private:
 	void HandleActionMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted, FGameplayTag InStateTag, uint32 InActionSerial, FOnActionEnded InOnActionEnded);
-	void EndHitStop();
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "ET|Component")
@@ -100,6 +96,4 @@ protected:
 private:
 	// PlayAction 호출마다 증가, 이전 행동 몽타주의 늦은 BlendingOut 이 새 행동 상태를 덮어쓰지 않도록 구분
 	uint32 ActionSerial = 0;
-
-	FTimerHandle HitStopTimerHandle;
 };

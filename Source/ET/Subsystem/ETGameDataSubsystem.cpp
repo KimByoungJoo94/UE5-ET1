@@ -1,7 +1,5 @@
 ﻿#include "Subsystem/ETGameDataSubsystem.h"
 #include "AssetRegistry/AssetRegistryModule.h"
-#include "Engine/GameInstance.h"
-#include "Kismet/GameplayStatics.h"
 #include "DataAsset/ETGameStatTableRowData.h"
 #include "DataAsset/ETCollisionTableRowData.h"
 #include "DataAsset/ETDropItemTableRowData.h"
@@ -33,11 +31,6 @@ void UETGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 void UETGameDataSubsystem::Deinitialize()
 {
 	Super::Deinitialize();
-}
-
-UETGameDataSubsystem* UETGameDataSubsystem::Get(const UObject* InWorldContextObject)
-{
-	return UGameInstance::GetSubsystem<UETGameDataSubsystem>(UGameplayStatics::GetGameInstance(InWorldContextObject));
 }
 
 TArray<FName> UETGameDataSubsystem::GetGameStatRowNameOptions()

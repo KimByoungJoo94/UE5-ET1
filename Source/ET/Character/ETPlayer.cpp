@@ -564,10 +564,11 @@ bool AETPlayer::TryAvoidDamage(const FDamageEvent& InDamageEvent, AActor* InDama
 		PlayCameraShake(bPerfect ? ETNames::RowName::CameraShakePerfectParry : ETNames::RowName::CameraShakeParry);
 
 		const float HitStopDuration = bPerfect ? PlayerParryData.PerfectParryHitStopDuration : PlayerParryData.ParryHitStopDuration;
-		StartHitStop(HitStopDuration, PlayerParryData.HitStopTimeDilation);
-		if (AETCharacter* AttackerCharacter = Cast<AETCharacter>(InDamageCauser))
+		if (HitStopDuration > 0.f)
 		{
-			AttackerCharacter->StartHitStop(HitStopDuration, PlayerParryData.HitStopTimeDilation);
+			UETTimeDilationSubsystem& TimeDilationSubsystem = ETSubsystem::Get<UETTimeDilationSubsystem>(this);
+			TimeDilationSubsystem.AddActorTimeDilation(this, EETTimeDilationReason::HitStop, PlayerParryData.HitStopTimeDilation, HitStopDuration);
+			TimeDilationSubsystem.AddActorTimeDilation(InDamageCauser, EETTimeDilationReason::HitStop, PlayerParryData.HitStopTimeDilation, HitStopDuration);
 		}
 		return true;
 	}
@@ -708,7 +709,7 @@ void AETPlayer::OnChargeCountChanged(const int32 InCurrentChargeCount, const int
 void AETPlayer::PlayCameraShake(const FName InCameraShakeRowName)
 {
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
-	const FETCameraShakeTableRowData* RowData = UETGameDataSubsystem::GetRow<FETCameraShakeTableRowData>(this, InCameraShakeRowName);
+	const FETCameraShakeTableRowData* RowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETCameraShakeTableRowData>(InCameraShakeRowName);
 	if (PlayerController == nullptr || RowData == nullptr || RowData->Scale <= 0.f)
 	{
 		return;
@@ -742,10 +743,7 @@ void AETPlayer::PlayPerfectDodge()
 {
 	AfterImageComponent->SpawnAfterImage();
 
-	if (UETTimeDilationSubsystem* TimeDilationSubsystem = GetWorld()->GetSubsystem<UETTimeDilationSubsystem>())
-	{
-		TimeDilationSubsystem->StartTimeDilation(PlayerDodgeData.PerfectDodgeTimeDilation, PlayerDodgeData.PerfectDodgeSlowDuration);
-	}
+	ETSubsystem::Get<UETTimeDilationSubsystem>(this).StartGlobalTimeDilation(PlayerDodgeData.PerfectDodgeTimeDilation, PlayerDodgeData.PerfectDodgeSlowDuration);
 }
 
 void AETPlayer::OnActionMontageBlendingOut(const FGameplayTag& InStateTag, const bool bInterrupted)

@@ -4,6 +4,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "DataAsset/ETSkillTableRowData.h"
 #include "Subsystem/ETGameDataSubsystem.h"
+#include "Subsystem/ETTimeDilationSubsystem.h"
 #include "Common/ETCommonSettings.h"
 #include "Materials/MaterialInterface.h"
 #include "Camera/CameraComponent.h"
@@ -27,7 +28,7 @@ void UETTimeFreezeComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void UETTimeFreezeComponent::CastTimeFreeze(const FName InRowName)
 {
-	const FETTimeFreezeTableRowData* RowData = UETGameDataSubsystem::GetRow<FETTimeFreezeTableRowData>(this, InRowName);
+	const FETTimeFreezeTableRowData* RowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETTimeFreezeTableRowData>(InRowName);
 	if (RowData == nullptr)
 	{
 		return;
@@ -55,7 +56,7 @@ void UETTimeFreezeComponent::Freeze(const float InDuration)
 
 	if (bFrozen == false)
 	{
-		OwnerActor->CustomTimeDilation = 0.f;
+		ETSubsystem::Get<UETTimeDilationSubsystem>(this).AddActorTimeDilation(OwnerActor, EETTimeDilationReason::TimeFreeze, 0.f);
 		bFrozen = true;
 
 		ApplyTimeFreezeMaterial();
@@ -80,11 +81,7 @@ void UETTimeFreezeComponent::Unfreeze()
 		return;
 	}
 
-	if (AActor* OwnerActor = GetOwner())
-	{
-		// 히트 스톱과 겹쳐도 항상 정상 속도로 복구
-		OwnerActor->CustomTimeDilation = 1.f;
-	}
+	ETSubsystem::Get<UETTimeDilationSubsystem>(this).RemoveActorTimeDilation(GetOwner(), EETTimeDilationReason::TimeFreeze);
 
 	RestoreOriginMaterials();
 

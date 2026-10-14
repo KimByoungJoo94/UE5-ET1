@@ -1,5 +1,6 @@
 ﻿#include "Character/ETMonster.h"
 #include "Components/WidgetComponent.h"
+#include "Components/ETDissolveComponent.h"
 #include "UI/ETStatWidget.h"
 #include "Common/ETCommonSettings.h"
 #include "Common/ETNames.h"
@@ -29,6 +30,8 @@ AETMonster::AETMonster()
 	LockOnWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 50.f));
 	LockOnWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	LockOnWidgetComponent->SetDrawAtDesiredSize(false);
+
+	DissolveComponent = CreateDefaultSubobject<UETDissolveComponent>(TEXT("DissolveComponent"));
 }
 
 void AETMonster::PostInitializeComponents()
@@ -45,6 +48,8 @@ void AETMonster::PostInitializeComponents()
 	{
 		LockOnWidgetComponent->SetWidgetClass(GetDefault<UETCommonSettings>()->UI.LockOnWidgetClass.LoadSynchronous());
 	}
+
+	DissolveComponent->OnDissolveFinished.AddUObject(this, &ThisClass::OnDissolveFinished);
 }
 
 void AETMonster::BeginPlay()
@@ -80,6 +85,16 @@ void AETMonster::Die()
 
 	HealthBarWidgetComponent->SetVisibility(false);
 	LockOnWidgetComponent->SetVisibility(false);
+}
+
+void AETMonster::Disappear()
+{
+	Destroy();
+}
+
+void AETMonster::OnDissolveFinished()
+{
+	Disappear();
 }
 
 AActor* AETMonster::GetAttackTarget() const

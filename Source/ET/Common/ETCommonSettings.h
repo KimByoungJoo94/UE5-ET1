@@ -48,6 +48,9 @@ public:
 		
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UMaterialInterface> TimeFreezeMaterial;
+
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UMaterialInterface> DissolveMaterial;
 };
 
 // Project Settings > ET > Common > UI, Character...

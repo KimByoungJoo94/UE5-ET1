@@ -29,6 +29,9 @@ namespace ETNames
 	namespace MaterialParameter
 	{
 		inline const FName Opacity(TEXT("Opacity"));
+
+		// FreeMaterialPack M_Disolve 의 파라미터 이름 (철자 그대로)
+		inline const FName Dissolve(TEXT("Disolve"));
 	}
 
 	namespace RootMotionSource

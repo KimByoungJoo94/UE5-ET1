@@ -86,6 +86,9 @@ void AETCharacter::Die()
 	// 사망 후에는 맞지도 길을 막지도 않도록
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	// 시간 정지 중이면 풀어서 사망 몽타주가 재생되도록
+	TimeFreezeComponent->Unfreeze();
+
 	// 상태 컴포넌트가 Death 에서 다른 상태로 바뀌지 않으므로 몽타주가 끝나도 Death 유지
 	if (PlayAction(ETGameplayTags::Character_Action_Death, INDEX_NONE, ETGameplayTags::Character_State_Death) == false)
 	{

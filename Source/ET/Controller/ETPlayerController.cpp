@@ -1,6 +1,7 @@
 ﻿#include "Controller/ETPlayerController.h"
 #include "UI/ETPlayerHUDWidget.h"
 #include "UI/ETCheckpointWidget.h"
+#include "Components/ETInteractionComponent.h"
 #include "Common/ETCommonSettings.h"
 
 void AETPlayerController::BeginPlay()
@@ -68,4 +69,10 @@ void AETPlayerController::CloseCheckpointWidget()
 
 	SetInputMode(FInputModeGameOnly());
 	SetShowMouseCursor(false);
+
+	// 무릎 꿇고 대기 중이던 상호작용 몽타주 재개
+	if (UETInteractionComponent* InteractionComponent = GetPawn() ? GetPawn()->FindComponentByClass<UETInteractionComponent>() : nullptr)
+	{
+		InteractionComponent->EndInteraction();
+	}
 }

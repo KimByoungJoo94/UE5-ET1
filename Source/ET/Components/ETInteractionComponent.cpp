@@ -1,5 +1,10 @@
 ﻿#include "Components/ETInteractionComponent.h"
 #include "Interface/ETInteractionInterface.h"
+#include "Components/ETCharacterStateComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Character/ETCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Animation/AnimInstance.h"
 
 UETInteractionComponent::UETInteractionComponent()
 {	
@@ -41,6 +46,20 @@ void UETInteractionComponent::ReleaseInteractionTarget()
 	}
 }
 
+bool UETInteractionComponent::StartInteraction()
+{
+	AETCharacter* OwnerCharacter = GetOwnerCharacter();
+	if (OwnerCharacter == nullptr ||
+		InteractionTarget.IsValid() == false ||
+		OwnerCharacter->GetCharacterMovement()->IsFalling() ||
+		OwnerCharacter->CanPlayAction(ETGameplayTags::Character_Action_Interaction) == false)
+	{
+		return false;
+	}
+
+	return OwnerCharacter->PlayAction(ETGameplayTags::Character_Action_Interaction, 0, ETGameplayTags::Character_State_Interacting);
+}
+
 void UETInteractionComponent::DoInteraction()
 {
 	DoInteraction(InteractionTarget.Get());
@@ -48,12 +67,44 @@ void UETInteractionComponent::DoInteraction()
 
 void UETInteractionComponent::DoInteraction(AActor* InTarget)
 {
-	if (IsValid(InTarget))
+	IETInteractionInterface* InteractionInterface = Cast<IETInteractionInterface>(InTarget);
+	if (IsValid(InTarget) == false || InteractionInterface == nullptr)
 	{
-		if (IETInteractionInterface* InteractionInterface = Cast<IETInteractionInterface>(InTarget))
+		return;
+	}
+
+	InteractionInterface->OnInteraction(GetOwner());
+
+	if (InteractionInterface->IsHoldInteraction())
+	{
+		if (UAnimInstance* AnimInstance = GetInteractingAnimInstance())
 		{
-			InteractionInterface->OnInteraction(GetOwner());
+			AnimInstance->Montage_Pause(AnimInstance->GetCurrentActiveMontage());
 		}
 	}
 }
 
+void UETInteractionComponent::EndInteraction()
+{
+	if (UAnimInstance* AnimInstance = GetInteractingAnimInstance())
+	{
+		AnimInstance->Montage_Resume(AnimInstance->GetCurrentActiveMontage());
+	}
+}
+
+AETCharacter* UETInteractionComponent::GetOwnerCharacter() const
+{
+	return Cast<AETCharacter>(GetOwner());
+}
+
+UAnimInstance* UETInteractionComponent::GetInteractingAnimInstance() const
+{
+	// 대기 중 피격 등으로 다른 몽타주로 바뀐 경우 건드리지 않도록 상호작용 상태일 때만
+	AETCharacter* OwnerCharacter = GetOwnerCharacter();
+	if (OwnerCharacter == nullptr || OwnerCharacter->GetCharacterStateComponent()->IsCurrentState(ETGameplayTags::Character_State_Interacting) == false)
+	{
+		return nullptr;
+	}
+
+	return OwnerCharacter->GetMesh()->GetAnimInstance();
+}

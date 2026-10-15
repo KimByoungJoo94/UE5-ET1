@@ -21,6 +21,9 @@ namespace ETNames
 	{
 		inline const FName TargetActor(TEXT("TargetActor"));
 		inline const FName HomeLocation(TEXT("HomeLocation"));
+		// ET Select Action 이 고른 액션 몽타주 인덱스와 사용 거리
+		inline const FName ActionIndex(TEXT("ActionIndex"));
+		inline const FName ActionRange(TEXT("ActionRange"));
 	}
 
 	namespace AnimCurve

@@ -11,6 +11,7 @@ class UETTimeFreezeComponent;
 class UETCharacterActionDataAsset;
 class UAnimMontage;
 struct FETCharacterActionMontageData;
+struct FETActionConditionTableRowData;
 struct FGameplayTag;
 
 // PlayAction 으로 재생한 몽타주의 BlendingOut 시점 (끊긴 경우 포함)
@@ -53,18 +54,26 @@ public:
 	// 액션 태그에 맞는 재생 가능한 몽타주가 있으면 상태 전환 후 재생 (AI 등 외부 호출용, InIndex 가 INDEX_NONE 이면 랜덤)
 	bool PlayAction(const FGameplayTag& InActionTag, const int32 InIndex, const FGameplayTag& InStateTag, const FOnActionEnded& InOnActionEnded = FOnActionEnded());
 
+	int32 GetActionMontageNum(const FGameplayTag& InActionTag) const;
+	// 몽타주가 있고 액션 조건(비용, 쿨타임)을 만족하는 몽타주 데이터 (없으면 nullptr)
+	const FETCharacterActionMontageData* FindPlayableActionMontageData(const FGameplayTag& InActionTag, const int32 InIndex) const;
+	const FETActionConditionTableRowData* GetActionConditionRowData(const FETCharacterActionMontageData* InMontageData) const;
+
 protected:
 	// true 이면 데미지 무시 (회피, 패리 등 / 퍼펙트 판정 처리 위치)
 	virtual bool TryAvoidDamage(const FDamageEvent& InDamageEvent, AActor* InDamageCauser);
-	virtual void HitReact(AActor* InDamageCauser) {}
+	// Hit 액션 데이터의 허용, 차단 상태로 피격 몽타주 재생 여부 결정 (막혀도 데미지는 이미 적용됨)
+	void HitReact(AActor* InDamageCauser);
+	// 피격 몽타주 재생 직전 호출 (진행 중이던 행동 정리용)
+	virtual void OnHitReact() {}
 	// 사망 공통 처리 (판정, 이동, 충돌 정지 후 사망 몽타주 재생)
 	virtual void Die();
 
-	bool HasEnoughActionCost(const FETCharacterActionMontageData* InMontageData) const;
-	void ConsumeActionCost(const FETCharacterActionMontageData* InMontageData);
+	// 몽타주 항목의 액션 조건 행 기준 (비용, 쿨타임), 행이 없으면 조건 없음
+	bool IsActionConditionMet(const FETCharacterActionMontageData* InMontageData) const;
+	// 비용 차감, 쿨타임 시작
+	void ApplyActionCondition(const FETCharacterActionMontageData* InMontageData);
 		
-	const FETCharacterActionMontageData* FindPlayableActionMontageData(const FGameplayTag& InActionTag, const int32 InIndex) const;
-	
 	// 찾은 데이터로 상태 전환 → 재생 → 비용 차감, BlendingOut 시 상태 복구 (찾기와 재생 사이에 처리가 필요한 경우 직접 사용)
 	bool PlayAction(const FETCharacterActionMontageData* InMontageData, const FGameplayTag& InStateTag, const FOnActionEnded& InOnActionEnded = FOnActionEnded());
 
@@ -72,6 +81,9 @@ protected:
 	virtual void OnActionMontageBlendingOut(const FGameplayTag& InStateTag, const bool bInterrupted) {}
 
 private:
+	// Character.Action.Hit 몽타주 배열 인덱스 (0 : Front, 1 : Back, 2 : Left, 3 : Right)
+	int32 GetHitMontageIndex(const AActor* InDamageCauser) const;
+
 	void HandleActionMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted, FGameplayTag InStateTag, uint32 InActionSerial, FOnActionEnded InOnActionEnded);
 
 protected:
@@ -94,6 +106,9 @@ protected:
 	TObjectPtr<UETCharacterActionDataAsset> CachedActionDataAsset;
 
 private:
+	// 액션 조건 RowName → 다시 사용 가능한 월드 시간
+	TMap<FName, double> ActionCooldownEndTimeMap;
+
 	// PlayAction 호출마다 증가, 이전 행동 몽타주의 늦은 BlendingOut 이 새 행동 상태를 덮어쓰지 않도록 구분
 	uint32 ActionSerial = 0;
 };

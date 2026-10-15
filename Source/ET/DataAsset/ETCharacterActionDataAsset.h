@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "Common/ETGameplayTags.h"
-#include "DataAsset/ETGameStatTableRowData.h"
 #include "ETCharacterActionDataAsset.generated.h"
 
 class UAnimMontage;
@@ -17,12 +16,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> Montage;
 
-	// 시전 시 소모되는 스탯과 수치 (0 이면 비용 없음)
-	UPROPERTY(EditAnywhere)
-	EETGameStatType CostStatType = EETGameStatType::Mana;
-
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
-	float CostValue = 0.f;
+	// 비용, 쿨타임 등 사용 조건 (비어 있으면 조건 없음)
+	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetActionConditionRowNameOptions"))
+	FName ActionConditionRowName;
 };
 
 USTRUCT(BlueprintType)

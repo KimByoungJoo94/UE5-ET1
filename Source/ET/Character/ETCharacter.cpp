@@ -7,6 +7,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "DataAsset/ETCharacterActionDataAsset.h"
 #include "DataAsset/ETCharacterTableRowData.h"
+#include "DataAsset/ETActionConditionTableRowData.h"
 #include "Subsystem/ETGameDataSubsystem.h"
 #include "Animation/AnimInstance.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -84,6 +85,50 @@ float AETCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 bool AETCharacter::TryAvoidDamage(const FDamageEvent& InDamageEvent, AActor* InDamageCauser)
 {
 	return CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death);
+}
+
+void AETCharacter::HitReact(AActor* InDamageCauser)
+{
+	if (IsValid(InDamageCauser) == false || CanPlayAction(ETGameplayTags::Character_Action_Hit) == false)
+	{
+		return;
+	}
+
+	// 재생할 몽타주가 있을 때만 진행 중이던 행동 정리 (정리 중 상태가 Idle 로 바뀌므로 재생 전에 처리)
+	const FETCharacterActionMontageData* HitMontageData = FindPlayableActionMontageData(ETGameplayTags::Character_Action_Hit, GetHitMontageIndex(InDamageCauser));
+	if (HitMontageData == nullptr)
+	{
+		return;
+	}
+
+	AttackCollisionComponent->EndWeaponCollision();
+	OnHitReact();
+
+	PlayAction(HitMontageData, ETGameplayTags::Character_State_Hit);
+}
+
+int32 AETCharacter::GetHitMontageIndex(const AActor* InDamageCauser) const
+{
+	const FRotator LookAtRotation = (InDamageCauser->GetActorLocation() - GetActorLocation()).Rotation();
+	const float DeltaYaw = (GetActorRotation() - LookAtRotation).GetNormalized().Yaw;
+
+	// 0 : Front, 1 : Back, 2 : Left, 3 : Right
+	int32 DirectionIndex = 0;
+
+	if (FMath::Abs(DeltaYaw) > 135.f)
+	{
+		DirectionIndex = 1;
+	}
+	else if (DeltaYaw > 45.f)
+	{
+		DirectionIndex = 2;
+	}
+	else if (DeltaYaw < -45.f)
+	{
+		DirectionIndex = 3;
+	}
+
+	return DirectionIndex;
 }
 
 void AETCharacter::Die()
@@ -174,26 +219,58 @@ float AETCharacter::GetDefaultCapsuleHalfHeight() const
 	return DefaultCharacter->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
 }
 
-bool AETCharacter::HasEnoughActionCost(const FETCharacterActionMontageData* InMontageData) const
+const FETActionConditionTableRowData* AETCharacter::GetActionConditionRowData(const FETCharacterActionMontageData* InMontageData) const
+{
+	if (InMontageData == nullptr || InMontageData->ActionConditionRowName.IsNone())
+	{
+		return nullptr;
+	}
+
+	return ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETActionConditionTableRowData>(InMontageData->ActionConditionRowName);
+}
+
+bool AETCharacter::IsActionConditionMet(const FETCharacterActionMontageData* InMontageData) const
 {
 	if (InMontageData == nullptr)
 	{
 		return false;
 	}
 
-	if (InMontageData->CostValue <= 0.f)
+	const FETActionConditionTableRowData* ConditionRowData = GetActionConditionRowData(InMontageData);
+	if (ConditionRowData == nullptr)
 	{
 		return true;
 	}
 
-	return GameStatComponent->HasEnoughCurrentValue(InMontageData->CostStatType, InMontageData->CostValue);
+	if (ConditionRowData->CostValue > 0.f && GameStatComponent->HasEnoughCurrentValue(ConditionRowData->CostStatType, ConditionRowData->CostValue) == false)
+	{
+		return false;
+	}
+
+	if (const double* CooldownEndTime = ActionCooldownEndTimeMap.Find(InMontageData->ActionConditionRowName))
+	{
+		return GetWorld()->GetTimeSeconds() >= *CooldownEndTime;
+	}
+
+	return true;
 }
 
-void AETCharacter::ConsumeActionCost(const FETCharacterActionMontageData* InMontageData)
+void AETCharacter::ApplyActionCondition(const FETCharacterActionMontageData* InMontageData)
 {
-	if (InMontageData && InMontageData->CostValue > 0.f)
+	const FETActionConditionTableRowData* ConditionRowData = GetActionConditionRowData(InMontageData);
+	if (ConditionRowData == nullptr)
 	{
-		GameStatComponent->AddDepletedValue(InMontageData->CostStatType, -InMontageData->CostValue);
+		return;
+	}
+
+	if (ConditionRowData->CostValue > 0.f)
+	{
+		GameStatComponent->AddDepletedValue(ConditionRowData->CostStatType, -ConditionRowData->CostValue);
+	}
+
+	if (ConditionRowData->Cooldown > 0.f)
+	{
+		ActionCooldownEndTimeMap.Emplace(InMontageData->ActionConditionRowName, GetWorld()->GetTimeSeconds() + ConditionRowData->Cooldown);
 	}
 }
 
@@ -205,12 +282,17 @@ const FETCharacterActionMontageData* AETCharacter::FindPlayableActionMontageData
 	}
 
 	const FETCharacterActionMontageData* MontageData = CachedActionDataAsset->GetActionMontageData(InActionTag, InIndex);
-	if (MontageData == nullptr || MontageData->Montage == nullptr || HasEnoughActionCost(MontageData) == false)
+	if (MontageData == nullptr || MontageData->Montage == nullptr || IsActionConditionMet(MontageData) == false)
 	{
 		return nullptr;
 	}
 
 	return MontageData;
+}
+
+int32 AETCharacter::GetActionMontageNum(const FGameplayTag& InActionTag) const
+{
+	return CachedActionDataAsset ? CachedActionDataAsset->GetActionMontageDataArray(InActionTag).Num() : 0;
 }
 
 bool AETCharacter::CanPlayAction(const FGameplayTag& InActionTag) const
@@ -235,9 +317,9 @@ bool AETCharacter::PlayAction(const FGameplayTag& InActionTag, const int32 InInd
 	}
 
 	int32 MontageIndex = InIndex;
-	if (MontageIndex == INDEX_NONE && CachedActionDataAsset)
+	if (MontageIndex == INDEX_NONE)
 	{
-		const int32 MontageNum = CachedActionDataAsset->GetActionMontageDataArray(InActionTag).Num();
+		const int32 MontageNum = GetActionMontageNum(InActionTag);
 		MontageIndex = MontageNum > 0 ? FMath::RandRange(0, MontageNum - 1) : 0;
 	}
 
@@ -263,7 +345,7 @@ bool AETCharacter::PlayAction(const FETCharacterActionMontageData* InMontageData
 		return false;
 	}
 
-	ConsumeActionCost(InMontageData);
+	ApplyActionCondition(InMontageData);
 
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{

@@ -15,6 +15,7 @@ public:
 public:
 	// IETInteractionInterface
 	virtual void OnInteraction(AActor* InInteractor) override;
+	virtual bool IsHoldInteraction() const override { return true; }
 	// ~IETInteractionInterface
 
 public:

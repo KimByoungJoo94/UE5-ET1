@@ -179,7 +179,7 @@ public:
 
 protected:
 	virtual bool TryAvoidDamage(const FDamageEvent& InDamageEvent, AActor* InDamageCauser) override;
-	virtual void HitReact(AActor* InDamageCauser) override;
+	virtual void OnHitReact() override;
 	virtual void Die() override;
 
 	virtual void OnActionMontageBlendingOut(const FGameplayTag& InStateTag, const bool bInterrupted) override;

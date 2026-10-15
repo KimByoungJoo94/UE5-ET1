@@ -77,6 +77,9 @@ public:
 	UFUNCTION()
 	static TArray<FName> GetNoticeWidgetRowNameOptions();
 
+	UFUNCTION()
+	static TArray<FName> GetActionConditionRowNameOptions();
+
 private:
 	static TArray<FName> GetRowNameOptions(const UScriptStruct* InRowStruct);
 

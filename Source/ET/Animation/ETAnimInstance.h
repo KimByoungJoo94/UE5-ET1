@@ -53,7 +53,6 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "ET")
 	bool bIsFullbody = false;
 
-	// TODO : 락온 옆걸음 블렌드 스페이스 추가 시 사용
 	// Actor forward 기준 이동 방향 (-180 ~ 180)
 	UPROPERTY(BlueprintReadOnly, Category = "ET")
 	float Direction = 0.f;

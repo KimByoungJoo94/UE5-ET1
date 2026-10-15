@@ -3,16 +3,16 @@
 #include "CoreMinimal.h"
 #include "BehaviorTree/BTTaskNode.h"
 #include "GameplayTagContainer.h"
-#include "ETBTTask_Attack.generated.h"
+#include "ETBTTask_UseAction.generated.h"
 
-// 대상 방향으로 돌아서 액션 재생, 몽타주가 끝나면 성공 (끊기면 실패)
+// 블랙보드의 액션 인덱스로 액션 재생, 몽타주가 끝나면 성공 (끊기거나 조건 불충족이면 실패)
 UCLASS()
-class ET_API UETBTTask_Attack : public UBTTaskNode
+class ET_API UETBTTask_UseAction : public UBTTaskNode
 {
 	GENERATED_BODY()
 
 public:
-	UETBTTask_Attack();
+	UETBTTask_UseAction();
 
 protected:
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
@@ -24,14 +24,13 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Action", meta = (Categories = "Character.Action"))
 	FGameplayTag ActionTag;
 
-	// INDEX_NONE(-1) 이면 액션 몽타주 중 랜덤
-	UPROPERTY(EditAnywhere, Category = "Action")
-	int32 ActionIndex = INDEX_NONE;
-
 	UPROPERTY(EditAnywhere, Category = "Action", meta = (Categories = "Character.State"))
 	FGameplayTag StateTag;
 
-private:	
+	UPROPERTY(EditAnywhere, Category = "Blackboard")
+	FBlackboardKeySelector ActionIndexKey;
+
+private:
 	TWeakObjectPtr<UBehaviorTreeComponent> OwnerComponent;
 	bool bWaitingActionEnd = false;
 };

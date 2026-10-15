@@ -11,6 +11,7 @@ namespace ETGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Character_State_UsingSkill, "Character.State.UsingSkill");
 	UE_DEFINE_GAMEPLAY_TAG(Character_State_Interacting, "Character.State.Interacting");
 	UE_DEFINE_GAMEPLAY_TAG(Character_State_UsingItem, "Character.State.UsingItem");
+	UE_DEFINE_GAMEPLAY_TAG(Character_State_Hit, "Character.State.Hit");
 	UE_DEFINE_GAMEPLAY_TAG(Character_State_Death, "Character.State.Death");
 
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Move, "Character.Action.Move");

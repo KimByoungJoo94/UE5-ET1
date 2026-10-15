@@ -205,7 +205,7 @@ void AETPlayer::OnHeavyAttackActionStarted()
 	if (CanPlayAction(ETGameplayTags::Character_Action_HeavyAttack) && CachedActionDataAsset)
 	{
 		const FETCharacterActionMontageData* HeavyAttackMontageData = CachedActionDataAsset->GetActionMontageData(ETGameplayTags::Character_Action_HeavyAttack, 0);
-		if (HeavyAttackMontageData && HeavyAttackMontageData->Montage && HasEnoughActionCost(HeavyAttackMontageData))
+		if (HeavyAttackMontageData && HeavyAttackMontageData->Montage && IsActionConditionMet(HeavyAttackMontageData))
 		{
 			HeavyAttackMontage = HeavyAttackMontageData->Montage;
 			bPlayHeavyAttack = false;
@@ -213,7 +213,7 @@ void AETPlayer::OnHeavyAttackActionStarted()
 
 			if (PlayAnimMontage(HeavyAttackMontage, 1.f, TEXT("Intro")) > 0.f)
 			{
-				ConsumeActionCost(HeavyAttackMontageData);
+				ApplyActionCondition(HeavyAttackMontageData);
 			}
 		}
 	}
@@ -242,14 +242,7 @@ void AETPlayer::OnHeavyAttackActionCompleted()
 
 void AETPlayer::OnPrimaryActionCompleted()
 {
-	if (CanPlayAction(ETGameplayTags::Character_Action_Interaction) == false ||
-		GetCharacterMovement()->IsFalling() ||
-		InteractionComponent->GetInteractionTarget() == nullptr)
-	{
-		return;
-	}
-
-	PlayAction(ETGameplayTags::Character_Action_Interaction, 0, ETGameplayTags::Character_State_Interacting);
+	InteractionComponent->StartInteraction();
 }
 
 void AETPlayer::OnUseItemActionStarted()
@@ -370,19 +363,19 @@ void AETPlayer::OnActiveSkillActionStarted(const int32 InSkillIndex)
 
 bool AETPlayer::TryPayActiveSkillCost(const int32 InSkillIndex)
 {
-	// 몽타주 없는 스킬용 : 몽타주 항목의 비용만 확인 후 차감
+	// 몽타주 없는 스킬용 : 몽타주 항목의 액션 조건(비용, 쿨타임)만 확인 후 적용
 	if (CanPlayAction(ETGameplayTags::Character_Action_ActiveSkill) == false || GetCharacterMovement()->IsFalling() || CachedActionDataAsset == nullptr)
 	{
 		return false;
 	}
 
 	const FETCharacterActionMontageData* SkillMontageData = CachedActionDataAsset->GetActionMontageData(ETGameplayTags::Character_Action_ActiveSkill, InSkillIndex);
-	if (SkillMontageData == nullptr || HasEnoughActionCost(SkillMontageData) == false)
+	if (SkillMontageData == nullptr || IsActionConditionMet(SkillMontageData) == false)
 	{
 		return false;
 	}
 
-	ConsumeActionCost(SkillMontageData);
+	ApplyActionCondition(SkillMontageData);
 	return true;
 }
 
@@ -583,55 +576,11 @@ bool AETPlayer::TryAvoidDamage(const FDamageEvent& InDamageEvent, AActor* InDama
 	return false;
 }
 
-void AETPlayer::HitReact(AActor* InDamageCauser)
+void AETPlayer::OnHitReact()
 {
-	if (IsValid(InDamageCauser) == false || CachedActionDataAsset == nullptr)
-	{
-		return;
-	}
-
-	// 스킬 시전 중에는 슈퍼아머 (데미지만 받고 피격 리액션 없음)
-	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_UsingSkill))
-	{
-		return;
-	}
-
-	const FRotator LookAtRotation = (InDamageCauser->GetActorLocation() - GetActorLocation()).Rotation();
-	const float DeltaYaw = (GetActorRotation() - LookAtRotation).GetNormalized().Yaw;
-
-	// Character.Action.Hit 몽타주 배열 인덱스 (0 : Front, 1 : Back, 2 : Left, 3 : Right)
-	int32 HitMontageIndex = 0;
-
-	if (FMath::Abs(DeltaYaw) > 135.f)
-	{
-		HitMontageIndex = 1;
-	}
-	else if (DeltaYaw > 45.f)
-	{
-		HitMontageIndex = 2;
-	}
-	else if (DeltaYaw < -45.f)
-	{
-		HitMontageIndex = 3;
-	}
-
-	UAnimMontage* HitMontage = CachedActionDataAsset->GetAnimMontage(ETGameplayTags::Character_Action_Hit, HitMontageIndex);
-	if (HitMontage == nullptr)
-	{
-		HitMontage = CachedActionDataAsset->GetAnimMontage(ETGameplayTags::Character_Action_Hit, 0);
-	}
-
-	if (HitMontage == nullptr)
-	{
-		return;
-	}
-
 	GetCharacterMovement()->RemoveRootMotionSource(ETNames::RootMotionSource::Dodge);
-	AttackCollisionComponent->EndWeaponCollision();
 	ResetComboAttack();
 	ResetHeavyAttack();
-
-	PlayAnimMontage(HitMontage);
 }
 
 void AETPlayer::Die()
@@ -720,7 +669,7 @@ void AETPlayer::PlayComboAttack()
 
 		const TArray<FETCharacterActionMontageData>& AttackMontageDataArray = CachedActionDataAsset->GetActionMontageDataArray(AttackGameplayTag);
 		if (AttackMontageDataArray.IsValidIndex(CurrentIndex) &&
-			HasEnoughActionCost(&AttackMontageDataArray[CurrentIndex]))
+			IsActionConditionMet(&AttackMontageDataArray[CurrentIndex]))
 		{
 			ComboAttackIndex = (ComboAttackIndex + 1) % AttackMontageDataArray.Num();
 
@@ -728,7 +677,7 @@ void AETPlayer::PlayComboAttack()
 
 			if (PlayAnimMontage(AttackMontageDataArray[CurrentIndex].Montage) > 0.f)
 			{
-				ConsumeActionCost(&AttackMontageDataArray[CurrentIndex]);
+				ApplyActionCondition(&AttackMontageDataArray[CurrentIndex]);
 			}
 		}
 	}

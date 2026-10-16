@@ -72,6 +72,18 @@ EBTNodeResult::Type UETBTTask_SelectAction::ExecuteTask(UBehaviorTreeComponent& 
 		return EBTNodeResult::Failed;
 	}
 
+	// 같은 액션이 연속으로 나오지 않도록 다른 후보가 있으면 직전 액션 제외
+	FETSelectActionMemory* Memory = CastInstanceNodeMemory<FETSelectActionMemory>(NodeMemory);
+	if (CandidateArray.Num() > 1)
+	{
+		const int32 LastCandidateIndex = CandidateArray.IndexOfByPredicate([Memory](const TPair<int32, float>& InCandidate) { return InCandidate.Key == Memory->LastActionIndex; });
+		if (LastCandidateIndex != INDEX_NONE)
+		{
+			TotalWeight -= CandidateArray[LastCandidateIndex].Value;
+			CandidateArray.RemoveAt(LastCandidateIndex);
+		}
+	}
+
 	int32 SelectedIndex = CandidateArray.Last().Key;
 	float RandomWeight = FMath::FRandRange(0.f, TotalWeight);
 	for (const TPair<int32, float>& Candidate : CandidateArray)
@@ -90,5 +102,22 @@ EBTNodeResult::Type UETBTTask_SelectAction::ExecuteTask(UBehaviorTreeComponent& 
 	BlackboardComponent->SetValueAsInt(ActionIndexKey.SelectedKeyName, SelectedIndex);
 	BlackboardComponent->SetValueAsFloat(ActionRangeKey.SelectedKeyName, MaxRange > 0.f ? MaxRange : UE_BIG_NUMBER);
 
+	Memory->LastActionIndex = SelectedIndex;
+
 	return EBTNodeResult::Succeeded;
+}
+
+uint16 UETBTTask_SelectAction::GetInstanceMemorySize() const
+{
+	return sizeof(FETSelectActionMemory);
+}
+
+void UETBTTask_SelectAction::InitializeMemory(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTMemoryInit::Type InitType) const
+{
+	InitializeNodeMemory<FETSelectActionMemory>(NodeMemory, InitType);
+}
+
+void UETBTTask_SelectAction::CleanupMemory(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTMemoryClear::Type CleanupType) const
+{
+	CleanupNodeMemory<FETSelectActionMemory>(NodeMemory, CleanupType);
 }

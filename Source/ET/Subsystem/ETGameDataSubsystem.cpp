@@ -10,6 +10,7 @@
 #include "DataAsset/ETCheckpointTableRowData.h"
 #include "DataAsset/ETNoticeWidgetTableRowData.h"
 #include "DataAsset/ETActionConditionTableRowData.h"
+#include "DataAsset/ETSpawnVolumeTableRowData.h"
 #include "Common/ETNames.h"
 
 void UETGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -92,7 +93,23 @@ TArray<FName> UETGameDataSubsystem::GetActionConditionRowNameOptions()
 	return GetRowNameOptions(FETActionConditionTableRowData::StaticStruct());
 }
 
+TArray<FName> UETGameDataSubsystem::GetSpawnVolumeRowNameOptions()
+{
+	return GetRowNameOptions(FETSpawnVolumeTableRowData::StaticStruct());
+}
+
 TArray<FName> UETGameDataSubsystem::GetRowNameOptions(const UScriptStruct* InRowStruct)
+{
+	const UDataTable* DataTable = FindDataTableInPath(InRowStruct);
+	if (DataTable == nullptr)
+	{
+		return TArray<FName>();
+	}
+
+	return DataTable->GetRowNames();
+}
+
+const UDataTable* UETGameDataSubsystem::FindDataTableInPath(const UScriptStruct* InRowStruct)
 {
 	// 에디터에는 서브시스템 인스턴스가 없으므로 폴더의 테이블을 직접 로드
 	TArray<UDataTable*> DataTableArray;
@@ -102,11 +119,11 @@ TArray<FName> UETGameDataSubsystem::GetRowNameOptions(const UScriptStruct* InRow
 	{
 		if (DataTable->GetRowStruct() == InRowStruct)
 		{
-			return DataTable->GetRowNames();
+			return DataTable;
 		}
 	}
 
-	return TArray<FName>();
+	return nullptr;
 }
 
 void UETGameDataSubsystem::LoadDataTablesInPath(OUT TArray<UDataTable*>& OutDataTableArray)

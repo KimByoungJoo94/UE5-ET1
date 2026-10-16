@@ -45,6 +45,23 @@ public:
 		return FoundDataTable->Get();
 	}
 
+#if WITH_EDITOR
+	// 에디터 월드 미리보기용 (서브시스템 인스턴스가 없으므로 폴더의 테이블을 직접 로드해서 조회)
+	template <typename T>
+	static const T* GetRowInEditor(const FName InRowName)
+	{
+		static_assert(TIsDerivedFrom<T, FTableRowBase>::IsDerived, "T must derive from FTableRowBase.");
+
+		const UDataTable* DataTable = FindDataTableInPath(T::StaticStruct());
+		if (DataTable == nullptr)
+		{
+			return nullptr;
+		}
+
+		return DataTable->FindRow<T>(InRowName, TEXT("UETGameDataSubsystem::GetRowInEditor"), false);
+	}
+#endif
+
 public:
 	// 에디터 드롭다운(GetOptions) 용 RowName 목록
 	UFUNCTION()
@@ -80,8 +97,12 @@ public:
 	UFUNCTION()
 	static TArray<FName> GetActionConditionRowNameOptions();
 
+	UFUNCTION()
+	static TArray<FName> GetSpawnVolumeRowNameOptions();
+
 private:
 	static TArray<FName> GetRowNameOptions(const UScriptStruct* InRowStruct);
+	static const UDataTable* FindDataTableInPath(const UScriptStruct* InRowStruct);
 
 	// /Game/ET/DataTable 폴더(하위 포함)의 모든 DataTable 로드
 	static void LoadDataTablesInPath(OUT TArray<UDataTable*>& OutDataTableArray);

@@ -12,7 +12,7 @@ void AETAIController::OnPossess(APawn* InPawn)
 
 	const AETCharacter* PossessedCharacter = Cast<AETCharacter>(InPawn);
 	const FETCharacterTableRowData* CharacterRowData = PossessedCharacter ? ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETCharacterTableRowData>(PossessedCharacter->GetCharacterRowName()) : nullptr;
-	UBehaviorTree* BehaviorTree = CharacterRowData ? CharacterRowData->BehaviorTree.LoadSynchronous() : nullptr;
+	UBehaviorTree* BehaviorTree = CharacterRowData ? CharacterRowData->AIData.BehaviorTree.LoadSynchronous() : nullptr;
 	if (BehaviorTree == nullptr || RunBehaviorTree(BehaviorTree) == false)
 	{
 		return;

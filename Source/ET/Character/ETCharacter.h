@@ -34,6 +34,8 @@ public:
 	FORCEINLINE UETAttackCollisionComponent* GetAttackCollisionComponent() { return AttackCollisionComponent; }
 	FORCEINLINE UETTimeFreezeComponent* GetTimeFreezeComponent() { return TimeFreezeComponent; }
 	FORCEINLINE FName GetCharacterRowName() const { return CharacterRowName; }
+	// 생성 시 FinishSpawning 전에만 지정 (PreInitializeComponents 에서 행 데이터 적용)
+	FORCEINLINE void SetCharacterRowName(const FName InCharacterRowName) { CharacterRowName = InCharacterRowName; }
 
 public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;

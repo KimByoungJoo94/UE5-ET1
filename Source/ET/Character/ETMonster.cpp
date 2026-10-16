@@ -1,10 +1,13 @@
 ﻿#include "Character/ETMonster.h"
 #include "Components/WidgetComponent.h"
 #include "Components/ETDissolveComponent.h"
+#include "Components/ETCharacterStateComponent.h"
+#include "Common/ETGameplayTags.h"
 #include "UI/ETStatWidget.h"
 #include "Common/ETCommonSettings.h"
 #include "Common/ETNames.h"
 #include "Controller/ETAIController.h"
+#include "Spawn/ETSpawnVolume.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BrainComponent.h"
@@ -23,13 +26,13 @@ AETMonster::AETMonster()
 
 	HealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidgetComponent"));
 	HealthBarWidgetComponent->SetupAttachment(GetRootComponent());
-	HealthBarWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 140.f));
-	HealthBarWidgetComponent->SetDrawSize(FVector2D(130.f, 12.f));
+	HealthBarWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 150.f));
+	HealthBarWidgetComponent->SetDrawSize(FVector2D(130.f, 10.f));
 	HealthBarWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 
 	LockOnWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("LockOnWidgetComponent"));
 	LockOnWidgetComponent->SetupAttachment(GetRootComponent());
-	LockOnWidgetComponent->SetDrawSize(FVector2D(64.f, 64.f));
+	LockOnWidgetComponent->SetDrawSize(FVector2D(40.f, 40.f));
 	LockOnWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 50.f));
 	LockOnWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	LockOnWidgetComponent->SetDrawAtDesiredSize(false);
@@ -70,6 +73,8 @@ void AETMonster::BeginPlay()
 		HealthBarWidget->SetGameStatType(EETGameStatType::Health);
 	}
 
+	// 플레이어가 스폰 볼륨에 들어왔을 때만 표시
+	HealthBarWidgetComponent->SetVisibility(false);
 	LockOnWidgetComponent->SetVisibility(false);
 }
 
@@ -105,6 +110,25 @@ void AETMonster::OnDissolveFinished()
 	Disappear();
 }
 
+float AETMonster::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	if (ActualDamage <= 0.f || CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death))
+	{
+		return ActualDamage;
+	}
+
+	// 탐지 조건과 상관없이 공격한 대상 인식 (유지, 해제는 ET Find Target 에서 판정)
+	AAIController* AIController = Cast<AAIController>(GetController());
+	if (UBlackboardComponent* BlackboardComponent = AIController ? AIController->GetBlackboardComponent() : nullptr)
+	{
+		AActor* Attacker = EventInstigator ? EventInstigator->GetPawn() : DamageCauser;
+		BlackboardComponent->SetValueAsObject(ETNames::BlackboardKey::TargetActor, Attacker);
+	}
+
+	return ActualDamage;
+}
+
 AActor* AETMonster::GetAttackTarget() const
 {
 	const AAIController* AIController = Cast<AAIController>(GetController());
@@ -115,6 +139,21 @@ AActor* AETMonster::GetAttackTarget() const
 	}
 
 	return Cast<AActor>(BlackboardComponent->GetValueAsObject(ETNames::BlackboardKey::TargetActor));
+}
+
+AETSpawnVolume* AETMonster::GetSpawnVolume() const
+{
+	return SpawnVolume.Get();
+}
+
+void AETMonster::SetSpawnVolume(AETSpawnVolume* InSpawnVolume)
+{
+	SpawnVolume = InSpawnVolume;
+}
+
+void AETMonster::SetHealthBarVisible(const bool bVisible)
+{
+	HealthBarWidgetComponent->SetVisibility(bVisible && CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death) == false);
 }
 
 void AETMonster::OnLockOnTargeted()

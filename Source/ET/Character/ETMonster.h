@@ -7,6 +7,7 @@
 
 class UWidgetComponent;
 class UETDissolveComponent;
+class AETSpawnVolume;
 
 UCLASS()
 class ET_API AETMonster : public AETCharacter, public IETLockOnInterface
@@ -22,7 +23,15 @@ protected:
 	virtual void Die() override;
 
 public:
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	virtual AActor* GetAttackTarget() const override;
+
+	AETSpawnVolume* GetSpawnVolume() const;
+	// 생성한 스폰 볼륨이 FinishSpawning 전에 지정
+	void SetSpawnVolume(AETSpawnVolume* InSpawnVolume);
+
+	// 스폰 볼륨이 플레이어 진입, 이탈 시 호출 (사망 후에는 항상 숨김)
+	void SetHealthBarVisible(const bool bVisible);
 
 	// IETLockOnInterface
 	virtual void OnLockOnTargeted() override;
@@ -44,4 +53,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "ET|Component")
 	TObjectPtr<UETDissolveComponent> DissolveComponent;
+
+private:
+	TWeakObjectPtr<AETSpawnVolume> SpawnVolume;
 };

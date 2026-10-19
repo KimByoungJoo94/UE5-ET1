@@ -19,6 +19,8 @@ enum class EETGameStatType : uint8
 	MomentumAttackBonus,
 	MomentumGain,
 	DetectRange,
+	StunPoint,
+	StunAttack,
 	Max,
 };
 

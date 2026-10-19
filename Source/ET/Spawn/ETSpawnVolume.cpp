@@ -124,7 +124,7 @@ void AETSpawnVolume::SetPlayerInRange(const bool bInRange)
 	{
 		if (SpawnedMonster.IsValid())
 		{
-			SpawnedMonster->SetHealthBarVisible(bPlayerInRange);
+			SpawnedMonster->SetStatBarVisible(bPlayerInRange);
 		}
 	}
 }
@@ -163,7 +163,7 @@ void AETSpawnVolume::SpawnCharacters()
 		Monster->SetCharacterRowName(SpawnCharacterData.CharacterRowName);
 		Monster->SetSpawnVolume(this);
 		Monster->FinishSpawning(SpawnTransform);
-		Monster->SetHealthBarVisible(bPlayerInRange);
+		Monster->SetStatBarVisible(bPlayerInRange);
 
 		SpawnedMonsterArray.Add(Monster);
 	}

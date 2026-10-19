@@ -13,6 +13,7 @@ namespace ETGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Interacting);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_UsingItem);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Hit);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Stun);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Death);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Move);
@@ -21,6 +22,7 @@ namespace ETGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_JumpAttack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_HeavyAttack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Hit);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Stun);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Death);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Dodge);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Parry);

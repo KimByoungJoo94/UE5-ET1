@@ -21,6 +21,8 @@ protected:
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
 	virtual void Die() override;
+	virtual void Stun() override;
+	virtual void OnStunEnded(bool bInterrupted) override;
 
 public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
@@ -31,7 +33,7 @@ public:
 	void SetSpawnVolume(AETSpawnVolume* InSpawnVolume);
 
 	// 스폰 볼륨이 플레이어 진입, 이탈 시 호출 (사망 후에는 항상 숨김)
-	void SetHealthBarVisible(const bool bVisible);
+	void SetStatBarVisible(const bool bVisible);
 
 	// IETLockOnInterface
 	virtual void OnLockOnTargeted() override;
@@ -46,7 +48,7 @@ protected:
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "ET")
-	TObjectPtr<UWidgetComponent> HealthBarWidgetComponent;
+	TObjectPtr<UWidgetComponent> StatBarWidgetComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "ET")
 	TObjectPtr<UWidgetComponent> LockOnWidgetComponent;

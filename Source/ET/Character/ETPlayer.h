@@ -189,6 +189,8 @@ protected:
 	void PlayParryParticle(const FDamageEvent& InDamageEvent, const bool bInPerfect);
 	void PlayCameraShake(const FName InCameraShakeRowName);
 	void GainPerfectMomentum();
+	// 퍼펙트 회피, 패리 시 공격한 캐릭터의 스턴 포인트 차감
+	void ApplyPerfectStunDamage(AActor* InDamageCauser);
 
 	// 스폰 시 세이브 데이터의 영구 스탯을 스탯 컴포넌트에 적용
 	void ApplySavedPermanentGameStat();

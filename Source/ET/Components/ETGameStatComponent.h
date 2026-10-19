@@ -74,6 +74,7 @@ public:
 	const FETGameStat& GetGameStat(const EETGameStatType InGameStatType) const;
 	void AddDepletedValue(const EETGameStatType InGameStatType, const float InValue);
 	void AddPermanentValue(const EETGameStatType InGameStatType, const float InValue);
+	void ResetDepletedValue(const EETGameStatType InGameStatType);
 	void ResetAllDepletedValue();
 	void EmptyCurrentValue(const EETGameStatType InGameStatType);
 	bool HasEnoughCurrentValue(const EETGameStatType InGameStatType, const float InValue) const;

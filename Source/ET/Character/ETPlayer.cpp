@@ -509,6 +509,14 @@ void AETPlayer::GainPerfectMomentum()
 	GameStatComponent->AddDepletedValue(EETGameStatType::Momentum, GameStatComponent->GetGameStat(EETGameStatType::MomentumGain).GetCurrentValue());
 }
 
+void AETPlayer::ApplyPerfectStunDamage(AActor* InDamageCauser)
+{
+	if (AETCharacter* DamageCauserCharacter = Cast<AETCharacter>(InDamageCauser))
+	{
+		DamageCauserCharacter->ApplyStunDamage(GameStatComponent->GetGameStat(EETGameStatType::StunAttack).GetCurrentValue());
+	}
+}
+
 float AETPlayer::AttackTarget(AActor* InTarget, const FHitResult& InHitResult)
 {
 	const float ActualDamage = Super::AttackTarget(InTarget, InHitResult);
@@ -547,6 +555,7 @@ bool AETPlayer::TryAvoidDamage(const FDamageEvent& InDamageEvent, AActor* InDama
 			bPerfectTiming = false;
 			PlayPerfectDodge();
 			GainPerfectMomentum();
+			ApplyPerfectStunDamage(InDamageCauser);
 		}
 		return true;
 	}
@@ -558,6 +567,7 @@ bool AETPlayer::TryAvoidDamage(const FDamageEvent& InDamageEvent, AActor* InDama
 		{
 			bPerfectTiming = false;
 			GainPerfectMomentum();
+			ApplyPerfectStunDamage(InDamageCauser);
 		}
 
 		PlayParryParticle(InDamageEvent, bPerfect);

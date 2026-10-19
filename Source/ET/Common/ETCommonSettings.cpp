@@ -7,4 +7,10 @@
 UETCommonSettings::UETCommonSettings()
 {
 	CategoryName = TEXT("ET");
+
+	UI.MonsterStatList.StatBarDataArray =
+	{
+		{ EETGameStatType::Health, TEXT("red") },
+		{ EETGameStatType::StunPoint, TEXT("yellow") },
+	};
 }

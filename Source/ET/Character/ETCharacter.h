@@ -43,6 +43,9 @@ public:
 	virtual float AttackTarget(AActor* InTarget, const FHitResult& InHitResult);
 	virtual float GetAttackDamage() const;
 
+	// 스턴 포인트 차감, 0 이 되면 다음 틱에 스턴 (스턴, 사망 중이거나 이미 0 이면 무시 / 최대값 0 은 스턴 면역)
+	void ApplyStunDamage(const float InStunDamage);
+
 	// 공격 시 바라볼 대상 (플레이어는 락온 대상, AI 는 블랙보드 대상)
 	virtual AActor* GetAttackTarget() const { return nullptr; }
 	virtual void ResetGameStat();
@@ -70,6 +73,10 @@ protected:
 	virtual void OnHitReact() {}
 	// 사망 공통 처리 (판정, 이동, 충돌 정지 후 사망 몽타주 재생)
 	virtual void Die();
+	// 스턴 몽타주 재생 (재생 실패 시 바로 종료 처리)
+	virtual void Stun();
+	// 스턴 몽타주 종료 시 스턴 포인트 초기화 (사망으로 끊긴 경우 제외)
+	virtual void OnStunEnded(bool bInterrupted);
 
 	// 몽타주 항목의 액션 조건 행 기준 (비용, 쿨타임), 행이 없으면 조건 없음
 	bool IsActionConditionMet(const FETCharacterActionMontageData* InMontageData) const;

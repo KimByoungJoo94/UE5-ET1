@@ -12,6 +12,7 @@ namespace ETGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Character_State_Interacting, "Character.State.Interacting");
 	UE_DEFINE_GAMEPLAY_TAG(Character_State_UsingItem, "Character.State.UsingItem");
 	UE_DEFINE_GAMEPLAY_TAG(Character_State_Hit, "Character.State.Hit");
+	UE_DEFINE_GAMEPLAY_TAG(Character_State_Stun, "Character.State.Stun");
 	UE_DEFINE_GAMEPLAY_TAG(Character_State_Death, "Character.State.Death");
 
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Move, "Character.Action.Move");
@@ -20,6 +21,7 @@ namespace ETGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_JumpAttack, "Character.Action.JumpAttack");	
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_HeavyAttack, "Character.Action.HeavyAttack");
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Hit, "Character.Action.Hit");
+	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Stun, "Character.Action.Stun");
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Death, "Character.Action.Death");
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Dodge, "Character.Action.Dodge");
 	UE_DEFINE_GAMEPLAY_TAG(Character_Action_Parry, "Character.Action.Parry");

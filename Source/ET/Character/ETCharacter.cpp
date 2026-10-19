@@ -15,6 +15,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
 
 AETCharacter::AETCharacter()
 {
@@ -158,6 +159,56 @@ void AETCharacter::Die()
 			MontageInstance->bEnableAutoBlendOut = false;
 		}
 	}
+}
+
+void AETCharacter::ApplyStunDamage(const float InStunDamage)
+{
+	if (InStunDamage <= 0.f ||
+		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death) ||
+		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Stun))
+	{
+		return;
+	}
+
+	// 0 이면 스턴 면역(최대값 0)이거나 다음 틱 스턴 대기 중
+	if (GameStatComponent->GetGameStat(EETGameStatType::StunPoint).GetCurrentValue() <= 0.f)
+	{
+		return;
+	}
+
+	GameStatComponent->AddDepletedValue(EETGameStatType::StunPoint, -InStunDamage);
+
+	// 공격 판정 처리 중에 호출되므로 무기 충돌, 몽타주 정리는 다음 틱에 처리
+	if (GameStatComponent->GetGameStat(EETGameStatType::StunPoint).GetCurrentValue() <= 0.f)
+	{
+		GetWorldTimerManager().SetTimerForNextTick(this, &ThisClass::Stun);
+	}
+}
+
+void AETCharacter::Stun()
+{
+	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death))
+	{
+		return;
+	}
+
+	AttackCollisionComponent->EndWeaponCollision();
+	GetCharacterMovement()->StopMovementImmediately();
+
+	if (PlayAction(ETGameplayTags::Character_Action_Stun, 0, ETGameplayTags::Character_State_Stun, FOnActionEnded::CreateUObject(this, &ThisClass::OnStunEnded)) == false)
+	{
+		OnStunEnded(true);
+	}
+}
+
+void AETCharacter::OnStunEnded(bool bInterrupted)
+{
+	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death))
+	{
+		return;
+	}
+
+	GameStatComponent->ResetDepletedValue(EETGameStatType::StunPoint);
 }
 
 float AETCharacter::AttackTarget(AActor* InTarget, const FHitResult& InHitResult)

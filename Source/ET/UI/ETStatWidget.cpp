@@ -18,16 +18,19 @@ void UETStatWidget::SetUseStatText(const bool bInUseStatText)
 	UpdateStatTextVisibility();
 }
 
+void UETStatWidget::SetProgressBarColorName(const FName InProgressBarColorName)
+{
+	ProgressBarColorName = InProgressBarColorName;
+
+	UpdateProgressBarColor();
+}
+
 void UETStatWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
 
 	// 디자이너 미리보기에도 반영
-	if (ValueProgressBar)
-	{
-		ValueProgressBar->SetFillColorAndOpacity(FLinearColor(GColorList.GetFColorByName(*ProgressBarColorName.ToString())));
-	}
-
+	UpdateProgressBarColor();
 	UpdateStatTextVisibility();
 }
 
@@ -81,6 +84,14 @@ void UETStatWidget::UpdateStatTextVisibility()
 	ValueText->SetVisibility(bUseStatText ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 }
 
+void UETStatWidget::UpdateProgressBarColor()
+{
+	if (ValueProgressBar)
+	{
+		ValueProgressBar->SetFillColorAndOpacity(FLinearColor(GColorList.GetFColorByName(*ProgressBarColorName.ToString())));
+	}
+}
+
 void UETStatWidget::OnUpdateGameStat(const FETGameStat& InGameStat)
 {
 	UpdateGameStat(InGameStat);
@@ -99,7 +110,7 @@ void UETStatWidget::UpdateGameStat(const FETGameStat& InGameStat)
 	}
 }
 
-TArray<FString> UETStatWidget::GetColorNameOptions() const
+TArray<FString> UETStatWidget::GetColorNameOptions()
 {
 	TArray<FString> ColorNameArray;
 	ColorNameArray.Reserve(GColorList.GetColorsNum());

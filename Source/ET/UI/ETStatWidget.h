@@ -21,6 +21,11 @@ public:
 	// 수치 텍스트 표시 여부 (false 면 Collapsed)
 	void SetUseStatText(const bool bInUseStatText);
 
+	void SetProgressBarColorName(const FName InProgressBarColorName);
+
+	UFUNCTION()
+	static TArray<FString> GetColorNameOptions();
+
 protected:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
@@ -28,9 +33,6 @@ protected:
 
 	void OnUpdateGameStat(const FETGameStat& InGameStat);
 	void UpdateGameStat(const FETGameStat& InGameStat);
-
-	UFUNCTION()
-	TArray<FString> GetColorNameOptions() const;
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Stat")
@@ -54,6 +56,7 @@ private:
 	void UnbindGameStatComponent();
 
 	void UpdateStatTextVisibility();
+	void UpdateProgressBarColor();
 
 private:
 	TWeakObjectPtr<UETGameStatComponent> BoundGameStatComponent;

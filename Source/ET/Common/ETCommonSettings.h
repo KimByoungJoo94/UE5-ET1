@@ -2,12 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
+#include "UI/ETStatListWidget.h"
 #include "ETCommonSettings.generated.h"
 
 class UETPlayerHUDWidget;
 class UETInteractionWidget;
 class UETCheckpointWidget;
-class UETStatWidget;
 class UETUserWidget;
 class UETDamageTextWidget;
 class UETThrobberWidget;
@@ -28,8 +28,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSoftClassPtr<UETCheckpointWidget> CheckpointWidgetClass;
 
+	// 몬스터 머리 위 스탯 바
 	UPROPERTY(EditAnywhere)
-	TSoftClassPtr<UETStatWidget> HealthBarWidgetClass;
+	FETStatListSettings MonsterStatList;
 
 	UPROPERTY(EditAnywhere)
 	TSoftClassPtr<UETUserWidget> LockOnWidgetClass;

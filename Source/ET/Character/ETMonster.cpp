@@ -3,7 +3,7 @@
 #include "Components/ETDissolveComponent.h"
 #include "Components/ETCharacterStateComponent.h"
 #include "Common/ETGameplayTags.h"
-#include "UI/ETStatWidget.h"
+#include "UI/ETStatListWidget.h"
 #include "Common/ETCommonSettings.h"
 #include "Common/ETNames.h"
 #include "Controller/ETAIController.h"
@@ -24,11 +24,11 @@ AETMonster::AETMonster()
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
-	HealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidgetComponent"));
-	HealthBarWidgetComponent->SetupAttachment(GetRootComponent());
-	HealthBarWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 150.f));
-	HealthBarWidgetComponent->SetDrawSize(FVector2D(130.f, 10.f));
-	HealthBarWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	StatBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("StatBarWidgetComponent"));
+	StatBarWidgetComponent->SetupAttachment(GetRootComponent());
+	StatBarWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 150.f));
+	StatBarWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	StatBarWidgetComponent->SetWidgetClass(UETStatListWidget::StaticClass());
 
 	LockOnWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("LockOnWidgetComponent"));
 	LockOnWidgetComponent->SetupAttachment(GetRootComponent());
@@ -45,11 +45,6 @@ void AETMonster::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	// 위젯 컴포넌트가 BeginPlay 에서 위젯을 생성하므로 그 전에 지정 (BP 에서 지정한 값이 우선)
-	if (HealthBarWidgetComponent->GetWidgetClass() == nullptr)
-	{
-		HealthBarWidgetComponent->SetWidgetClass(GetDefault<UETCommonSettings>()->UI.HealthBarWidgetClass.LoadSynchronous());
-	}
-
 	if (LockOnWidgetComponent->GetWidgetClass() == nullptr)
 	{
 		LockOnWidgetComponent->SetWidgetClass(GetDefault<UETCommonSettings>()->UI.LockOnWidgetClass.LoadSynchronous());
@@ -63,18 +58,17 @@ void AETMonster::BeginPlay()
 	Super::BeginPlay();
 
 	// 위젯은 WidgetComponent::BeginPlay 에서 생성되고 첫 Tick 에 Construct 되므로 그 전에 소유 캐릭터 지정
-	if (UETStatWidget* HealthBarWidget = Cast<UETStatWidget>(HealthBarWidgetComponent->GetUserWidgetObject()))
+	if (UETStatListWidget* StatListWidget = Cast<UETStatListWidget>(StatBarWidgetComponent->GetUserWidgetObject()))
 	{
-		HealthBarWidget->SetOwningETCharacter(this);
-		HealthBarWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
-		HealthBarWidget->SetUseStatText(false);
+		StatListWidget->SetOwningETCharacter(this);
+		StatListWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
 
-		// 소유 캐릭터 지정 후 바로 바인딩해서 첫 값 갱신 (Construct 시 다시 바인딩해도 기존 바인딩은 해제됨)
-		HealthBarWidget->SetGameStatType(EETGameStatType::Health);
+		// 최대값이 0 인 스탯(스턴 면역 등)은 빠지므로 표시되는 개수만큼 크기 지정
+		StatBarWidgetComponent->SetDrawSize(StatListWidget->BuildStatWidgets(GetDefault<UETCommonSettings>()->UI.MonsterStatList));
 	}
 
 	// 플레이어가 스폰 볼륨에 들어왔을 때만 표시
-	HealthBarWidgetComponent->SetVisibility(false);
+	StatBarWidgetComponent->SetVisibility(false);
 	LockOnWidgetComponent->SetVisibility(false);
 }
 
@@ -91,12 +85,45 @@ void AETMonster::Die()
 
 	Super::Die();
 
-	HealthBarWidgetComponent->SetVisibility(false);
+	StatBarWidgetComponent->SetVisibility(false);
 	LockOnWidgetComponent->SetVisibility(false);
 
 	if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0))
 	{
 		ETSubsystem::Get<UETJobSubsystem>(this).Run(PlayerController, MakeUnique<FETShowNoticeWidgetJob>(PlayerController, ETNames::RowName::NoticeWin));
+	}
+}
+
+void AETMonster::Stun()
+{
+	// BT 액션 태스크가 중단되며 몽타주를 멈추고 이동도 계속되므로 스턴 몽타주 재생 전에 정지
+	if (const AAIController* AIController = Cast<AAIController>(GetController()))
+	{
+		if (UBrainComponent* BrainComponent = AIController->GetBrainComponent())
+		{
+			BrainComponent->StopLogic(TEXT("Stun"));
+		}
+	}
+
+	Super::Stun();
+}
+
+void AETMonster::OnStunEnded(bool bInterrupted)
+{
+	Super::OnStunEnded(bInterrupted);
+
+	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death))
+	{
+		return;
+	}
+
+	// 블랙보드는 유지되므로 인식 중이던 대상부터 다시 판단
+	if (const AAIController* AIController = Cast<AAIController>(GetController()))
+	{
+		if (UBrainComponent* BrainComponent = AIController->GetBrainComponent())
+		{
+			BrainComponent->RestartLogic();
+		}
 	}
 }
 
@@ -151,9 +178,9 @@ void AETMonster::SetSpawnVolume(AETSpawnVolume* InSpawnVolume)
 	SpawnVolume = InSpawnVolume;
 }
 
-void AETMonster::SetHealthBarVisible(const bool bVisible)
+void AETMonster::SetStatBarVisible(const bool bVisible)
 {
-	HealthBarWidgetComponent->SetVisibility(bVisible && CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death) == false);
+	StatBarWidgetComponent->SetVisibility(bVisible && CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death) == false);
 }
 
 void AETMonster::OnLockOnTargeted()

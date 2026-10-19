@@ -3,6 +3,8 @@
 #include "UI/ETCheckpointWidget.h"
 #include "Components/ETInteractionComponent.h"
 #include "Common/ETCommonSettings.h"
+#include "Character/ETPlayer.h"
+#include "Subsystem/ETSpawnSubsystem.h"
 
 void AETPlayerController::BeginPlay()
 {
@@ -18,7 +20,7 @@ void AETPlayerController::BeginPlay()
 	}
 }
 
-void AETPlayerController::OpenCheckpointWidget()
+void AETPlayerController::OpenCheckpointWidget(const FName InCheckpointRowName)
 {
 	if (CheckpointWidget && CheckpointWidget->IsInViewport())
 	{
@@ -44,6 +46,7 @@ void AETPlayerController::OpenCheckpointWidget()
 		PlayerHUDWidget->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
+	CheckpointWidget->SetCheckpointRowName(InCheckpointRowName);
 	CheckpointWidget->AddToViewport(1);
 
 	FInputModeUIOnly InputMode;
@@ -75,4 +78,14 @@ void AETPlayerController::CloseCheckpointWidget()
 	{
 		InteractionComponent->EndInteraction();
 	}
+}
+
+void AETPlayerController::RestAtCheckpoint()
+{
+	if (AETPlayer* PlayerCharacter = Cast<AETPlayer>(GetPawn()))
+	{
+		PlayerCharacter->ResetGameStat();
+	}
+
+	ETSubsystem::Get<UETSpawnSubsystem>(this).ResetAllSpawnVolumes();
 }

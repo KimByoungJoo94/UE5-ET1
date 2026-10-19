@@ -18,8 +18,11 @@ public:
 
 public:
 	// 열려 있는 동안 HUD 숨김, 입력은 UI 에서만 처리
-	void OpenCheckpointWidget();
+	void OpenCheckpointWidget(const FName InCheckpointRowName);
 	void CloseCheckpointWidget();
+
+	// 체크포인트 휴식 (상태 회복, 몬스터 리스폰 / 부활 위치는 상호작용 시 이미 갱신됨)
+	void RestAtCheckpoint();
 
 protected:
 	UPROPERTY(Transient)

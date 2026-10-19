@@ -8,6 +8,7 @@
 #include "EnhancedInputComponent.h"
 #include "DataAsset/ETCharacterActionDataAsset.h"
 #include "DataAsset/ETCameraShakeTableRowData.h"
+#include "DataAsset/ETCharacterTableRowData.h"
 #include "Components/ETCharacterStateComponent.h"
 #include "Components/ETGameStatComponent.h"
 #include "Components/ETAttackCollisionComponent.h"
@@ -630,7 +631,12 @@ void AETPlayer::OnDefeated()
 
 	FETJobParallel& PresentationJob = DefeatJob->Add<FETJobParallel>();
 	PresentationJob.Add<FETCameraZoomJob>(SpringArmComponent);
-	PresentationJob.Add<FETShowNoticeWidgetJob>(Cast<APlayerController>(GetController()), ETNames::RowName::NoticeDefeat);
+
+	const FETCharacterTableRowData* CharacterRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETCharacterTableRowData>(CharacterRowName);
+	if (CharacterRowData && CharacterRowData->DefeatData.NoticeWidgetRowName.IsNone() == false)
+	{
+		PresentationJob.Add<FETShowNoticeWidgetJob>(Cast<APlayerController>(GetController()), CharacterRowData->DefeatData.NoticeWidgetRowName);
+	}
 
 	DefeatJob->Add<FETRestartLevelJob>();
 

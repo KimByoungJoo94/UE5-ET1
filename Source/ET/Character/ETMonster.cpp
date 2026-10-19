@@ -12,6 +12,9 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BrainComponent.h"
 #include "Subsystem/ETJobSubsystem.h"
+#include "Subsystem/ETGameDataSubsystem.h"
+#include "Subsystem/ETLevelSubsystem.h"
+#include "DataAsset/ETCharacterTableRowData.h"
 #include "Job/ETWidgetJobs.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -88,9 +91,21 @@ void AETMonster::Die()
 	StatBarWidgetComponent->SetVisibility(false);
 	LockOnWidgetComponent->SetVisibility(false);
 
-	if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0))
+	const FETCharacterTableRowData* CharacterRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETCharacterTableRowData>(CharacterRowName);
+	if (CharacterRowData == nullptr)
 	{
-		ETSubsystem::Get<UETJobSubsystem>(this).Run(PlayerController, MakeUnique<FETShowNoticeWidgetJob>(PlayerController, ETNames::RowName::NoticeWin));
+		return;
+	}
+
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+	if (PlayerController && CharacterRowData->DefeatData.NoticeWidgetRowName.IsNone() == false)
+	{
+		ETSubsystem::Get<UETJobSubsystem>(this).Run(PlayerController, MakeUnique<FETShowNoticeWidgetJob>(PlayerController, CharacterRowData->DefeatData.NoticeWidgetRowName));
+	}
+
+	if (CharacterRowData->CharacterType == EETCharacterType::Boss)
+	{
+		ETSubsystem::Get<UETLevelSubsystem>(this).RecordBossDefeat(CharacterRowName);
 	}
 }
 

@@ -13,6 +13,8 @@ enum class EETCharacterType : uint8
 {
 	Player = 0,
 	Monster,
+	// 처치 기록을 세이브에 남김 (최초 처치 보상, 레벨 클리어 판정)
+	Boss,
 	Max,
 };
 
@@ -36,8 +38,7 @@ struct ET_API FETCharacterAIData
 {
 	GENERATED_BODY()
 
-public:
-	// AI 가 실행할 BT (플레이어는 비워 둠, 잡몹은 공용 BT 지정)
+public:	
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UBehaviorTree> BehaviorTree;
 
@@ -49,6 +50,20 @@ public:
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0", ClampMax = "360.0", EditCondition = "TargetDetectType == EETTargetDetectType::Sight"))
 	float SightAngle = 120.f;
+};
+
+// 처치(사망) 시 처리
+USTRUCT()
+struct ET_API FETCharacterDefeatData
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetNoticeWidgetRowNameOptions"))
+	FName NoticeWidgetRowName;
+		
+	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetDropItemRowNameOptions"))
+	FName FirstDropItemRowName;
 };
 
 // 캐릭터별 데이터 (캐릭터는 RowName 만 가지고 조회)
@@ -74,4 +89,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "AI")
 	FETCharacterAIData AIData;
+
+	UPROPERTY(EditAnywhere, Category = "Defeat")
+	FETCharacterDefeatData DefeatData;
 };

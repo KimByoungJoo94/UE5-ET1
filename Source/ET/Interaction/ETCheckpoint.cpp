@@ -25,16 +25,17 @@ void AETCheckpoint::OnInteraction(AActor* InInteractor)
 		return;
 	}
 
-	Player->ResetGameStat();
+	// 발견 기록, 부활 위치 갱신 (회복, 몬스터 리스폰, 이동은 체크포인트 창 버튼으로 처리)
+	UETSaveSubsystem& SaveSubsystem = ETSubsystem::Get<UETSaveSubsystem>(this);
+	FETWorldSaveData& WorldSaveData = SaveSubsystem.GetWorldSaveData();
+	WorldSaveData.DiscoveredCheckpointRowNameSet.Add(CheckpointRowName);
+	WorldSaveData.CheckpointRowName = CheckpointRowName;
+	SaveSubsystem.Save();
 
 	if (AETPlayerController* PlayerController = Cast<AETPlayerController>(Player->GetController()))
 	{
-		PlayerController->OpenCheckpointWidget();
+		PlayerController->OpenCheckpointWidget(CheckpointRowName);
 	}
-
-	UETSaveSubsystem& SaveSubsystem = ETSubsystem::Get<UETSaveSubsystem>(this);
-	SaveSubsystem.GetWorldSaveData().CheckpointRowName = CheckpointRowName;
-	SaveSubsystem.Save();
 }
 
 FTransform AETCheckpoint::GetRespawnTransform() const

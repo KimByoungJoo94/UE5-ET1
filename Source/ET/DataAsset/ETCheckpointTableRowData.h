@@ -16,5 +16,5 @@ public:
 
 	// 지역명
 	UPROPERTY(EditAnywhere)
-	FText DisplayName;
+	FText DisplayText;
 };

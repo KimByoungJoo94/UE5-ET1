@@ -12,6 +12,7 @@ class UETUserWidget;
 class UETDamageTextWidget;
 class UETThrobberWidget;
 class UMaterialInterface;
+class UWorld;
 
 USTRUCT()
 struct FETUISettings
@@ -58,6 +59,21 @@ public:
 	TSoftObjectPtr<UMaterialInterface> DissolveMaterial;
 };
 
+USTRUCT()
+struct FETLevelSettings
+{
+	GENERATED_BODY()
+
+public:
+	// 새로하기, 진행 기록이 없을 때 시작할 레벨
+	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetLevelRowNameOptions"))
+	FName StartLevelRowName;
+
+	// 메인 타이틀 레벨 (플레이 레벨이 아니므로 레벨 테이블에 넣지 않음)
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UWorld> TitleLevel;
+};
+
 // Project Settings > ET > Common > UI, Character...
 UCLASS(Config = Game, DefaultConfig, meta = (DisplayName = "Common"))
 class ET_API UETCommonSettings : public UDeveloperSettings
@@ -73,4 +89,7 @@ public:
 
 	UPROPERTY(Config, EditAnywhere, Category = "Character", meta = (ShowOnlyInnerProperties))
 	FETCharacterSettings Character;
+
+	UPROPERTY(Config, EditAnywhere, Category = "Level", meta = (ShowOnlyInnerProperties))
+	FETLevelSettings Level;
 };

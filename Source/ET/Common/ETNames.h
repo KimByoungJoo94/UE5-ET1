@@ -12,9 +12,6 @@ namespace ETNames
 		inline const FName CameraShakeHit(TEXT("Hit"));
 		inline const FName CameraShakeParry(TEXT("Parry"));
 		inline const FName CameraShakePerfectParry(TEXT("PerfectParry"));
-
-		inline const FName NoticeDefeat(TEXT("Defeat"));
-		inline const FName NoticeWin(TEXT("Win"));
 	}
 
 	namespace BlackboardKey

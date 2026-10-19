@@ -4,7 +4,16 @@
 #include "GameMode/ETGameModeBase.h"
 #include "Interaction/ETCheckpoint.h"
 #include "Subsystem/ETSaveSubsystem.h"
+#include "Subsystem/ETLevelSubsystem.h"
 #include "EngineUtils.h"
+
+void AETGameModeBase::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// 들어온 경로(포탈, 체크포인트 이동, 이어하기)와 상관없이 레벨이 열리면 기록
+	ETSubsystem::Get<UETLevelSubsystem>(this).RecordCurrentLevel(GetWorld());
+}
 
 void AETGameModeBase::RestartPlayer(AController* NewPlayer)
 {

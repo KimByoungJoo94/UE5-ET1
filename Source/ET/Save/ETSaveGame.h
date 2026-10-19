@@ -12,9 +12,21 @@ struct ET_API FETWorldSaveData
 	GENERATED_BODY()
 
 public:
-	// 마지막으로 쉰 체크포인트 (소속 레벨은 체크포인트 테이블에서 조회), None 이면 기본 PlayerStart
+	// 마지막으로 있던 레벨 (이어하기 시 열 레벨, 포탈, 체크포인트 이동, 휴식 시 갱신)
+	UPROPERTY()
+	FName LevelRowName = NAME_None;
+
+	// 마지막으로 쉰 체크포인트, 현재 레벨에 없거나 None 이면 기본 PlayerStart
 	UPROPERTY()
 	FName CheckpointRowName = NAME_None;
+
+	// 상호작용한 적 있는 체크포인트 (체크포인트 이동 목록)
+	UPROPERTY()
+	TSet<FName> DiscoveredCheckpointRowNameSet;
+
+	// 한 번이라도 처치한 보스 캐릭터 RowName (최초 처치 보상, 레벨 클리어 판정)
+	UPROPERTY()
+	TSet<FName> DefeatedBossRowNameSet;
 };
 
 // 플레이어 진행 (영구 스탯 등)

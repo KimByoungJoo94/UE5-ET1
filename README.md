@@ -9,6 +9,7 @@
 | --- | --- | --- |
 | Paragon: Kwang | Fab | `Content/ParagonKwang` |
 | Paragon: Sun Wukong | Fab | `Content/ParagonSunWukong` |
+| Paragon: Minions | Fab | `Content/ParagonMinions` |
 | Sci-fi Container Free 02 | Fab | `Content/Fab/Sci-fi_Container_Free_02` |
 | The Motherland Calls | Fab | `Content/Fab/The_Motherland_Calls` |
 | Free Material Pack | Fab | `Content/FreeMaterialPack` |

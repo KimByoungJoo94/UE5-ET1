@@ -68,6 +68,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputAction> LockOnAction;
+
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UInputAction> MenuAction;
 };
 
 USTRUCT()
@@ -146,6 +149,7 @@ public:
 	void OnParryActionCompleted();
 	void OnActiveSkillActionStarted(const int32 InSkillIndex);
 	void OnLockOnActionStarted();
+	void OnMenuActionStarted();
 	bool TryPayActiveSkillCost(const int32 InSkillIndex);
 	void PlayActiveSkill(const int32 InSkillIndex);
 	// ~Key Input

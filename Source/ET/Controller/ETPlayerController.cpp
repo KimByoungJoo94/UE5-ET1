@@ -1,6 +1,7 @@
 ﻿#include "Controller/ETPlayerController.h"
 #include "UI/ETPlayerHUDWidget.h"
 #include "UI/ETCheckpointWidget.h"
+#include "UI/ETMenuWidget.h"
 #include "Components/ETInteractionComponent.h"
 #include "Common/ETCommonSettings.h"
 #include "Character/ETPlayer.h"
@@ -88,4 +89,63 @@ void AETPlayerController::RestAtCheckpoint()
 	}
 
 	ETSubsystem::Get<UETSpawnSubsystem>(this).ResetAllSpawnVolumes();
+}
+
+void AETPlayerController::OpenMenuWidget()
+{
+	if ((MenuWidget && MenuWidget->IsInViewport()) || (CheckpointWidget && CheckpointWidget->IsInViewport()))
+	{
+		return;
+	}
+
+	if (MenuWidget == nullptr)
+	{
+		if (UClass* MenuWidgetClass = GetDefault<UETCommonSettings>()->UI.MenuWidgetClass.LoadSynchronous())
+		{
+			MenuWidget = CreateWidget<UETMenuWidget>(this, MenuWidgetClass);
+		}
+	}
+
+	if (MenuWidget == nullptr)
+	{
+		return;
+	}
+
+	if (PlayerHUDWidget)
+	{
+		PlayerHUDVisibility = PlayerHUDWidget->GetVisibility();
+		PlayerHUDWidget->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	// 스탯 목록이 플레이어 기준으로 생성되도록 뷰포트 추가(NativeConstruct) 전에 지정
+	MenuWidget->SetOwningETCharacter(Cast<AETCharacter>(GetPawn()));
+	MenuWidget->AddToViewport(1);
+
+	SetPause(true);
+
+	FInputModeUIOnly InputMode;
+	InputMode.SetWidgetToFocus(MenuWidget->TakeWidget());
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	SetInputMode(InputMode);
+	SetShowMouseCursor(true);
+}
+
+void AETPlayerController::CloseMenuWidget()
+{
+	if (MenuWidget == nullptr || MenuWidget->IsInViewport() == false)
+	{
+		return;
+	}
+
+	MenuWidget->RemoveFromParent();
+
+	if (PlayerHUDWidget)
+	{
+		PlayerHUDWidget->SetVisibility(PlayerHUDVisibility);
+	}
+
+	SetPause(false);
+
+	SetInputMode(FInputModeGameOnly());
+	SetShowMouseCursor(false);
 }

@@ -7,6 +7,7 @@
 
 class UETPlayerHUDWidget;
 class UETCheckpointWidget;
+class UETMenuWidget;
 
 UCLASS()
 class ET_API AETPlayerController : public APlayerController
@@ -24,12 +25,19 @@ public:
 	// 체크포인트 휴식 (상태 회복, 몬스터 리스폰 / 부활 위치는 상호작용 시 이미 갱신됨)
 	void RestAtCheckpoint();
 
+	// 열려 있는 동안 HUD 숨김, 게임 일시정지, 입력은 UI 에서만 처리 (다른 창이 열려 있으면 무시)
+	void OpenMenuWidget();
+	void CloseMenuWidget();
+
 protected:
 	UPROPERTY(Transient)
 	TObjectPtr<UETPlayerHUDWidget> PlayerHUDWidget;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UETCheckpointWidget> CheckpointWidget;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UETMenuWidget> MenuWidget;
 
 private:
 	ESlateVisibility PlayerHUDVisibility = ESlateVisibility::SelfHitTestInvisible;

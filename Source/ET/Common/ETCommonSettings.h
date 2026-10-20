@@ -8,6 +8,7 @@
 class UETPlayerHUDWidget;
 class UETInteractionWidget;
 class UETCheckpointWidget;
+class UETMenuWidget;
 class UETUserWidget;
 class UETDamageTextWidget;
 class UETThrobberWidget;
@@ -28,6 +29,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSoftClassPtr<UETCheckpointWidget> CheckpointWidgetClass;
+
+	UPROPERTY(EditAnywhere)
+	TSoftClassPtr<UETMenuWidget> MenuWidgetClass;
 
 	// 몬스터 머리 위 스탯 바
 	UPROPERTY(EditAnywhere)

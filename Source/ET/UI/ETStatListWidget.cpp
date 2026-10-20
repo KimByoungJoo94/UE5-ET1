@@ -39,10 +39,12 @@ FVector2D UETStatListWidget::BuildStatWidgets(const FETStatListSettings& InStatL
 		return FVector2D::ZeroVector;
 	}
 
+	const bool bFixedSize = InStatListSettings.StatWidgetSize.X > 0.f && InStatListSettings.StatWidgetSize.Y > 0.f;
+
 	int32 StatWidgetNum = 0;
-	for (const FETStatBarData& StatBarData : InStatListSettings.StatBarDataArray)
+	for (const FETStatUISettingData& StatUISettingData : InStatListSettings.StatUISettingDataArray)
 	{
-		if (GameStatComponent->GetGameStat(StatBarData.GameStatType).GetMaxValue() <= 0.f)
+		if (InStatListSettings.bHideZeroMaxStat && GameStatComponent->GetGameStat(StatUISettingData.GameStatType).GetMaxValue() <= 0.f)
 		{
 			continue;
 		}
@@ -55,21 +57,32 @@ FVector2D UETStatListWidget::BuildStatWidgets(const FETStatListSettings& InStatL
 
 		StatWidget->SetOwningETCharacter(GetOwningETCharacter());
 		StatWidget->SetUseStatText(InStatListSettings.bUseStatText);
-		StatWidget->SetProgressBarColorName(StatBarData.ProgressBarColorName);
-		StatWidget->SetGameStatType(StatBarData.GameStatType);
+		StatWidget->SetStatTextFormat(InStatListSettings.StatTextFormat);
+		StatWidget->SetProgressBarColorName(StatUISettingData.ProgressBarColorName);
+		StatWidget->SetGameStatType(StatUISettingData.GameStatType);
 
-		// WBP 크기와 상관없이 설정 크기로 고정
-		USizeBox* SizeBox = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
-		SizeBox->SetWidthOverride(InStatListSettings.StatBarSize.X);
-		SizeBox->SetHeightOverride(InStatListSettings.StatBarSize.Y);
-		SizeBox->AddChild(StatWidget);
+		UWidget* EntryWidget = StatWidget;
+		if (bFixedSize)
+		{
+			// WBP 크기와 상관없이 설정 크기로 고정
+			USizeBox* SizeBox = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
+			SizeBox->SetWidthOverride(InStatListSettings.StatWidgetSize.X);
+			SizeBox->SetHeightOverride(InStatListSettings.StatWidgetSize.Y);
+			SizeBox->AddChild(StatWidget);
+			EntryWidget = SizeBox;
+		}
 
-		UVerticalBoxSlot* VerticalBoxSlot = StatVerticalBox->AddChildToVerticalBox(SizeBox);
-		VerticalBoxSlot->SetPadding(FMargin(0.f, StatWidgetNum > 0 ? InStatListSettings.StatBarSpacing : 0.f, 0.f, 0.f));
+		UVerticalBoxSlot* VerticalBoxSlot = StatVerticalBox->AddChildToVerticalBox(EntryWidget);
+		VerticalBoxSlot->SetPadding(FMargin(0.f, StatWidgetNum > 0 ? InStatListSettings.StatWidgetSpacing : 0.f, 0.f, 0.f));
 
 		++StatWidgetNum;
 	}
 
-	const float TotalHeight = StatWidgetNum * InStatListSettings.StatBarSize.Y + FMath::Max(StatWidgetNum - 1, 0) * InStatListSettings.StatBarSpacing;
-	return FVector2D(InStatListSettings.StatBarSize.X, TotalHeight);
+	if (bFixedSize == false)
+	{
+		return FVector2D::ZeroVector;
+	}
+
+	const float TotalHeight = StatWidgetNum * InStatListSettings.StatWidgetSize.Y + FMath::Max(StatWidgetNum - 1, 0) * InStatListSettings.StatWidgetSpacing;
+	return FVector2D(InStatListSettings.StatWidgetSize.X, TotalHeight);
 }

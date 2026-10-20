@@ -7,6 +7,7 @@
 #include "Subsystem/ETTimeDilationSubsystem.h"
 #include "Common/ETCommonSettings.h"
 #include "Materials/MaterialInterface.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "Camera/CameraComponent.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
@@ -60,6 +61,7 @@ void UETTimeFreezeComponent::Freeze(const float InDuration)
 		bFrozen = true;
 
 		ApplyTimeFreezeMaterial();
+		HideSpawnedEffects();
 	}
 
 	// 액터 CustomTimeDilation 영향을 받지 않는 월드 타이머로 복구 (전체 TimeDilation 은 적용됨)
@@ -84,6 +86,7 @@ void UETTimeFreezeComponent::Unfreeze()
 	ETSubsystem::Get<UETTimeDilationSubsystem>(this).RemoveActorTimeDilation(GetOwner(), EETTimeDilationReason::TimeFreeze);
 
 	RestoreOriginMaterials();
+	RestoreSpawnedEffects();
 
 	bFrozen = false;
 }
@@ -120,6 +123,47 @@ void UETTimeFreezeComponent::RestoreOriginMaterials()
 	}
 
 	OriginMaterialArray.Reset();
+}
+
+void UETTimeFreezeComponent::HideSpawnedEffects()
+{
+	HiddenEffectArray.Reset();
+
+	AETCharacter* OwnerCharacter = Cast<AETCharacter>(GetOwner());
+	USkeletalMeshComponent* MeshComponent = OwnerCharacter ? OwnerCharacter->GetMesh() : nullptr;
+	if (MeshComponent == nullptr)
+	{
+		return;
+	}
+
+	TArray<USceneComponent*> ChildComponentArray;
+	MeshComponent->GetChildrenComponents(true, ChildComponentArray);
+
+	for (USceneComponent* ChildComponent : ChildComponentArray)
+	{
+		// 노티파이가 NewObject 로 만든 컴포넌트만 (C++ 기본 서브오브젝트, BP 컴포넌트 제외)
+		UFXSystemComponent* EffectComponent = Cast<UFXSystemComponent>(ChildComponent);
+		if (EffectComponent == nullptr || EffectComponent->HasAnyFlags(RF_DefaultSubObject) || EffectComponent->IsCreatedByConstructionScript() || EffectComponent->IsVisible() == false)
+		{
+			continue;
+		}
+
+		EffectComponent->SetVisibility(false);
+		HiddenEffectArray.Add(EffectComponent);
+	}
+}
+
+void UETTimeFreezeComponent::RestoreSpawnedEffects()
+{
+	for (const TWeakObjectPtr<UFXSystemComponent>& HiddenEffect : HiddenEffectArray)
+	{
+		if (UFXSystemComponent* EffectComponent = HiddenEffect.Get())
+		{
+			EffectComponent->SetVisibility(true);
+		}
+	}
+
+	HiddenEffectArray.Reset();
 }
 
 void UETTimeFreezeComponent::FindTimeFreezeTargets(const FETTimeFreezeTableRowData& InRowData, OUT TArray<AETCharacter*>& OutTargetArray) const

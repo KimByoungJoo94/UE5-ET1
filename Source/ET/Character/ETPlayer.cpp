@@ -25,6 +25,7 @@
 #include "Job/ETCameraJobs.h"
 #include "Job/ETWidgetJobs.h"
 #include "Job/ETLevelJobs.h"
+#include "Controller/ETPlayerController.h"
 #include "Common/ETNames.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
@@ -138,6 +139,7 @@ void AETPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 		EnhancedInputComponent->BindAction(PlayerInputData.UseItemAction, ETriggerEvent::Started, this, &ThisClass::OnUseItemActionStarted);
 		EnhancedInputComponent->BindAction(PlayerInputData.LockOnAction, ETriggerEvent::Started, this, &ThisClass::OnLockOnActionStarted);
+		EnhancedInputComponent->BindAction(PlayerInputData.MenuAction, ETriggerEvent::Started, this, &ThisClass::OnMenuActionStarted);
 
 		for (int32 Index = 0; Index < PlayerInputData.ActiveSkillActionArray.Num(); ++Index)
 		{
@@ -188,6 +190,14 @@ void AETPlayer::OnLookActionTriggered(const FInputActionValue& InValue)
 void AETPlayer::OnLockOnActionStarted()
 {
 	LockOnComponent->ToggleLockOn();
+}
+
+void AETPlayer::OnMenuActionStarted()
+{
+	if (AETPlayerController* PlayerController = Cast<AETPlayerController>(GetController()))
+	{
+		PlayerController->OpenMenuWidget();
+	}
 }
 
 void AETPlayer::OnAttackActionCompleted()

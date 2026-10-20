@@ -72,6 +72,7 @@ public:
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	const FETGameStat& GetGameStat(const EETGameStatType InGameStatType) const;
+	FORCEINLINE const TMap<EETGameStatType, FETGameStat>& GetGameStatMap() const { return GameStatMap; }
 	void AddDepletedValue(const EETGameStatType InGameStatType, const float InValue);
 	void AddPermanentValue(const EETGameStatType InGameStatType, const float InValue);
 	void ResetDepletedValue(const EETGameStatType InGameStatType);

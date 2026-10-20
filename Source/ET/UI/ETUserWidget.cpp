@@ -1,5 +1,6 @@
 ﻿#include "UI/ETUserWidget.h"
 #include "Character/ETPlayer.h"
+#include "Math/ColorList.h"
 
 void UETUserWidget::SetOwningETCharacter(AETCharacter* InCharacter)
 {
@@ -61,4 +62,17 @@ UETChargeAttackComponent* UETUserWidget::GetOwningChargeAttackComponent() const
 	}
 
 	return nullptr;
+}
+
+TArray<FString> UETUserWidget::GetColorNameOptions()
+{
+	TArray<FString> ColorNameArray;
+	ColorNameArray.Reserve(GColorList.GetColorsNum());
+
+	for (int32 Index = 0; Index < GColorList.GetColorsNum(); ++Index)
+	{
+		ColorNameArray.Add(GColorList.GetColorNameByIndex(Index));
+	}
+
+	return ColorNameArray;
 }

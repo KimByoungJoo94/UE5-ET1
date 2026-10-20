@@ -8,6 +8,7 @@ void UETStatWidget::SetGameStatType(const EETGameStatType InGameStatType)
 {
 	GameStatType = InGameStatType;
 
+	UpdateDisplayNameText();
 	BindGameStatComponent();
 }
 
@@ -16,6 +17,16 @@ void UETStatWidget::SetUseStatText(const bool bInUseStatText)
 	bUseStatText = bInUseStatText;
 
 	UpdateStatTextVisibility();
+}
+
+void UETStatWidget::SetStatTextFormat(const EETStatTextFormat InStatTextFormat)
+{
+	StatTextFormat = InStatTextFormat;
+
+	if (const UETGameStatComponent* GameStatComponent = BoundGameStatComponent.Get())
+	{
+		UpdateGameStat(GameStatComponent->GetGameStat(GameStatType));
+	}
 }
 
 void UETStatWidget::SetProgressBarColorName(const FName InProgressBarColorName)
@@ -32,6 +43,7 @@ void UETStatWidget::NativePreConstruct()
 	// 디자이너 미리보기에도 반영
 	UpdateProgressBarColor();
 	UpdateStatTextVisibility();
+	UpdateDisplayNameText();
 }
 
 void UETStatWidget::NativeConstruct()
@@ -92,6 +104,14 @@ void UETStatWidget::UpdateProgressBarColor()
 	}
 }
 
+void UETStatWidget::UpdateDisplayNameText()
+{
+	if (DisplayNameText && GameStatType != EETGameStatType::Max)
+	{
+		DisplayNameText->SetText(StaticEnum<EETGameStatType>()->GetDisplayNameTextByValue(static_cast<int64>(GameStatType)));
+	}
+}
+
 void UETStatWidget::OnUpdateGameStat(const FETGameStat& InGameStat)
 {
 	UpdateGameStat(InGameStat);
@@ -102,23 +122,28 @@ void UETStatWidget::UpdateGameStat(const FETGameStat& InGameStat)
 	const float CurrentValue = InGameStat.GetCurrentValue();
 	const float MaxValue = InGameStat.GetMaxValue();
 
-	ValueProgressBar->SetPercent(MaxValue > 0.f ? CurrentValue / MaxValue : 0.f);
-	
-	if (bUseStatText)
+	if (ValueProgressBar)
 	{
-		ValueText->SetText(FText::Format(INVTEXT("{0} / {1}"), FText::AsNumber(FMath::FloorToInt32(CurrentValue)), FText::AsNumber(FMath::FloorToInt32(MaxValue))));
-	}
-}
-
-TArray<FString> UETStatWidget::GetColorNameOptions()
-{
-	TArray<FString> ColorNameArray;
-	ColorNameArray.Reserve(GColorList.GetColorsNum());
-
-	for (int32 Index = 0; Index < GColorList.GetColorsNum(); ++Index)
-	{
-		ColorNameArray.Add(GColorList.GetColorNameByIndex(Index));
+		ValueProgressBar->SetPercent(MaxValue > 0.f ? CurrentValue / MaxValue : 0.f);
 	}
 
-	return ColorNameArray;
+	if (bUseStatText == false)
+	{
+		return;
+	}
+
+	const FText CurrentValueText = FText::AsNumber(FMath::FloorToInt32(CurrentValue));
+	const FText MaxValueText = FText::AsNumber(FMath::FloorToInt32(MaxValue));
+	switch (StatTextFormat)
+	{
+	case EETStatTextFormat::Current:
+		ValueText->SetText(CurrentValueText);
+		break;
+	case EETStatTextFormat::Max:
+		ValueText->SetText(MaxValueText);
+		break;
+	default:
+		ValueText->SetText(FText::Format(INVTEXT("{0} / {1}"), CurrentValueText, MaxValueText));
+		break;
+	}
 }

@@ -1,5 +1,6 @@
 ﻿#include "Components/ETAttackCollisionComponent.h"
 #include "Character/ETCharacter.h"
+#include "Components/ETTimeFreezeComponent.h"
 #include "Subsystem/ETGameDataSubsystem.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
@@ -29,6 +30,13 @@ void UETAttackCollisionComponent::BeginPlay()
 void UETAttackCollisionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+    // 시간 정지 중에는 무기가 멈춰 있어도 판정하지 않음 (해제 후 이어서 판정)
+    AETCharacter* OwnerCharacter = Cast<AETCharacter>(GetOwner());
+    if (OwnerCharacter && OwnerCharacter->GetTimeFreezeComponent()->IsFrozen())
+    {
+        return;
+    }
 
     if (IsWeaponCollisionTracing())
     {

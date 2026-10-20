@@ -9,22 +9,25 @@ class UProgressBar;
 class UTextBlock;
 struct FETGameStat;
 
+UENUM()
+enum class EETStatTextFormat : uint8
+{	
+	CurrentAndMax,
+	Current,
+	Max,
+};
+
+// 스탯 하나 표시 (WBP 에 있는 위젯만 갱신 : 막대, 스탯 이름, 수치)
 UCLASS()
 class ET_API UETStatWidget : public UETUserWidget
 {
 	GENERATED_BODY()
 
-public:
-	// 바인딩된 스탯 컴포넌트가 있으면 새 타입으로 다시 바인딩하고 갱신
+public:	
 	void SetGameStatType(const EETGameStatType InGameStatType);
-
-	// 수치 텍스트 표시 여부 (false 면 Collapsed)
 	void SetUseStatText(const bool bInUseStatText);
-
+	void SetStatTextFormat(const EETStatTextFormat InStatTextFormat);
 	void SetProgressBarColorName(const FName InProgressBarColorName);
-
-	UFUNCTION()
-	static TArray<FString> GetColorNameOptions();
 
 protected:
 	virtual void NativePreConstruct() override;
@@ -39,14 +42,20 @@ protected:
 	EETGameStatType GameStatType = EETGameStatType::Health;
 
 	// 엔진 GColorList 의 색 이름
-	UPROPERTY(EditAnywhere, Category = "Stat", meta = (GetOptions = "GetColorNameOptions"))
+	UPROPERTY(EditAnywhere, Category = "Stat", meta = (GetOptions = "ET.ETUserWidget.GetColorNameOptions"))
 	FName ProgressBarColorName = TEXT("red");
 
 	UPROPERTY(EditAnywhere, Category = "Stat")
 	bool bUseStatText = true;
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(EditAnywhere, Category = "Stat")
+	EETStatTextFormat StatTextFormat = EETStatTextFormat::CurrentAndMax;
+
+	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UProgressBar> ValueProgressBar;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> DisplayNameText;
 	
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> ValueText;
@@ -57,6 +66,8 @@ private:
 
 	void UpdateStatTextVisibility();
 	void UpdateProgressBarColor();
+	// 스탯 이름은 우선 enum 표시 이름 사용
+	void UpdateDisplayNameText();
 
 private:
 	TWeakObjectPtr<UETGameStatComponent> BoundGameStatComponent;

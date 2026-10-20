@@ -152,8 +152,8 @@ public:
 
 	void UseItem();
 
-	// 영구 스탯 증감 (스탯 컴포넌트와 세이브 데이터에 함께 반영, 디스크 저장은 체크포인트 / 사망 / 게임 종료 시)
-	void AddPermanentGameStat(const EETGameStatType InGameStatType, const float InValue);
+	// 영구 스탯은 세이브 데이터에도 반영 (디스크 저장은 체크포인트 / 사망 / 게임 종료 시)
+	virtual void ApplyReward(const FName InRewardRowName) override;
 	void AdvanceComboAttack();
 	void ResetComboAttack();
 	void PauseHeavyAttack();

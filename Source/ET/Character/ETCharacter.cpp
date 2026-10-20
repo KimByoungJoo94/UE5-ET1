@@ -8,7 +8,9 @@
 #include "DataAsset/ETCharacterActionDataAsset.h"
 #include "DataAsset/ETCharacterTableRowData.h"
 #include "DataAsset/ETActionConditionTableRowData.h"
+#include "DataAsset/ETRewardTableRowData.h"
 #include "Subsystem/ETGameDataSubsystem.h"
+#include "Subsystem/ETLevelSubsystem.h"
 #include "Animation/AnimInstance.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/DamageType.h"
@@ -73,6 +75,7 @@ float AETCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 	if (GameStatComponent->GetGameStat(EETGameStatType::Health).GetCurrentValue() <= 0.f)
 	{
 		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Death);
+		ProcessDefeat(EventInstigator ? EventInstigator->GetPawn() : DamageCauser);
 		Die();
 	}
 	else
@@ -130,6 +133,56 @@ int32 AETCharacter::GetHitMontageIndex(const AActor* InDamageCauser) const
 	}
 
 	return DirectionIndex;
+}
+
+void AETCharacter::ApplyReward(const FName InRewardRowName)
+{
+	if (InRewardRowName.IsNone())
+	{
+		return;
+	}
+
+	const FETRewardTableRowData* RewardRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETRewardTableRowData>(InRewardRowName);
+	if (RewardRowData == nullptr)
+	{
+		return;
+	}
+
+	for (const TPair<EETGameStatType, float>& PermanentGameStatPair : RewardRowData->PermanentGameStatMap)
+	{
+		GameStatComponent->AddPermanentValue(PermanentGameStatPair.Key, PermanentGameStatPair.Value);
+	}
+}
+
+void AETCharacter::ProcessDefeat(AActor* InKiller)
+{
+	const FETCharacterTableRowData* CharacterRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETCharacterTableRowData>(CharacterRowName);
+	if (CharacterRowData == nullptr)
+	{
+		return;
+	}
+
+	const FETCharacterDefeatData& DefeatData = CharacterRowData->DefeatData;
+	const bool bBoss = CharacterRowData->CharacterType == EETCharacterType::Boss;
+	const bool bRecordDefeat = bBoss || DefeatData.OnceRewardRowName.IsNone() == false;
+
+	UETLevelSubsystem& LevelSubsystem = ETSubsystem::Get<UETLevelSubsystem>(this);
+
+	if (AETCharacter* Killer = Cast<AETCharacter>(InKiller))
+	{
+		Killer->ApplyReward(DefeatData.RepeatRewardRowName);
+
+		if (bRecordDefeat && LevelSubsystem.IsCharacterDefeated(CharacterRowName) == false)
+		{
+			Killer->ApplyReward(DefeatData.OnceRewardRowName);
+		}
+	}
+
+	// 최초 처치 저장에 보상이 포함되도록 보상 적용 후 기록
+	if (bRecordDefeat)
+	{
+		LevelSubsystem.RecordCharacterDefeat(CharacterRowName, bBoss);
+	}
 }
 
 void AETCharacter::Die()

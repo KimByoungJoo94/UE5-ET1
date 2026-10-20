@@ -2,7 +2,8 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "DataAsset/ETGameStatTableRowData.h"
 #include "DataAsset/ETCollisionTableRowData.h"
-#include "DataAsset/ETDropItemTableRowData.h"
+#include "DataAsset/ETRewardTableRowData.h"
+#include "DataAsset/ETFieldItemTableRowData.h"
 #include "DataAsset/ETSkillTableRowData.h"
 #include "DataAsset/ETCharacterTableRowData.h"
 #include "DataAsset/ETCameraShakeTableRowData.h"
@@ -53,9 +54,14 @@ TArray<FName> UETGameDataSubsystem::GetRadialAttackCollisionRowNameOptions()
 	return GetRowNameOptions(FETRadialAttackCollisionTableRowData::StaticStruct());
 }
 
-TArray<FName> UETGameDataSubsystem::GetDropItemRowNameOptions()
+TArray<FName> UETGameDataSubsystem::GetRewardRowNameOptions()
 {
-	return GetRowNameOptions(FETDropItemTableRowData::StaticStruct());
+	return GetRowNameOptions(FETRewardTableRowData::StaticStruct());
+}
+
+TArray<FName> UETGameDataSubsystem::GetFieldItemRowNameOptions()
+{
+	return GetRowNameOptions(FETFieldItemTableRowData::StaticStruct());
 }
 
 TArray<FName> UETGameDataSubsystem::GetTimeFreezeRowNameOptions()

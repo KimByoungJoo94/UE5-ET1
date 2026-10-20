@@ -9,6 +9,7 @@
 #include "DataAsset/ETCharacterActionDataAsset.h"
 #include "DataAsset/ETCameraShakeTableRowData.h"
 #include "DataAsset/ETCharacterTableRowData.h"
+#include "DataAsset/ETRewardTableRowData.h"
 #include "Components/ETCharacterStateComponent.h"
 #include "Components/ETGameStatComponent.h"
 #include "Components/ETAttackCollisionComponent.h"
@@ -609,11 +610,26 @@ void AETPlayer::Die()
 	ETSubsystem::Get<UETSaveSubsystem>(this).Save();
 }
 
-void AETPlayer::AddPermanentGameStat(const EETGameStatType InGameStatType, const float InValue)
+void AETPlayer::ApplyReward(const FName InRewardRowName)
 {
-	GameStatComponent->AddPermanentValue(InGameStatType, InValue);
+	Super::ApplyReward(InRewardRowName);
 
-	ETSubsystem::Get<UETSaveSubsystem>(this).GetPlayerSaveData().PermanentGameStatMap.FindOrAdd(InGameStatType) += InValue;
+	if (InRewardRowName.IsNone())
+	{
+		return;
+	}
+
+	const FETRewardTableRowData* RewardRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETRewardTableRowData>(InRewardRowName);
+	if (RewardRowData == nullptr)
+	{
+		return;
+	}
+
+	TMap<EETGameStatType, float>& SavedPermanentGameStatMap = ETSubsystem::Get<UETSaveSubsystem>(this).GetPlayerSaveData().PermanentGameStatMap;
+	for (const TPair<EETGameStatType, float>& PermanentGameStatPair : RewardRowData->PermanentGameStatMap)
+	{
+		SavedPermanentGameStatMap.FindOrAdd(PermanentGameStatPair.Key) += PermanentGameStatPair.Value;
+	}
 }
 
 void AETPlayer::ApplySavedPermanentGameStat()

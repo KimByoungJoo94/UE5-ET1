@@ -13,7 +13,6 @@
 #include "BrainComponent.h"
 #include "Subsystem/ETJobSubsystem.h"
 #include "Subsystem/ETGameDataSubsystem.h"
-#include "Subsystem/ETLevelSubsystem.h"
 #include "DataAsset/ETCharacterTableRowData.h"
 #include "Job/ETWidgetJobs.h"
 #include "Kismet/GameplayStatics.h"
@@ -101,11 +100,6 @@ void AETMonster::Die()
 	if (PlayerController && CharacterRowData->DefeatData.NoticeWidgetRowName.IsNone() == false)
 	{
 		ETSubsystem::Get<UETJobSubsystem>(this).Run(PlayerController, MakeUnique<FETShowNoticeWidgetJob>(PlayerController, CharacterRowData->DefeatData.NoticeWidgetRowName));
-	}
-
-	if (CharacterRowData->CharacterType == EETCharacterType::Boss)
-	{
-		ETSubsystem::Get<UETLevelSubsystem>(this).RecordBossDefeat(CharacterRowName);
 	}
 }
 

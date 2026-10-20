@@ -62,8 +62,13 @@ public:
 	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetNoticeWidgetRowNameOptions"))
 	FName NoticeWidgetRowName;
 		
-	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetDropItemRowNameOptions"))
-	FName FirstDropItemRowName;
+	// 처치할 때마다 처치한 캐릭터에게 지급
+	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetRewardRowNameOptions"))
+	FName RepeatRewardRowName;
+
+	// 최초 처치 시 한 번만 지급 (값이 있으면 처치 기록 대상)
+	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetRewardRowNameOptions"))
+	FName OnceRewardRowName;
 };
 
 // 캐릭터별 데이터 (캐릭터는 RowName 만 가지고 조회)

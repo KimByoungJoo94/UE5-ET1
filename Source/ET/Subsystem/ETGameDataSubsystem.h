@@ -74,7 +74,10 @@ public:
 	static TArray<FName> GetRadialAttackCollisionRowNameOptions();
 
 	UFUNCTION()
-	static TArray<FName> GetDropItemRowNameOptions();
+	static TArray<FName> GetRewardRowNameOptions();
+
+	UFUNCTION()
+	static TArray<FName> GetFieldItemRowNameOptions();
 
 	UFUNCTION()
 	static TArray<FName> GetTimeFreezeRowNameOptions();

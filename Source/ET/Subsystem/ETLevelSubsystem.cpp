@@ -91,19 +91,27 @@ void UETLevelSubsystem::RecordCurrentLevel(const UWorld* InWorld)
 	SaveSubsystem.Save();
 }
 
-void UETLevelSubsystem::RecordBossDefeat(const FName InCharacterRowName)
+void UETLevelSubsystem::RecordCharacterDefeat(const FName InCharacterRowName, const bool bInBoss)
 {
 	UETSaveSubsystem& SaveSubsystem = ETSubsystem::Get<UETSaveSubsystem>(this);
 
 	bool bAlreadyDefeated = false;
-	SaveSubsystem.GetWorldSaveData().DefeatedBossRowNameSet.Add(InCharacterRowName, &bAlreadyDefeated);
+	SaveSubsystem.GetWorldSaveData().DefeatedCharacterRowNameSet.Add(InCharacterRowName, &bAlreadyDefeated);
 
 	if (bAlreadyDefeated == false)
 	{
 		SaveSubsystem.Save();
 	}
 
-	OnBossDefeated.Broadcast(InCharacterRowName);
+	if (bInBoss)
+	{
+		OnBossDefeated.Broadcast(InCharacterRowName);
+	}
+}
+
+bool UETLevelSubsystem::IsCharacterDefeated(const FName InCharacterRowName) const
+{
+	return ETSubsystem::Get<UETSaveSubsystem>(this).GetWorldSaveData().DefeatedCharacterRowNameSet.Contains(InCharacterRowName);
 }
 
 bool UETLevelSubsystem::IsLevelCleared(const FName InLevelRowName) const
@@ -114,5 +122,5 @@ bool UETLevelSubsystem::IsLevelCleared(const FName InLevelRowName) const
 		return false;
 	}
 
-	return ETSubsystem::Get<UETSaveSubsystem>(this).GetWorldSaveData().DefeatedBossRowNameSet.Contains(LevelRowData->ClearCharacterRowName);
+	return IsCharacterDefeated(LevelRowData->ClearCharacterRowName);
 }

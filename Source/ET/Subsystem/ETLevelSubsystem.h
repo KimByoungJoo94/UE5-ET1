@@ -32,8 +32,9 @@ public:
 	// 레벨 시작 시 마지막 레벨로 기록 (이어하기 시 열 레벨)
 	void RecordCurrentLevel(const UWorld* InWorld);
 
-	// 보스 처치 기록 (최초 처치일 때만 저장)
-	void RecordBossDefeat(const FName InCharacterRowName);
+	// 처치 기록 (최초 처치일 때만 저장, 보스면 OnBossDefeated 알림)
+	void RecordCharacterDefeat(const FName InCharacterRowName, const bool bInBoss);
+	bool IsCharacterDefeated(const FName InCharacterRowName) const;
 
 	// 레벨의 클리어 보스 처치 기록이 있는지
 	bool IsLevelCleared(const FName InLevelRowName) const;

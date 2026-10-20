@@ -24,9 +24,9 @@ public:
 	UPROPERTY()
 	TSet<FName> DiscoveredCheckpointRowNameSet;
 
-	// 한 번이라도 처치한 보스 캐릭터 RowName (최초 처치 보상, 레벨 클리어 판정)
+	// 한 번이라도 처치한 캐릭터 RowName (보스 또는 1회 보상이 있는 캐릭터만, 1회 보상 지급, 레벨 클리어 판정)
 	UPROPERTY()
-	TSet<FName> DefeatedBossRowNameSet;
+	TSet<FName> DefeatedCharacterRowNameSet;
 };
 
 // 플레이어 진행 (영구 스탯 등)

@@ -43,6 +43,9 @@ public:
 	virtual float AttackTarget(AActor* InTarget, const FHitResult& InHitResult);
 	virtual float GetAttackDamage() const;
 
+	// 보상 테이블 행 적용 (영구 스탯은 스탯 컴포넌트에 반영)
+	virtual void ApplyReward(const FName InRewardRowName);
+
 	// 스턴 포인트 차감, 0 이 되면 다음 틱에 스턴 (스턴, 사망 중이거나 이미 0 이면 무시 / 최대값 0 은 스턴 면역)
 	void ApplyStunDamage(const float InStunDamage);
 
@@ -71,6 +74,8 @@ protected:
 	void HitReact(AActor* InDamageCauser);
 	// 피격 몽타주 재생 직전 호출 (진행 중이던 행동 정리용)
 	virtual void OnHitReact() {}
+	// 처치한 캐릭터에게 보상 지급, 처치 기록 (보스 또는 1회 보상이 있는 캐릭터)
+	void ProcessDefeat(AActor* InKiller);
 	// 사망 공통 처리 (판정, 이동, 충돌 정지 후 사망 몽타주 재생)
 	virtual void Die();
 	// 스턴 몽타주 재생 (재생 실패 시 바로 종료 처리)

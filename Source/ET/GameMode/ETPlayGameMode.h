@@ -4,12 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "ETGameModeBase.generated.h"
+#include "ETPlayGameMode.generated.h"
 
 class AETCheckpoint;
 
 UCLASS()
-class ET_API AETGameModeBase : public AGameModeBase
+class ET_API AETPlayGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 

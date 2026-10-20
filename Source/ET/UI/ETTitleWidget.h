@@ -6,7 +6,7 @@
 
 class UETTextButtonWidget;
 
-// 메인 타이틀 (이어하기, 새로하기, 종료 / 타이틀 레벨 블루프린트에서 뷰포트에 추가)
+// 메인 타이틀 (이어하기, 새로하기, 종료 / AETUIGameMode 가 생성)
 UCLASS()
 class ET_API UETTitleWidget : public UETUserWidget
 {

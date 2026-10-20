@@ -11,6 +11,7 @@
 #include "DataAsset/ETRewardTableRowData.h"
 #include "Subsystem/ETGameDataSubsystem.h"
 #include "Subsystem/ETLevelSubsystem.h"
+#include "Subsystem/ETTimeDilationSubsystem.h"
 #include "Animation/AnimInstance.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/DamageType.h"
@@ -165,6 +166,11 @@ void AETCharacter::ProcessDefeat(AActor* InKiller)
 	const FETCharacterDefeatData& DefeatData = CharacterRowData->DefeatData;
 	const bool bBoss = CharacterRowData->CharacterType == EETCharacterType::Boss;
 	const bool bRecordDefeat = bBoss || DefeatData.OnceRewardRowName.IsNone() == false;
+
+	if (DefeatData.SlowDuration > 0.f)
+	{
+		ETSubsystem::Get<UETTimeDilationSubsystem>(this).StartGlobalTimeDilation(DefeatData.SlowTimeDilation, DefeatData.SlowDuration);
+	}
 
 	UETLevelSubsystem& LevelSubsystem = ETSubsystem::Get<UETLevelSubsystem>(this);
 

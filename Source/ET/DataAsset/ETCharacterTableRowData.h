@@ -69,6 +69,13 @@ public:
 	// 최초 처치 시 한 번만 지급 (값이 있으면 처치 기록 대상)
 	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetRewardRowNameOptions"))
 	FName OnceRewardRowName;
+
+	// 처치 순간 전체 슬로 (실제 시간 기준, 0 이하면 슬로 없음)
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
+	float SlowDuration = 0.f;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.01", ClampMax = "1.0"))
+	float SlowTimeDilation = 0.2f;
 };
 
 // 캐릭터별 데이터 (캐릭터는 RowName 만 가지고 조회)

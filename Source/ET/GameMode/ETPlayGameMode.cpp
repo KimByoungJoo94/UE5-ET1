@@ -1,13 +1,13 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "GameMode/ETGameModeBase.h"
+#include "GameMode/ETPlayGameMode.h"
 #include "Interaction/ETCheckpoint.h"
 #include "Subsystem/ETSaveSubsystem.h"
 #include "Subsystem/ETLevelSubsystem.h"
 #include "EngineUtils.h"
 
-void AETGameModeBase::BeginPlay()
+void AETPlayGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -15,7 +15,7 @@ void AETGameModeBase::BeginPlay()
 	ETSubsystem::Get<UETLevelSubsystem>(this).RecordCurrentLevel(GetWorld());
 }
 
-void AETGameModeBase::RestartPlayer(AController* NewPlayer)
+void AETPlayGameMode::RestartPlayer(AController* NewPlayer)
 {
 	// PlayerStart 대신 체크포인트의 부활 위치를 쓰기 위해 Transform 지정 (컨트롤 회전도 이 값으로 설정됨)
 	if (const AETCheckpoint* LastCheckpoint = FindLastCheckpoint())
@@ -27,7 +27,7 @@ void AETGameModeBase::RestartPlayer(AController* NewPlayer)
 	Super::RestartPlayer(NewPlayer);
 }
 
-AETCheckpoint* AETGameModeBase::FindLastCheckpoint() const
+AETCheckpoint* AETPlayGameMode::FindLastCheckpoint() const
 {
 	const FName LastCheckpointRowName = ETSubsystem::Get<UETSaveSubsystem>(this).GetWorldSaveData().CheckpointRowName;
 	if (LastCheckpointRowName.IsNone())

@@ -72,6 +72,14 @@ public:
 	// 메인 타이틀 레벨 (플레이 레벨이 아니므로 레벨 테이블에 넣지 않음)
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UWorld> TitleLevel;
+
+	// 클리어 후 열 엔딩 레벨 (플레이 레벨이 아니므로 레벨 테이블에 넣지 않음)
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UWorld> EndingLevel;
+
+	// 마지막 레벨 클리어 후 엔딩 레벨을 열기까지 시간 (게임 시간 기준이라 슬로 중에는 늘어남, 0 이하면 즉시)
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
+	float EndingDelay = 5.f;
 };
 
 // Project Settings > ET > Common > UI, Character...

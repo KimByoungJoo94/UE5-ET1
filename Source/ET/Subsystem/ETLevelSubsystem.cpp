@@ -6,6 +6,7 @@
 #include "Common/ETCommonSettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
+#include "TimerManager.h"
 
 void UETLevelSubsystem::RestartLevel()
 {
@@ -32,6 +33,17 @@ void UETLevelSubsystem::OpenTitleLevel()
 	}
 
 	UGameplayStatics::OpenLevelBySoftObjectPtr(this, TitleLevel);
+}
+
+void UETLevelSubsystem::OpenEndingLevel()
+{
+	const TSoftObjectPtr<UWorld>& EndingLevel = GetDefault<UETCommonSettings>()->Level.EndingLevel;
+	if (ensureMsgf(EndingLevel.IsNull() == false, TEXT("EndingLevel is not set in ET Common Settings.")) == false)
+	{
+		return;
+	}
+
+	UGameplayStatics::OpenLevelBySoftObjectPtr(this, EndingLevel);
 }
 
 void UETLevelSubsystem::TravelToCheckpoint(const FName InCheckpointRowName)
@@ -106,6 +118,7 @@ void UETLevelSubsystem::RecordCharacterDefeat(const FName InCharacterRowName, co
 	if (bInBoss)
 	{
 		OnBossDefeated.Broadcast(InCharacterRowName);
+		TryStartEnding(InCharacterRowName);
 	}
 }
 
@@ -123,4 +136,30 @@ bool UETLevelSubsystem::IsLevelCleared(const FName InLevelRowName) const
 	}
 
 	return IsCharacterDefeated(LevelRowData->ClearCharacterRowName);
+}
+
+void UETLevelSubsystem::TryStartEnding(const FName InCharacterRowName)
+{
+	const FName LevelRowName = FindLevelRowName(GetWorld());
+	if (LevelRowName.IsNone())
+	{
+		return;
+	}
+
+	const FETLevelTableRowData* LevelRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETLevelTableRowData>(LevelRowName);
+	if (LevelRowData == nullptr || LevelRowData->NextLevelRowName.IsNone() == false || LevelRowData->ClearCharacterRowName != InCharacterRowName)
+	{
+		return;
+	}
+
+	const float EndingDelay = GetDefault<UETCommonSettings>()->Level.EndingDelay;
+	if (EndingDelay <= 0.f)
+	{
+		OpenEndingLevel();
+		return;
+	}
+
+	// 월드 타이머라 그 전에 레벨이 바뀌면 함께 취소됨
+	FTimerHandle EndingTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(EndingTimerHandle, this, &ThisClass::OpenEndingLevel, EndingDelay, false);
 }

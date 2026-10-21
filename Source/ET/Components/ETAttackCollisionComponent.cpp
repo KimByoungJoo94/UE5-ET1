@@ -121,8 +121,8 @@ void UETAttackCollisionComponent::TraceWeaponCollision()
         return;
     }
 
-    const FVector StartSocketLocation = SkeletalMeshComponent->GetSocketLocation(CachedWeaponCollisionRowData->StartSocketName);
-    const FVector EndSocketLocation = SkeletalMeshComponent->GetSocketLocation(CachedWeaponCollisionRowData->EndSocketName);
+    const FVector StartSocketLocation = SkeletalMeshComponent->GetSocketTransform(CachedWeaponCollisionRowData->StartSocketName).TransformPosition(CachedWeaponCollisionRowData->StartLocationOffset);
+    const FVector EndSocketLocation = SkeletalMeshComponent->GetSocketTransform(CachedWeaponCollisionRowData->EndSocketName).TransformPosition(CachedWeaponCollisionRowData->EndLocationOffset);
 
     // 무기 축 방향으로 양 끝 길이 보정
     const FVector WeaponDirection = (EndSocketLocation - StartSocketLocation).GetSafeNormal();

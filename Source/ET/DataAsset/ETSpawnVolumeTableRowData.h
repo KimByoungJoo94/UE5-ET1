@@ -10,7 +10,10 @@ struct ET_API FETSpawnVolumeCharacterData
 {
 	GENERATED_BODY()
 
-public:
+public:	
+	UPROPERTY(EditAnywhere)
+	bool bSpawnEnabled = true;
+
 	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetCharacterRowNameOptions"))
 	FName CharacterRowName;
 

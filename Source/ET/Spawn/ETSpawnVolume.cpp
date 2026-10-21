@@ -143,6 +143,11 @@ void AETSpawnVolume::SpawnCharacters()
 
 	for (const FETSpawnVolumeCharacterData& SpawnCharacterData : SpawnVolumeRowData->SpawnCharacterArray)
 	{
+		if (SpawnCharacterData.bSpawnEnabled == false)
+		{
+			continue;
+		}
+
 		const FETCharacterTableRowData* CharacterRowData = GameDataSubsystem.GetRow<FETCharacterTableRowData>(SpawnCharacterData.CharacterRowName);
 		UClass* CharacterClass = CharacterRowData ? CharacterRowData->CharacterClass.LoadSynchronous() : nullptr;
 		if (ensureMsgf(CharacterClass && CharacterClass->IsChildOf<AETMonster>(), TEXT("Invalid CharacterClass. SpawnVolume: %s, CharacterRowName: %s"), *GetName(), *SpawnCharacterData.CharacterRowName.ToString()) == false)
@@ -233,7 +238,7 @@ void AETSpawnVolume::UpdateEditorPreview()
 		PreviewCapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		PreviewCapsuleComponent->SetCanEverAffectNavigation(false);
 		PreviewCapsuleComponent->SetCapsuleSize(CapsuleRadius, CapsuleHalfHeight);
-		PreviewCapsuleComponent->ShapeColor = FColor::Green;
+		PreviewCapsuleComponent->ShapeColor = SpawnCharacterData.bSpawnEnabled ? FColor::Green : FColor::Silver;
 		PreviewCapsuleComponent->SetupAttachment(GetRootComponent());
 		PreviewCapsuleComponent->RegisterComponent();
 		PreviewCapsuleComponent->SetWorldTransform(GetSpawnTransform(SpawnCharacterData, CapsuleHalfHeight));

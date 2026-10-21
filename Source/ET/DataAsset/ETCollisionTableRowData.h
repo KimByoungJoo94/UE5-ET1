@@ -22,6 +22,13 @@ public:
 	UPROPERTY(EditAnywhere)
 	FName EndSocketName;
 
+	// 소켓(본) 로컬 공간 기준 위치 보정, 소켓 회전을 따라감 (무기 끝 소켓이 없으면 Start, End 를 같은 소켓으로 두고 이 값으로 양 끝 지정)
+	UPROPERTY(EditAnywhere)
+	FVector StartLocationOffset = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere)
+	FVector EndLocationOffset = FVector::ZeroVector;
+
 	// Start → End 소켓 위치를 잇는 무기 축 방향 길이 보정 (+ 늘림, - 줄임, 소켓 회전은 사용하지 않음)
 	UPROPERTY(EditAnywhere)
 	float StartLengthOffset = 0.f;

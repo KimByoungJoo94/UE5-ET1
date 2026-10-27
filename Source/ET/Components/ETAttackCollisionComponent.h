@@ -27,10 +27,12 @@ public:
 
 	void StartRadialAttackCollision(const FName InRowName);
 
+	// 판정 파티클 출력 (루프 파티클은 일정 시간 뒤 정지, 발사체 등 다른 판정에서도 사용)
+	static void SpawnParticle(const UObject* InWorldContextObject, const TSoftObjectPtr<UParticleSystem>& InParticle, const FVector& InLocation, const float InScale);
+
 protected:
 	void TraceWeaponCollision();
 	void SweepWeaponCollision(AETCharacter* OwnerCharacter, const FVector& StartLocation, const FVector& EndLocation);
-	void SpawnParticle(const TSoftObjectPtr<UParticleSystem>& InParticle, const FVector& InLocation, const float InScale);
 
 private:
 	// 데이터 테이블 행 (테이블 에셋이 유지되는 동안 유효)

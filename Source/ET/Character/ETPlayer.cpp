@@ -533,9 +533,9 @@ void AETPlayer::ApplyPerfectStunDamage(AActor* InDamageCauser)
 	}
 }
 
-float AETPlayer::AttackTarget(AActor* InTarget, const FHitResult& InHitResult)
+float AETPlayer::AttackTarget(AActor* InTarget, const FHitResult& InHitResult, const float InDamage)
 {
-	const float ActualDamage = Super::AttackTarget(InTarget, InHitResult);
+	const float ActualDamage = Super::AttackTarget(InTarget, InHitResult, InDamage);
 	if (ActualDamage > 0.f)
 	{
 		DamageTextComponent->ShowDamageText(InHitResult.ImpactPoint, ActualDamage);

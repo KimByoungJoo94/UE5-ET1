@@ -271,11 +271,11 @@ void AETCharacter::OnStunEnded(bool bInterrupted)
 	GameStatComponent->ResetDepletedValue(EETGameStatType::StunPoint);
 }
 
-float AETCharacter::AttackTarget(AActor* InTarget, const FHitResult& InHitResult)
+float AETCharacter::AttackTarget(AActor* InTarget, const FHitResult& InHitResult, const float InDamage)
 {
 	// 대상의 TakeDamage 반환값 (포인트 데미지로 충돌 정보를 대상에게 전달)
 	const FVector HitFromDirection = (InTarget->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-	return UGameplayStatics::ApplyPointDamage(InTarget, GetAttackDamage(), HitFromDirection, InHitResult, GetController(), this, UDamageType::StaticClass());
+	return UGameplayStatics::ApplyPointDamage(InTarget, InDamage, HitFromDirection, InHitResult, GetController(), this, UDamageType::StaticClass());
 }
 
 float AETCharacter::GetAttackDamage() const

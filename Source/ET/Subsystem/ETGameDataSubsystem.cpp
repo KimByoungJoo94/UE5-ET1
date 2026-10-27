@@ -12,6 +12,7 @@
 #include "DataAsset/ETNoticeWidgetTableRowData.h"
 #include "DataAsset/ETActionConditionTableRowData.h"
 #include "DataAsset/ETSpawnVolumeTableRowData.h"
+#include "DataAsset/ETProjectileTableRowData.h"
 #include "Common/ETNames.h"
 
 void UETGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -102,6 +103,11 @@ TArray<FName> UETGameDataSubsystem::GetActionConditionRowNameOptions()
 TArray<FName> UETGameDataSubsystem::GetSpawnVolumeRowNameOptions()
 {
 	return GetRowNameOptions(FETSpawnVolumeTableRowData::StaticStruct());
+}
+
+TArray<FName> UETGameDataSubsystem::GetProjectileRowNameOptions()
+{
+	return GetRowNameOptions(FETProjectileTableRowData::StaticStruct());
 }
 
 TArray<FName> UETGameDataSubsystem::GetRowNameOptions(const UScriptStruct* InRowStruct)

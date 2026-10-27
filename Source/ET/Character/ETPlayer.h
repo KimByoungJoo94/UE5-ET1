@@ -167,7 +167,7 @@ public:
 	void ResetParry();
 	void SetPerfectTiming(const bool bInPerfectTiming);
 
-	virtual float AttackTarget(AActor* InTarget, const FHitResult& InHitResult) override;
+	virtual float AttackTarget(AActor* InTarget, const FHitResult& InHitResult, const float InDamage) override;
 	virtual float GetAttackDamage() const override;
 	virtual AActor* GetAttackTarget() const override;
 

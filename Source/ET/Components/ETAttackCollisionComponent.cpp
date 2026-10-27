@@ -82,16 +82,16 @@ void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowNa
         IgnoreActorArray,
         OverlapActorArray);
 
-    SpawnParticle(RowData->CenterParticle, Origin, RowData->CenterParticleScale);
+    SpawnParticle(this, RowData->CenterParticle, Origin, RowData->CenterParticleScale);
 
     for (AActor* OverlapActor : OverlapActorArray)
     {
         const FVector TargetLocation = OverlapActor->GetActorLocation();
         const FHitResult HitResult(OverlapActor, nullptr, TargetLocation, (TargetLocation - Origin).GetSafeNormal());
 
-        if (OwnerCharacter->AttackTarget(OverlapActor, HitResult) > 0.f)
+        if (OwnerCharacter->AttackTarget(OverlapActor, HitResult, OwnerCharacter->GetAttackDamage()) > 0.f)
         {
-            SpawnParticle(RowData->HitParticle, TargetLocation, RowData->HitParticleScale);
+            SpawnParticle(this, RowData->HitParticle, TargetLocation, RowData->HitParticleScale);
         }
     }
 
@@ -181,9 +181,9 @@ void UETAttackCollisionComponent::SweepWeaponCollision(AETCharacter* OwnerCharac
                 {
                     AlreadHitActorSet.Add(HitActor);
 
-                    if (OwnerCharacter->AttackTarget(HitActor, HitResult) > 0.f)
+                    if (OwnerCharacter->AttackTarget(HitActor, HitResult, OwnerCharacter->GetAttackDamage()) > 0.f)
                     {
-                        SpawnParticle(CachedWeaponCollisionRowData->HitParticle, HitResult.ImpactPoint, CachedWeaponCollisionRowData->HitParticleScale);
+                        SpawnParticle(this, CachedWeaponCollisionRowData->HitParticle, HitResult.ImpactPoint, CachedWeaponCollisionRowData->HitParticleScale);
                     }
                 }
             }
@@ -191,21 +191,22 @@ void UETAttackCollisionComponent::SweepWeaponCollision(AETCharacter* OwnerCharac
     }
 }
 
-void UETAttackCollisionComponent::SpawnParticle(const TSoftObjectPtr<UParticleSystem>& InParticle, const FVector& InLocation, const float InScale)
+void UETAttackCollisionComponent::SpawnParticle(const UObject* InWorldContextObject, const TSoftObjectPtr<UParticleSystem>& InParticle, const FVector& InLocation, const float InScale)
 {
     UParticleSystem* Particle = InParticle.LoadSynchronous();
-    if (Particle == nullptr)
+    UWorld* World = InWorldContextObject ? InWorldContextObject->GetWorld() : nullptr;
+    if (Particle == nullptr || World == nullptr)
     {
         return;
     }
 
-    UParticleSystemComponent* ParticleSystemComponent = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Particle, InLocation, FRotator::ZeroRotator, FVector(InScale));
+    UParticleSystemComponent* ParticleSystemComponent = UGameplayStatics::SpawnEmitterAtLocation(World, Particle, InLocation, FRotator::ZeroRotator, FVector(InScale));
 
     // 루프 파티클은 끝나지 않아 자동 제거되지 않으므로 일정 시간 뒤 정지 (남은 입자가 사라지면 자동 제거)
     if (ParticleSystemComponent && Particle->IsLooping())
     {
         FTimerHandle DeactivateTimerHandle;
-        GetWorld()->GetTimerManager().SetTimer(
+        World->GetTimerManager().SetTimer(
             DeactivateTimerHandle,
             FTimerDelegate::CreateWeakLambda(ParticleSystemComponent, [ParticleSystemComponent]()
             {

@@ -103,6 +103,9 @@ public:
 	UFUNCTION()
 	static TArray<FName> GetSpawnVolumeRowNameOptions();
 
+	UFUNCTION()
+	static TArray<FName> GetProjectileRowNameOptions();
+
 private:
 	static TArray<FName> GetRowNameOptions(const UScriptStruct* InRowStruct);
 	static const UDataTable* FindDataTableInPath(const UScriptStruct* InRowStruct);

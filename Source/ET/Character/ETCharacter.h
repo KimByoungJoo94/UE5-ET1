@@ -39,8 +39,8 @@ public:
 
 public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-	// 실제로 들어간 데미지 반환 (대상이 회피 등으로 데미지를 받지 않으면 0)
-	virtual float AttackTarget(AActor* InTarget, const FHitResult& InHitResult);
+	// 실제로 들어간 데미지 반환 (대상이 회피 등으로 데미지를 받지 않으면 0, 발사체는 발사 시점 데미지 전달)
+	virtual float AttackTarget(AActor* InTarget, const FHitResult& InHitResult, const float InDamage);
 	virtual float GetAttackDamage() const;
 
 	// 보상 테이블 행 적용 (영구 스탯은 스탯 컴포넌트에 반영)

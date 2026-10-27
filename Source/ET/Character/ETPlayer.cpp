@@ -78,6 +78,9 @@ void AETPlayer::BeginPlay()
 	GameStatComponent->StartDecreaseOverTime(EETGameStatType::Momentum, EETGameStatType::MomentumDrain);
 
 	OnChargeCountChangedHandle = ChargeAttackComponent->OnChargeCountChanged.AddUObject(this, &ThisClass::OnChargeCountChanged);
+
+	// 레벨 시작 연출 (재생 중에는 입력, 카메라 회전 불가)
+	PlayIntro();
 }
 
 void AETPlayer::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -176,7 +179,8 @@ void AETPlayer::OnMoveActionTriggered(const FInputActionValue& InValue)
 void AETPlayer::OnLookActionTriggered(const FInputActionValue& InValue)
 {	
 	if (LockOnComponent->IsLockedOn() || 
-		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death))
+		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death) ||
+		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Intro))
 	{
 		return;
 	}

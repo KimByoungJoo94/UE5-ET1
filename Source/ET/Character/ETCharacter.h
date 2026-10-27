@@ -56,8 +56,11 @@ public:
 	void ResetCapsuleHalfHeight();
 	float GetDefaultCapsuleHalfHeight() const;
 
-	// 액션 데이터의 허용, 차단 상태 기준으로 현재 상태에서 행동 가능한지 (데이터에 없는 행동은 제한 없음)
+	// 액션 데이터의 허용, 차단 상태 기준으로 현재 상태에서 행동 가능한지 (데이터에 없는 행동은 제한 없음, 인트로 중에는 사망 외 불가)
 	bool CanPlayAction(const FGameplayTag& InActionTag) const;
+
+	// 등장 연출 몽타주 재생 (Intro 액션 데이터가 없으면 재생하지 않고 false)
+	virtual bool PlayIntro();
 
 	// 액션 태그에 맞는 재생 가능한 몽타주가 있으면 상태 전환 후 재생 (AI 등 외부 호출용, InIndex 가 INDEX_NONE 이면 랜덤)
 	bool PlayAction(const FGameplayTag& InActionTag, const int32 InIndex, const FGameplayTag& InStateTag, const FOnActionEnded& InOnActionEnded = FOnActionEnded());
@@ -82,6 +85,8 @@ protected:
 	virtual void Stun();
 	// 스턴 몽타주 종료 시 스턴 포인트 초기화 (사망으로 끊긴 경우 제외)
 	virtual void OnStunEnded(bool bInterrupted);
+	// 인트로 몽타주 종료 (끊긴 경우 포함)
+	virtual void OnIntroEnded(bool bInterrupted) {}
 
 	// 몽타주 항목의 액션 조건 행 기준 (비용, 쿨타임), 행이 없으면 조건 없음
 	bool IsActionConditionMet(const FETCharacterActionMontageData* InMontageData) const;

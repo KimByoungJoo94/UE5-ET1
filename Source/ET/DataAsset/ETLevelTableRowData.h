@@ -24,7 +24,7 @@ public:
 	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetCharacterRowNameOptions"))
 	FName ClearCharacterRowName;
 
-	// 클리어 후 포탈로 이동할 레벨
+	// 클리어 후 포탈로 이동할 레벨 (비어 있으면 마지막 레벨이라 엔딩 레벨로 이동)
 	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetLevelRowNameOptions"))
 	FName NextLevelRowName;
 };

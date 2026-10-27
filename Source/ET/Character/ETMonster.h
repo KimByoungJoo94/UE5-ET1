@@ -23,10 +23,14 @@ protected:
 	virtual void Die() override;
 	virtual void Stun() override;
 	virtual void OnStunEnded(bool bInterrupted) override;
+	virtual void OnIntroEnded(bool bInterrupted) override;
 
 public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	virtual AActor* GetAttackTarget() const override;
+
+	// 대상을 처음 인식하면 전투 전 등장 연출 (스폰당 한 번, Intro 액션 데이터가 있는 몬스터만)
+	virtual bool PlayIntro() override;
 
 	AETSpawnVolume* GetSpawnVolume() const;
 	// 생성한 스폰 볼륨이 FinishSpawning 전에 지정
@@ -58,4 +62,6 @@ protected:
 
 private:
 	TWeakObjectPtr<AETSpawnVolume> SpawnVolume;
+
+	bool bIntroPlayed = false;
 };

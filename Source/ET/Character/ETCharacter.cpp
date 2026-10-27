@@ -224,7 +224,8 @@ void AETCharacter::ApplyStunDamage(const float InStunDamage)
 {
 	if (InStunDamage <= 0.f ||
 		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death) ||
-		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Stun))
+		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Stun) ||
+		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Intro))
 	{
 		return;
 	}
@@ -407,6 +408,12 @@ int32 AETCharacter::GetActionMontageNum(const FGameplayTag& InActionTag) const
 
 bool AETCharacter::CanPlayAction(const FGameplayTag& InActionTag) const
 {
+	// 인트로는 특수 행동이라 액션마다 데이터에 넣지 않고 여기서 일괄 차단
+	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Intro) && InActionTag != ETGameplayTags::Character_Action_Death)
+	{
+		return false;
+	}
+
 	const FETCharacterActionData* ActionData = CachedActionDataAsset ? CachedActionDataAsset->GetActionData(InActionTag) : nullptr;
 	if (ActionData == nullptr)
 	{
@@ -417,6 +424,11 @@ bool AETCharacter::CanPlayAction(const FGameplayTag& InActionTag) const
 	const bool bBlocked = CharacterStateComponent->HasCurrentState(ActionData->BlockedStateContainer);
 
 	return bAllowed && bBlocked == false;
+}
+
+bool AETCharacter::PlayIntro()
+{
+	return PlayAction(ETGameplayTags::Character_Action_Intro, 0, ETGameplayTags::Character_State_Intro, FOnActionEnded::CreateUObject(this, &ThisClass::OnIntroEnded));
 }
 
 bool AETCharacter::PlayAction(const FGameplayTag& InActionTag, const int32 InIndex, const FGameplayTag& InStateTag, const FOnActionEnded& InOnActionEnded)

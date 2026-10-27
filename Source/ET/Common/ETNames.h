@@ -37,6 +37,12 @@ namespace ETNames
 		inline const FName Dissolve(TEXT("Disolve"));
 	}
 
+	namespace Socket
+	{
+		// 캐릭터 공통 본 (락온 아이콘 위치)
+		inline const FName LockOn(TEXT("pelvis"));
+	}
+
 	namespace RootMotionSource
 	{
 		inline const FName Dodge(TEXT("ETDodge"));

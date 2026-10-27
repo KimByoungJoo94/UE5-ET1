@@ -46,12 +46,19 @@ void AETLevelPortal::OnInteraction(AActor* InInteractor)
 	}
 
 	const FETLevelTableRowData* LevelRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETLevelTableRowData>(CurrentLevelRowName);
-	if (LevelRowData == nullptr || LevelRowData->NextLevelRowName.IsNone())
+	if (LevelRowData == nullptr)
 	{
 		return;
 	}
 
-	ETSubsystem::Get<UETLevelSubsystem>(this).OpenLevel(LevelRowData->NextLevelRowName);
+	UETLevelSubsystem& LevelSubsystem = ETSubsystem::Get<UETLevelSubsystem>(this);
+	if (LevelRowData->NextLevelRowName.IsNone())
+	{
+		LevelSubsystem.OpenEndingLevel();
+		return;
+	}
+
+	LevelSubsystem.OpenLevel(LevelRowData->NextLevelRowName);
 }
 
 void AETLevelPortal::OnBossDefeated(FName InCharacterRowName)

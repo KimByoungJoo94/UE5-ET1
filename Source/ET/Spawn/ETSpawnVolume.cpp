@@ -1,6 +1,8 @@
 ﻿#include "Spawn/ETSpawnVolume.h"
 #include "Character/ETMonster.h"
 #include "Character/ETPlayer.h"
+#include "Components/ETCharacterStateComponent.h"
+#include "Common/ETGameplayTags.h"
 #include "DataAsset/ETCharacterTableRowData.h"
 #include "DataAsset/ETSpawnVolumeTableRowData.h"
 #include "Subsystem/ETGameDataSubsystem.h"
@@ -8,10 +10,19 @@
 #include "Components/BillboardComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
+#include "Camera/PlayerCameraManager.h"
+#include "Materials/MaterialInterface.h"
+#include "UObject/ConstructorHelpers.h"
 
 AETSpawnVolume::AETSpawnVolume()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	// 잠금 대상 플레이어가 있을 때만 Tick (잠금 중에는 플레이어 이동 후 위치 보정하도록 이동 컴포넌트를 선행 조건으로 추가)
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
 
 	RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
 	SetRootComponent(RootSceneComponent);
@@ -25,6 +36,17 @@ AETSpawnVolume::AETSpawnVolume()
 	RangeSphereComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	RangeSphereComponent->SetCanEverAffectNavigation(false);
 	RangeSphereComponent->SetSphereRadius(0.f);
+
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+
+	// 잠금은 수평 거리 기준이라 볼륨을 바닥 근처에 두면 플레이어 높이의 구 단면이 경계와 거의 같음 (아래 절반은 바닥에 가려짐)
+	LockBoundaryMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LockBoundaryMeshComponent"));
+	LockBoundaryMeshComponent->SetupAttachment(GetRootComponent());
+	LockBoundaryMeshComponent->SetStaticMesh(SphereMesh.Object);
+	LockBoundaryMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	LockBoundaryMeshComponent->SetCanEverAffectNavigation(false);
+	LockBoundaryMeshComponent->SetCastShadow(false);
+	LockBoundaryMeshComponent->SetVisibility(false);
 
 #if WITH_EDITORONLY_DATA
 	// 거리와 상관없이 에디터에서 찾고 선택할 수 있도록 아이콘 표시
@@ -71,6 +93,8 @@ void AETSpawnVolume::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		SpawnSubsystem->UnregisterSpawnVolume(this);
 	}
 
+	EndLock();
+
 	RangeSphereComponent->OnComponentBeginOverlap.RemoveDynamic(this, &ThisClass::OnRangeSphereBeginOverlap);
 	RangeSphereComponent->OnComponentEndOverlap.RemoveDynamic(this, &ThisClass::OnRangeSphereEndOverlap);
 
@@ -83,10 +107,40 @@ void AETSpawnVolume::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
+void AETSpawnVolume::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	AETPlayer* Player = LockTargetPlayer.Get();
+	if (Player == nullptr)
+	{
+		EndLock();
+		UpdateLockTickEnabled();
+		return;
+	}
+
+	if (bPlayerLocked)
+	{
+		KeepPlayerInLockRange(Player);
+		TryShowLockBoundary(Player);
+		return;
+	}
+
+	// 범위 구체 오버랩은 캡슐이 닿는 순간이라 바로 잠그면 안쪽으로 끌려가므로 경계에서 진입 여유 거리만큼 더 들어온 뒤 잠금
+	const FVector Offset = Player->GetActorLocation() - GetActorLocation();
+	const float EnterDistance = FMath::Max(GetLockDistance(Player) - LockEnterMargin, 0.f);
+	if (Offset.SizeSquared2D() <= FMath::Square(EnterDistance))
+	{
+		BeginLock(Player);
+	}
+}
+
 void AETSpawnVolume::ResetSpawn()
 {
+	EndLock();
 	DestroySpawnedCharacters();
 	SpawnCharacters();
+	UpdateLockTickEnabled();
 }
 
 bool AETSpawnVolume::IsInRange(const FVector& InLocation) const
@@ -99,6 +153,12 @@ void AETSpawnVolume::OnRangeSphereBeginOverlap(UPrimitiveComponent* OverlappedCo
 	if (IsPlayerCapsule(OtherActor, OtherComp))
 	{
 		SetPlayerInRange(true);
+
+		if (bLockPlayerInRange)
+		{
+			LockTargetPlayer = Cast<AETPlayer>(OtherActor);
+			UpdateLockTickEnabled();
+		}
 	}
 }
 
@@ -107,6 +167,13 @@ void AETSpawnVolume::OnRangeSphereEndOverlap(UPrimitiveComponent* OverlappedComp
 	if (IsPlayerCapsule(OtherActor, OtherComp))
 	{
 		SetPlayerInRange(false);
+
+		// 잠금 중에는 높이 차이로 구체를 벗어나도 유지
+		if (bPlayerLocked == false)
+		{
+			LockTargetPlayer.Reset();
+			UpdateLockTickEnabled();
+		}
 	}
 }
 
@@ -129,6 +196,106 @@ void AETSpawnVolume::SetPlayerInRange(const bool bInRange)
 	}
 }
 
+void AETSpawnVolume::OnSpawnedMonsterDied()
+{
+	if (HasAliveSpawnedMonster())
+	{
+		return;
+	}
+
+	EndLock();
+	UpdateLockTickEnabled();
+}
+
+bool AETSpawnVolume::HasAliveSpawnedMonster() const
+{
+	for (const TWeakObjectPtr<AETMonster>& SpawnedMonster : SpawnedMonsterArray)
+	{
+		if (SpawnedMonster.IsValid() && SpawnedMonster->GetCharacterStateComponent()->IsCurrentState(ETGameplayTags::Character_State_Death) == false)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void AETSpawnVolume::UpdateLockTickEnabled()
+{
+	SetActorTickEnabled(LockTargetPlayer.IsValid() && HasAliveSpawnedMonster());
+}
+
+float AETSpawnVolume::GetLockDistance(const AETPlayer* InPlayer) const
+{
+	return FMath::Max(RangeSphereComponent->GetScaledSphereRadius() - InPlayer->GetCapsuleComponent()->GetScaledCapsuleRadius(), 0.f);
+}
+
+void AETSpawnVolume::BeginLock(AETPlayer* InPlayer)
+{
+	bPlayerLocked = true;
+	AddTickPrerequisiteComponent(InPlayer->GetCharacterMovement());
+	TryShowLockBoundary(InPlayer);
+}
+
+void AETSpawnVolume::EndLock()
+{
+	if (bPlayerLocked == false)
+	{
+		return;
+	}
+
+	bPlayerLocked = false;
+	LockBoundaryMeshComponent->SetVisibility(false);
+
+	if (const AETPlayer* Player = LockTargetPlayer.Get())
+	{
+		RemoveTickPrerequisiteComponent(Player->GetCharacterMovement());
+	}
+
+	// 범위 밖에서 풀리면 리셋 후 다시 잠기지 않도록 대상 해제
+	if (bPlayerInRange == false)
+	{
+		LockTargetPlayer.Reset();
+	}
+}
+
+void AETSpawnVolume::KeepPlayerInLockRange(AETPlayer* InPlayer) const
+{
+	const FVector Center = GetActorLocation();
+	const FVector PlayerLocation = InPlayer->GetActorLocation();
+	const FVector Offset(PlayerLocation.X - Center.X, PlayerLocation.Y - Center.Y, 0.f);
+	const float LockDistance = GetLockDistance(InPlayer);
+	if (Offset.SizeSquared() <= FMath::Square(LockDistance))
+	{
+		return;
+	}
+
+	const FVector OutwardDirection = Offset.GetSafeNormal();
+	InPlayer->SetActorLocation(FVector(Center.X, Center.Y, PlayerLocation.Z) + OutwardDirection * LockDistance);
+
+	UCharacterMovementComponent* CharacterMovementComponent = InPlayer->GetCharacterMovement();
+	const float OutwardSpeed = FVector::DotProduct(CharacterMovementComponent->Velocity, OutwardDirection);
+	if (OutwardSpeed > 0.f)
+	{
+		CharacterMovementComponent->Velocity -= OutwardDirection * OutwardSpeed;
+	}
+}
+
+void AETSpawnVolume::TryShowLockBoundary(const AETPlayer* InPlayer)
+{
+	if (LockBoundaryMaterial == nullptr || LockBoundaryMeshComponent->IsVisible())
+	{
+		return;
+	}
+
+	const APlayerController* PlayerController = Cast<APlayerController>(InPlayer->GetController());
+	const APlayerCameraManager* PlayerCameraManager = PlayerController ? PlayerController->PlayerCameraManager : nullptr;
+	if (PlayerCameraManager && IsInRange(PlayerCameraManager->GetCameraLocation()))
+	{
+		LockBoundaryMeshComponent->SetVisibility(true);
+	}
+}
+
 void AETSpawnVolume::SpawnCharacters()
 {
 	const UETGameDataSubsystem& GameDataSubsystem = ETSubsystem::Get<UETGameDataSubsystem>(this);
@@ -140,6 +307,17 @@ void AETSpawnVolume::SpawnCharacters()
 	}
 
 	RangeSphereComponent->SetSphereRadius(SpawnVolumeRowData->Range);
+
+	bLockPlayerInRange = SpawnVolumeRowData->bLockPlayerInRange;
+	LockEnterMargin = SpawnVolumeRowData->LockEnterMargin;
+	LockBoundaryMaterial = bLockPlayerInRange ? SpawnVolumeRowData->LockBoundaryMaterial.LoadSynchronous() : nullptr;
+	if (LockBoundaryMaterial && LockBoundaryMeshComponent->GetStaticMesh())
+	{
+		// 기본 구 메시 크기 기준으로 반지름을 Range 에 맞춤
+		const FVector MeshExtent = LockBoundaryMeshComponent->GetStaticMesh()->GetBounds().BoxExtent;
+		LockBoundaryMeshComponent->SetRelativeScale3D(FVector(SpawnVolumeRowData->Range / MeshExtent.X, SpawnVolumeRowData->Range / MeshExtent.Y, SpawnVolumeRowData->Range / MeshExtent.Z));
+		LockBoundaryMeshComponent->SetMaterial(0, LockBoundaryMaterial);
+	}
 
 	for (const FETSpawnVolumeCharacterData& SpawnCharacterData : SpawnVolumeRowData->SpawnCharacterArray)
 	{

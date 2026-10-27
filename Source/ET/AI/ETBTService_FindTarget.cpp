@@ -52,9 +52,10 @@ void UETBTService_FindTarget::TickNode(UBehaviorTreeComponent& OwnerComp, uint8*
 	const bool bInDetectRange = FVector::Dist(OwnerMonster->GetActorLocation(), PlayerCharacter->GetActorLocation()) <= DetectRange;
 	const bool bInSpawnVolume = SpawnVolume->IsInRange(PlayerCharacter->GetActorLocation());
 
+	const bool bWasTargeting = BlackboardComponent->GetValueAsObject(TargetActorKey.SelectedKeyName) == PlayerCharacter;
 	bool bTargeting = false;
 
-	if (BlackboardComponent->GetValueAsObject(TargetActorKey.SelectedKeyName) == PlayerCharacter)
+	if (bWasTargeting)
 	{
 		// 인식 중이면 시야는 보지 않음 (가려져도 바로 놓치지 않도록)
 		bTargeting = AIData.TargetLoseType == EETTargetLoseType::Persistent || bInDetectRange || bInSpawnVolume;
@@ -65,6 +66,12 @@ void UETBTService_FindTarget::TickNode(UBehaviorTreeComponent& OwnerComp, uint8*
 	}
 
 	BlackboardComponent->SetValueAsObject(TargetActorKey.SelectedKeyName, bTargeting ? PlayerCharacter : nullptr);
+
+	// 처음 인식하면 등장 연출 후 전투 (인트로가 없거나 이미 재생했으면 무시)
+	if (bWasTargeting == false && bTargeting)
+	{
+		OwnerMonster->PlayIntro();
+	}
 }
 
 bool UETBTService_FindTarget::IsInSight(const AActor* InOwner, const AActor* InTarget, const float InSightAngle)

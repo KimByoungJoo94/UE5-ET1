@@ -6,7 +6,7 @@
 
 class UParticleSystemComponent;
 
-// 현재 레벨이 클리어되면 열리고 다음 레벨로 이동 (레벨에 미리 배치, 열리면 파티클 재생 및 상호작용 가능)
+// 현재 레벨이 클리어되면 열리고 다음 레벨로 이동, 다음 레벨이 없으면 엔딩 레벨로 이동 (레벨에 미리 배치, 열리면 파티클 재생 및 상호작용 가능)
 UCLASS()
 class ET_API AETLevelPortal : public AETInteractionActor
 {

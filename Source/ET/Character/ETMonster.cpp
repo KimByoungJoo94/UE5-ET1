@@ -33,9 +33,9 @@ AETMonster::AETMonster()
 	StatBarWidgetComponent->SetWidgetClass(UETStatListWidget::StaticClass());
 
 	LockOnWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("LockOnWidgetComponent"));
-	LockOnWidgetComponent->SetupAttachment(GetRootComponent());
+	// 애니메이션에 따라 몸에 붙어 움직이도록 메시 본에 부착
+	LockOnWidgetComponent->SetupAttachment(GetMesh(), ETNames::Socket::LockOn);
 	LockOnWidgetComponent->SetDrawSize(FVector2D(40.f, 40.f));
-	LockOnWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 50.f));
 	LockOnWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	LockOnWidgetComponent->SetDrawAtDesiredSize(false);
 
@@ -90,6 +90,11 @@ void AETMonster::Die()
 	StatBarWidgetComponent->SetVisibility(false);
 	LockOnWidgetComponent->SetVisibility(false);
 
+	if (AETSpawnVolume* MySpawnVolume = SpawnVolume.Get())
+	{
+		MySpawnVolume->OnSpawnedMonsterDied();
+	}
+
 	const FETCharacterTableRowData* CharacterRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETCharacterTableRowData>(CharacterRowName);
 	if (CharacterRowData == nullptr)
 	{
@@ -127,6 +132,59 @@ void AETMonster::OnStunEnded(bool bInterrupted)
 	}
 
 	// 블랙보드는 유지되므로 인식 중이던 대상부터 다시 판단
+	if (const AAIController* AIController = Cast<AAIController>(GetController()))
+	{
+		if (UBrainComponent* BrainComponent = AIController->GetBrainComponent())
+		{
+			BrainComponent->RestartLogic();
+		}
+	}
+}
+
+bool AETMonster::PlayIntro()
+{
+	if (bIntroPlayed || GetActionMontageNum(ETGameplayTags::Character_Action_Intro) == 0)
+	{
+		return false;
+	}
+
+	bIntroPlayed = true;
+
+	// BT 액션 태스크가 몽타주를 끊지 않도록 연출 동안 정지 (끝나면 블랙보드 대상으로 바로 전투)
+	const AAIController* AIController = Cast<AAIController>(GetController());
+	UBrainComponent* BrainComponent = AIController ? AIController->GetBrainComponent() : nullptr;
+	if (BrainComponent)
+	{
+		BrainComponent->StopLogic(TEXT("Intro"));
+	}
+
+	if (const AActor* AttackTarget = GetAttackTarget())
+	{
+		SetActorRotation(FRotator(0.f, (AttackTarget->GetActorLocation() - GetActorLocation()).Rotation().Yaw, 0.f));
+	}
+
+	if (Super::PlayIntro() == false)
+	{
+		if (BrainComponent)
+		{
+			BrainComponent->RestartLogic();
+		}
+
+		return false;
+	}
+
+	return true;
+}
+
+void AETMonster::OnIntroEnded(bool bInterrupted)
+{
+	Super::OnIntroEnded(bInterrupted);
+
+	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death))
+	{
+		return;
+	}
+
 	if (const AAIController* AIController = Cast<AAIController>(GetController()))
 	{
 		if (UBrainComponent* BrainComponent = AIController->GetBrainComponent())

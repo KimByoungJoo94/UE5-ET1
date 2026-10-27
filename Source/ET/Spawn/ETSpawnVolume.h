@@ -5,8 +5,11 @@
 #include "ETSpawnVolume.generated.h"
 
 class AETMonster;
+class AETPlayer;
 class UBillboardComponent;
 class USphereComponent;
+class UStaticMeshComponent;
+class UMaterialInterface;
 struct FETSpawnVolumeCharacterData;
 
 // 스폰 볼륨 테이블 행의 캐릭터를 볼륨 기준 상대 위치에 생성 (몬스터는 반드시 스폰 볼륨으로 배치)
@@ -22,6 +25,7 @@ protected:
 	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void Tick(float DeltaSeconds) override;
 
 public:
 	// 생성한 몬스터를 모두 제거하고 처음 상태로 다시 생성
@@ -29,6 +33,9 @@ public:
 
 	// 볼륨 중심 기준 범위 구체 안인지
 	bool IsInRange(const FVector& InLocation) const;
+
+	// 생성한 몬스터가 Die 에서 호출 (모두 처치하면 잠금 해제)
+	void OnSpawnedMonsterDied();
 
 private:
 	UFUNCTION()
@@ -42,6 +49,23 @@ private:
 
 	// 플레이어 진입 여부를 기록하고 생성한 몬스터의 체력바 표시 갱신
 	void SetPlayerInRange(const bool bInRange);
+
+	bool HasAliveSpawnedMonster() const;
+
+	// 잠금 대상 플레이어가 있고 살아 있는 몬스터가 있을 때만 Tick (잠금 전 진입 대기, 잠금 후 위치 보정)
+	void UpdateLockTickEnabled();
+
+	// 잠금 경계 반지름 (캡슐이 경계 안쪽에 머물도록 캡슐 반지름만큼 줄임)
+	float GetLockDistance(const AETPlayer* InPlayer) const;
+
+	void BeginLock(AETPlayer* InPlayer);
+	void EndLock();
+
+	// 경계 밖으로 나간 만큼 경계 위로 되돌리고 바깥 방향 속도 제거
+	void KeepPlayerInLockRange(AETPlayer* InPlayer) const;
+
+	// 잠금 중 카메라까지 범위 안에 들어오면 경계 표시 (한 번 표시하면 잠금 해제 때까지 유지)
+	void TryShowLockBoundary(const AETPlayer* InPlayer);
 
 	void SpawnCharacters();
 	void DestroySpawnedCharacters();
@@ -68,6 +92,10 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<USphereComponent> RangeSphereComponent;
 
+	// 잠금 중 범위 경계 표시 (반지름은 테이블 Range)
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> LockBoundaryMeshComponent;
+
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UBillboardComponent> SpriteComponent;
@@ -78,4 +106,16 @@ private:
 
 	// 리셋으로 새로 생성한 몬스터에도 현재 상태를 적용하기 위해 기록
 	bool bPlayerInRange = false;
+
+	// 테이블 잠금 옵션 (생성 시 기록)
+	bool bLockPlayerInRange = false;
+	float LockEnterMargin = 0.f;
+
+	UPROPERTY()
+	TObjectPtr<UMaterialInterface> LockBoundaryMaterial;
+
+	// 잠금 옵션이 켜진 볼륨에 들어온 플레이어 (잠금 중에는 범위 구체를 벗어나도 유지)
+	TWeakObjectPtr<AETPlayer> LockTargetPlayer;
+
+	bool bPlayerLocked = false;
 };

@@ -23,7 +23,7 @@ public:
 	// 메인 타이틀 레벨 열기 (엔딩 후, 타이틀로 돌아가기 등)
 	void OpenTitleLevel();
 
-	// 엔딩 레벨 열기 (마지막 레벨 클리어 시)
+	// 엔딩 레벨 열기 (마지막 레벨 클리어 후 포탈 상호작용 시)
 	void OpenEndingLevel();
 
 	// 체크포인트를 부활 위치로 저장하고 소속 레벨 열기 (같은 레벨이어도 다시 열어서 상태 초기화)
@@ -41,10 +41,6 @@ public:
 
 	// 레벨의 클리어 보스 처치 기록이 있는지
 	bool IsLevelCleared(const FName InLevelRowName) const;
-
-private:
-	// 현재 레벨이 마지막 레벨(다음 레벨 없음)이고 클리어 보스를 처치했으면 엔딩 시작
-	void TryStartEnding(const FName InCharacterRowName);
 
 public:
 	FOnBossDefeated OnBossDefeated;

@@ -6,11 +6,15 @@
 #include "Common/ETCommonSettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
-#include "TimerManager.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogLevelTravel, Log, All);
 
 void UETLevelSubsystem::RestartLevel()
 {
-	UGameplayStatics::OpenLevel(this, FName(UGameplayStatics::GetCurrentLevelName(this)));
+	const FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(this);
+	UE_LOG(LogLevelTravel, Log, TEXT("RestartLevel: %s"), *CurrentLevelName);
+
+	UGameplayStatics::OpenLevel(this, FName(CurrentLevelName));
 }
 
 void UETLevelSubsystem::OpenLevel(const FName InLevelRowName)
@@ -20,6 +24,8 @@ void UETLevelSubsystem::OpenLevel(const FName InLevelRowName)
 	{
 		return;
 	}
+
+	UE_LOG(LogLevelTravel, Log, TEXT("OpenLevel: %s -> %s"), *InLevelRowName.ToString(), *LevelRowData->Level.ToString());
 
 	UGameplayStatics::OpenLevelBySoftObjectPtr(this, LevelRowData->Level);
 }
@@ -32,6 +38,8 @@ void UETLevelSubsystem::OpenTitleLevel()
 		return;
 	}
 
+	UE_LOG(LogLevelTravel, Log, TEXT("OpenTitleLevel: %s"), *TitleLevel.ToString());
+
 	UGameplayStatics::OpenLevelBySoftObjectPtr(this, TitleLevel);
 }
 
@@ -43,6 +51,8 @@ void UETLevelSubsystem::OpenEndingLevel()
 		return;
 	}
 
+	UE_LOG(LogLevelTravel, Log, TEXT("OpenEndingLevel: %s"), *EndingLevel.ToString());
+
 	UGameplayStatics::OpenLevelBySoftObjectPtr(this, EndingLevel);
 }
 
@@ -53,6 +63,8 @@ void UETLevelSubsystem::TravelToCheckpoint(const FName InCheckpointRowName)
 	{
 		return;
 	}
+
+	UE_LOG(LogLevelTravel, Log, TEXT("TravelToCheckpoint: %s -> %s"), *InCheckpointRowName.ToString(), *CheckpointRowData->LevelRowName.ToString());
 
 	UETSaveSubsystem& SaveSubsystem = ETSubsystem::Get<UETSaveSubsystem>(this);
 	SaveSubsystem.GetWorldSaveData().CheckpointRowName = InCheckpointRowName;
@@ -88,6 +100,8 @@ void UETLevelSubsystem::RecordCurrentLevel(const UWorld* InWorld)
 {
 	// 타이틀 등 테이블에 없는 레벨은 기록하지 않음
 	const FName LevelRowName = FindLevelRowName(InWorld);
+	UE_LOG(LogLevelTravel, Log, TEXT("RecordCurrentLevel: %s -> %s"), InWorld ? *InWorld->GetName() : TEXT("None"), *LevelRowName.ToString());
+
 	if (LevelRowName.IsNone())
 	{
 		return;
@@ -118,7 +132,6 @@ void UETLevelSubsystem::RecordCharacterDefeat(const FName InCharacterRowName, co
 	if (bInBoss)
 	{
 		OnBossDefeated.Broadcast(InCharacterRowName);
-		TryStartEnding(InCharacterRowName);
 	}
 }
 
@@ -136,30 +149,4 @@ bool UETLevelSubsystem::IsLevelCleared(const FName InLevelRowName) const
 	}
 
 	return IsCharacterDefeated(LevelRowData->ClearCharacterRowName);
-}
-
-void UETLevelSubsystem::TryStartEnding(const FName InCharacterRowName)
-{
-	const FName LevelRowName = FindLevelRowName(GetWorld());
-	if (LevelRowName.IsNone())
-	{
-		return;
-	}
-
-	const FETLevelTableRowData* LevelRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETLevelTableRowData>(LevelRowName);
-	if (LevelRowData == nullptr || LevelRowData->NextLevelRowName.IsNone() == false || LevelRowData->ClearCharacterRowName != InCharacterRowName)
-	{
-		return;
-	}
-
-	const float EndingDelay = GetDefault<UETCommonSettings>()->Level.EndingDelay;
-	if (EndingDelay <= 0.f)
-	{
-		OpenEndingLevel();
-		return;
-	}
-
-	// 월드 타이머라 그 전에 레벨이 바뀌면 함께 취소됨
-	FTimerHandle EndingTimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(EndingTimerHandle, this, &ThisClass::OpenEndingLevel, EndingDelay, false);
 }

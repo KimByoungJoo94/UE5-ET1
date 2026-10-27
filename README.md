@@ -14,6 +14,8 @@
 | The Motherland Calls | Fab | `Content/Fab/The_Motherland_Calls` |
 | Torii Gate - 3D Model | Fab | `Content/Fab/Torii_Gate_-_3D_Model` |
 | Free Material Pack | Fab | `Content/FreeMaterialPack` |
+| Soul: Cave | Fab | `Content/SoulCave` |
+| Soul: City | Fab | `Content/SoulCity` |
 
 > Fab 에서 "프로젝트에 추가(Add to Project)" 로 받으면 위 경로에 자동으로 설치됩니다.
 

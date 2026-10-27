@@ -15,6 +15,7 @@ namespace ETGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Hit);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Stun);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Death);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Intro);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Move);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Jump);
@@ -29,4 +30,5 @@ namespace ETGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_ActiveSkill);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Interaction);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_UseItem);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Action_Intro);
 }

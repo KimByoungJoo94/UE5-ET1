@@ -49,6 +49,10 @@ public:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
 	float HitParticleScale = 1.f;
 
+	// 실제 데미지가 들어갔을 때 카메라 쉐이크 (때린 쪽, 맞은 쪽 상관없이 로컬 플레이어 카메라)
+	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetCameraShakeRowNameOptions"))
+	FName CameraShakeRowName;
+
 	UPROPERTY(EditAnywhere)
 	TEnumAsByte<EDrawDebugTrace::Type> DrawDebugType = EDrawDebugTrace::None;
 
@@ -68,7 +72,7 @@ public:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
 	float Radius = 300.f;
 
-	// 오너 로컬 기준 오프셋 (X 전방, Y 우측, Z 위)
+	// 오너 로컬 기준 오프셋 (X 전방, Y 우측, Z 위), 노티파이에 소켓 설정 시 소켓 로컬 기준
 	UPROPERTY(EditAnywhere)
 	FVector LocationOffset = FVector::ZeroVector;
 
@@ -88,6 +92,10 @@ public:
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
 	float HitParticleScale = 1.f;
+
+	// 판정할 때마다 판정 중심을 진원지로 카메라 쉐이크 (맞은 대상이 없어도, 거리 감쇠는 카메라 쉐이크 테이블 Inner, Outer 반경)
+	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetCameraShakeRowNameOptions"))
+	FName CameraShakeRowName;
 
 	UPROPERTY(EditAnywhere)
 	TEnumAsByte<EDrawDebugTrace::Type> DrawDebugType = EDrawDebugTrace::None;

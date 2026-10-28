@@ -24,3 +24,20 @@ private:
 	float StartArmLength = 0.f;
 	float ElapsedTime = 0.f;
 };
+
+// 카메라 쉐이크 테이블 행으로 로컬 플레이어 카메라 흔들기 (시작 즉시 완료)
+// 진원지를 넘기면 테이블 Inner, Outer 반경 기준으로 거리 감쇠, 아니면 그대로 재생
+struct ET_API FETCameraShakeJob : public FETJob
+{
+public:
+	FETCameraShakeJob(const FName InCameraShakeRowName);
+	FETCameraShakeJob(const FName InCameraShakeRowName, const FVector& InEpicenter);
+
+	virtual void Start(UWorld* InWorld) override;
+	virtual EETJobStatus Tick(const float InDeltaTime) override;
+	virtual void End(const bool bInCancelled) override;
+
+private:
+	FName CameraShakeRowName;
+	TOptional<FVector> Epicenter;
+};

@@ -10,7 +10,7 @@ void UETAnimNotify_RadialAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimS
 	{
 		if (UETAttackCollisionComponent* AttackCollisionComponent = OwnerCharacter->GetAttackCollisionComponent())
 		{
-			AttackCollisionComponent->StartRadialAttackCollision(RadialAttackCollisionRowName);
+			AttackCollisionComponent->StartRadialAttackCollision(RadialAttackCollisionRowName, SocketName);
 		}
 	}
 }

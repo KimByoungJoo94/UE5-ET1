@@ -2,6 +2,8 @@
 #include "Character/ETCharacter.h"
 #include "Components/ETTimeFreezeComponent.h"
 #include "Subsystem/ETGameDataSubsystem.h"
+#include "Subsystem/ETJobSubsystem.h"
+#include "Job/ETCameraJobs.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
@@ -60,7 +62,7 @@ void UETAttackCollisionComponent::EndWeaponCollision()
     bHasLastLocation = false;
 }
 
-void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowName)
+void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowName, const FName InSocketName)
 {
     AETCharacter* OwnerCharacter = Cast<AETCharacter>(GetOwner());
     const FETRadialAttackCollisionTableRowData* RowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETRadialAttackCollisionTableRowData>(InRowName);
@@ -69,7 +71,11 @@ void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowNa
         return;
     }
 
-    const FVector Origin = OwnerCharacter->GetActorTransform().TransformPosition(RowData->LocationOffset);
+    // 소켓이 유효하면 소켓 위치, 회전 기준 오프셋, 아니면 오너 기준 오프셋
+    const USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter->GetMesh();
+    const bool bUseSocket = InSocketName.IsNone() == false && SkeletalMeshComponent && SkeletalMeshComponent->DoesSocketExist(InSocketName);
+    const FTransform OriginTransform = bUseSocket ? SkeletalMeshComponent->GetSocketTransform(InSocketName) : OwnerCharacter->GetActorTransform();
+    const FVector Origin = OriginTransform.TransformPosition(RowData->LocationOffset);
     const TArray<AActor*> IgnoreActorArray = { OwnerCharacter };
     TArray<AActor*> OverlapActorArray;
 
@@ -83,6 +89,7 @@ void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowNa
         OverlapActorArray);
 
     SpawnParticle(this, RowData->CenterParticle, Origin, RowData->CenterParticleScale);
+    PlayCameraShake(RowData->CameraShakeRowName, &Origin);
 
     for (AActor* OverlapActor : OverlapActorArray)
     {
@@ -105,6 +112,17 @@ void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowNa
         DrawDebugSphere(GetWorld(), Origin, RowData->Radius, 24, DebugColor, bPersistent, LifeTime);
     }
 #endif
+}
+
+void UETAttackCollisionComponent::PlayCameraShake(const FName InCameraShakeRowName, const FVector* InEpicenter)
+{
+    if (InCameraShakeRowName.IsNone())
+    {
+        return;
+    }
+
+    TUniquePtr<FETCameraShakeJob> CameraShakeJob = InEpicenter ? MakeUnique<FETCameraShakeJob>(InCameraShakeRowName, *InEpicenter) : MakeUnique<FETCameraShakeJob>(InCameraShakeRowName);
+    ETSubsystem::Get<UETJobSubsystem>(this).Run(this, MoveTemp(CameraShakeJob));
 }
 
 void UETAttackCollisionComponent::TraceWeaponCollision()
@@ -184,6 +202,7 @@ void UETAttackCollisionComponent::SweepWeaponCollision(AETCharacter* OwnerCharac
                     if (OwnerCharacter->AttackTarget(HitActor, HitResult, OwnerCharacter->GetAttackDamage()) > 0.f)
                     {
                         SpawnParticle(this, CachedWeaponCollisionRowData->HitParticle, HitResult.ImpactPoint, CachedWeaponCollisionRowData->HitParticleScale);
+                        PlayCameraShake(CachedWeaponCollisionRowData->CameraShakeRowName);
                     }
                 }
             }

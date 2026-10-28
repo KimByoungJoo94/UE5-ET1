@@ -9,7 +9,6 @@ namespace ETNames
 	{		
 		inline const FName RadialAttackCharge(TEXT("Charge"));
 
-		inline const FName CameraShakeHit(TEXT("Hit"));
 		inline const FName CameraShakeParry(TEXT("Parry"));
 		inline const FName CameraShakePerfectParry(TEXT("PerfectParry"));
 	}

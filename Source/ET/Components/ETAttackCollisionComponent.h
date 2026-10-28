@@ -25,7 +25,7 @@ public:
 	void StartWeaponCollision(const FName InRowName);
 	void EndWeaponCollision();
 
-	void StartRadialAttackCollision(const FName InRowName);
+	void StartRadialAttackCollision(const FName InRowName, const FName InSocketName = NAME_None);
 
 	// 판정 파티클 출력 (루프 파티클은 일정 시간 뒤 정지, 발사체 등 다른 판정에서도 사용)
 	static void SpawnParticle(const UObject* InWorldContextObject, const TSoftObjectPtr<UParticleSystem>& InParticle, const FVector& InLocation, const float InScale);
@@ -33,6 +33,8 @@ public:
 protected:
 	void TraceWeaponCollision();
 	void SweepWeaponCollision(AETCharacter* OwnerCharacter, const FVector& StartLocation, const FVector& EndLocation);
+	// 진원지가 있으면 카메라 쉐이크 테이블 Inner, Outer 반경으로 거리 감쇠
+	void PlayCameraShake(const FName InCameraShakeRowName, const FVector* InEpicenter = nullptr);
 
 private:
 	// 데이터 테이블 행 (테이블 에셋이 유지되는 동안 유효)

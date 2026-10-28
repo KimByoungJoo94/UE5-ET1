@@ -3,11 +3,9 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/RootMotionSource.h"
 #include "Camera/CameraComponent.h"
-#include "Camera/CameraShakeBase.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "DataAsset/ETCharacterActionDataAsset.h"
-#include "DataAsset/ETCameraShakeTableRowData.h"
 #include "DataAsset/ETCharacterTableRowData.h"
 #include "DataAsset/ETRewardTableRowData.h"
 #include "Components/ETCharacterStateComponent.h"
@@ -539,7 +537,6 @@ float AETPlayer::AttackTarget(AActor* InTarget, const FHitResult& InHitResult, c
 	if (ActualDamage > 0.f)
 	{
 		DamageTextComponent->ShowDamageText(InHitResult.ImpactPoint, ActualDamage);
-		PlayCameraShake(ETNames::RowName::CameraShakeHit);
 	}
 
 	return ActualDamage;
@@ -587,7 +584,7 @@ bool AETPlayer::TryAvoidDamage(const FDamageEvent& InDamageEvent, AActor* InDama
 		}
 
 		PlayParryParticle(InDamageEvent, bPerfect);
-		PlayCameraShake(bPerfect ? ETNames::RowName::CameraShakePerfectParry : ETNames::RowName::CameraShakeParry);
+		ETSubsystem::Get<UETJobSubsystem>(this).Run(this, MakeUnique<FETCameraShakeJob>(bPerfect ? ETNames::RowName::CameraShakePerfectParry : ETNames::RowName::CameraShakeParry));
 
 		const float HitStopDuration = bPerfect ? PlayerParryData.PerfectParryHitStopDuration : PlayerParryData.ParryHitStopDuration;
 		if (HitStopDuration > 0.f)
@@ -738,21 +735,6 @@ void AETPlayer::OnChargeCountChanged(const int32 InCurrentChargeCount, const int
 
 	// 충전 단계가 오를 때마다 범위 공격 (판정, 파티클은 범위 공격 테이블 행 기준)
 	AttackCollisionComponent->StartRadialAttackCollision(ETNames::RowName::RadialAttackCharge);
-}
-
-void AETPlayer::PlayCameraShake(const FName InCameraShakeRowName)
-{
-	APlayerController* PlayerController = Cast<APlayerController>(GetController());
-	const FETCameraShakeTableRowData* RowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETCameraShakeTableRowData>(InCameraShakeRowName);
-	if (PlayerController == nullptr || RowData == nullptr || RowData->Scale <= 0.f)
-	{
-		return;
-	}
-
-	if (const TSubclassOf<UCameraShakeBase> CameraShakeClass = RowData->CameraShakeClass.LoadSynchronous())
-	{
-		PlayerController->ClientStartCameraShake(CameraShakeClass, RowData->Scale);
-	}
 }
 
 void AETPlayer::PlayParryParticle(const FDamageEvent& InDamageEvent, const bool bInPerfect)

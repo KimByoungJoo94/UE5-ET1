@@ -24,17 +24,26 @@
 
 받은 외부 에셋은 가능하면 수정하지 않고 사용합니다.
 다만 꼭 필요한 부분만 최소한으로 편집했으며, 해당 에셋은 저장소에 포함되지 않으므로 새로 받은 뒤 아래 내용을 직접 적용해야 합니다.
-이후 외부 에셋을 수정하게 되면 이 표에 함께 기록합니다.
+이후 외부 에셋을 수정하게 되면 아래에 항목을 추가해 기록합니다.
 
-| 에셋 | 대상 | 수정 내용 | 이유 |
-| --- | --- | --- | --- |
-| Paragon: Minions | `Content/ParagonMinions/Characters/Buff/Buff_Red/Meshes/Buff_Red_Skeleton` | 애님 슬롯 `UpperBody_InMotion` 추가 (DefaultGroup) | 이동 중 상체 공격 몽타주 재생 |
-| Paragon: Minions | `Content/ParagonMinions/Characters/Minions/White_Camp_Minion/Meshes/Minion_Skeleton` | 애님 슬롯 `UpperBody_InMotion` 추가 (DefaultGroup) | 이동 중 상체 공격 몽타주 재생 |
-| Paragon: Minions | `Content/ParagonMinions/Characters/Minions/Down_Minions/Meshes/Minion_Lane_Core_Skeleton` | 애님 슬롯 `UpperBody_InMotion` 추가 (DefaultGroup) | 이동 중 상체 공격 몽타주 재생 |
-| Paragon: Minions | `Content/ParagonMinions/Characters/Minions/Down_Minions/Meshes/Minion_Lane_Siege_Skeleton` | 애님 슬롯 `UpperBody_InMotion` 추가 (DefaultGroup) | 이동 중 상체 공격 몽타주 재생 |
-| Paragon: Minions | `Content/ParagonMinions/Characters/Minions/Down_Minions/Meshes/SK_Minion_Lane_Super` | 애님 슬롯 `UpperBody_InMotion` 추가 (DefaultGroup) | 이동 중 상체 공격 몽타주 재생 |
+### Paragon: Minions - 애님 슬롯 `UpperBody_InMotion` 추가
 
-> `Content/ParagonMinions/Characters/Buff/Buff_Black/Meshes/Buff_Black_Skeleton` 은 원본에 `UpperBody_InMotion` 슬롯이 이미 있어 수정하지 않았습니다.
+| 항목 | 내용 |
+| --- | --- |
+| 수정 내용 | 스켈레톤에 애님 슬롯 `UpperBody_InMotion` 추가 (DefaultGroup) |
+| 이유 | 이동 중 상체 공격 몽타주 재생 |
+
+대상 스켈레톤
+
+```
+Content/ParagonMinions/Characters/Buff/Buff_Red/Meshes/Buff_Red_Skeleton
+Content/ParagonMinions/Characters/Minions/White_Camp_Minion/Meshes/Minion_Skeleton
+Content/ParagonMinions/Characters/Minions/Down_Minions/Meshes/Minion_Lane_Core_Skeleton
+Content/ParagonMinions/Characters/Minions/Down_Minions/Meshes/Minion_Lane_Siege_Skeleton
+Content/ParagonMinions/Characters/Minions/Down_Minions/Meshes/SK_Minion_Lane_Super
+```
+
+> `Buff_Black_Skeleton` 은 원본에 `UpperBody_InMotion` 슬롯이 이미 있어 수정하지 않았습니다.
 > 슬롯은 ABP 컴파일 시 스켈레톤에 자동 등록되기도 하지만, 몽타주에서 슬롯을 선택하려면 미리 추가해 두는 것이 안전합니다.
 
 ## Controls

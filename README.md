@@ -10,12 +10,13 @@
 | Paragon: Kwang | Fab | `Content/ParagonKwang` |
 | Paragon: Sun Wukong | Fab | `Content/ParagonSunWukong` |
 | Paragon: Minions | Fab | `Content/ParagonMinions` |
+| Paragon: Rampage | Fab | `Content/ParagonRampage` |
 | Sci-fi Container Free 02 | Fab | `Content/Fab/Sci-fi_Container_Free_02` |
 | The Motherland Calls | Fab | `Content/Fab/The_Motherland_Calls` |
 | Torii Gate - 3D Model | Fab | `Content/Fab/Torii_Gate_-_3D_Model` |
 | Free Material Pack | Fab | `Content/FreeMaterialPack` |
 | Soul: Cave | Fab | `Content/SoulCave` |
-| Soul: City | Fab | `Content/SoulCity` |
+| Asian Village | Fab | `Content/Asian_Village` |
 
 > Fab 에서 "프로젝트에 추가(Add to Project)" 로 받으면 위 경로에 자동으로 설치됩니다.
 

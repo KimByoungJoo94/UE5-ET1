@@ -1,6 +1,7 @@
 ﻿#include "Projectile/ETProjectile.h"
 #include "Character/ETCharacter.h"
 #include "Components/ETAttackCollisionComponent.h"
+#include "DataAsset/ETCharacterTableRowData.h"
 #include "DataAsset/ETProjectileTableRowData.h"
 #include "Subsystem/ETGameDataSubsystem.h"
 #include "Components/SphereComponent.h"
@@ -10,6 +11,7 @@
 #include "Particles/ParticleSystemComponent.h"
 
 AETProjectile::AETProjectile()
+	: OwnerCharacterType(EETCharacterType::Monster)
 {
 	PrimaryActorTick.bCanEverTick = false;
 
@@ -63,6 +65,7 @@ void AETProjectile::PreInitializeComponents()
 	OwnerCharacter = Cast<AETCharacter>(GetInstigator());
 	if (AETCharacter* Character = OwnerCharacter.Get())
 	{
+		OwnerCharacterType = Character->GetCharacterType();
 		AttackDamage = Character->GetAttackDamage();
 		SphereComponent->IgnoreActorWhenMoving(Character, true);
 	}
@@ -104,7 +107,7 @@ void AETProjectile::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AETProjectile::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	// 캐릭터만 공격 대상 (발사자 제외)
+	// 캐릭터만 충돌 대상 (발사자 제외, 같은 편도 충돌 후 소멸하고 데미지만 없음)
 	AETCharacter* TargetCharacter = Cast<AETCharacter>(OtherActor);
 	if (bHit || TargetCharacter == nullptr || TargetCharacter == GetInstigator())
 	{
@@ -137,7 +140,7 @@ void AETProjectile::ProcessHit(const FHitResult& InHitResult, AETCharacter* InTa
 		{
 			ActualDamage = Character->AttackTarget(InTargetCharacter, InHitResult, AttackDamage);
 		}
-		else
+		else if (ETCharacterType::IsHostile(OwnerCharacterType, InTargetCharacter->GetCharacterType()))
 		{
 			ActualDamage = UGameplayStatics::ApplyPointDamage(InTargetCharacter, AttackDamage, GetVelocity().GetSafeNormal(), InHitResult, nullptr, this, UDamageType::StaticClass());
 		}

@@ -9,6 +9,7 @@ class UParticleSystemComponent;
 class UProjectileMovementComponent;
 class USphereComponent;
 struct FETProjectileTableRowData;
+enum class EETCharacterType : uint8;
 
 // 발사체 테이블 행 기준으로 직선, 포물선 이동 (캐릭터에 맞으면 발사자 공격, 지형에 맞으면 소멸 / 관통 없음)
 UCLASS()
@@ -54,8 +55,9 @@ private:
 	// 데이터 테이블 행 (테이블 에셋이 유지되는 동안 유효)
 	const FETProjectileTableRowData* CachedProjectileRowData = nullptr;
 
-	// 발사자가 먼저 사라져도 데미지는 들어가도록 발사 시점 값 기록
+	// 발사자가 먼저 사라져도 데미지, 같은 편 판정이 되도록 발사 시점 값 기록
 	TWeakObjectPtr<AETCharacter> OwnerCharacter;
+	EETCharacterType OwnerCharacterType;
 	float AttackDamage = 0.f;
 
 	// 한 틱에 여러 대상과 겹쳐도 한 번만 처리

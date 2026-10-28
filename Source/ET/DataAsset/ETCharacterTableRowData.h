@@ -18,6 +18,15 @@ enum class EETCharacterType : uint8
 	Max,
 };
 
+namespace ETCharacterType
+{
+	// 플레이어와 몬스터(보스 포함)만 서로 적 (같은 편은 공격이 닿아도 데미지 없음)
+	inline bool IsHostile(const EETCharacterType InAttackerType, const EETCharacterType InTargetType)
+	{
+		return (InAttackerType == EETCharacterType::Player) != (InTargetType == EETCharacterType::Player);
+	}
+}
+
 UENUM()
 enum class EETTargetDetectType : uint8
 {	

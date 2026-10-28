@@ -271,8 +271,21 @@ void AETCharacter::OnStunEnded(bool bInterrupted)
 	GameStatComponent->ResetDepletedValue(EETGameStatType::StunPoint);
 }
 
+EETCharacterType AETCharacter::GetCharacterType() const
+{
+	const FETCharacterTableRowData* CharacterRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETCharacterTableRowData>(CharacterRowName);
+	return CharacterRowData ? CharacterRowData->CharacterType : EETCharacterType::Monster;
+}
+
 float AETCharacter::AttackTarget(AActor* InTarget, const FHitResult& InHitResult, const float InDamage)
 {
+	// 무기, 범위 공격, 발사체 모두 여기를 거치므로 같은 편 판정을 한 곳에서 처리
+	const AETCharacter* TargetCharacter = Cast<AETCharacter>(InTarget);
+	if (TargetCharacter && ETCharacterType::IsHostile(GetCharacterType(), TargetCharacter->GetCharacterType()) == false)
+	{
+		return 0.f;
+	}
+
 	// 대상의 TakeDamage 반환값 (포인트 데미지로 충돌 정보를 대상에게 전달)
 	const FVector HitFromDirection = (InTarget->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	return UGameplayStatics::ApplyPointDamage(InTarget, InDamage, HitFromDirection, InHitResult, GetController(), this, UDamageType::StaticClass());
@@ -328,6 +341,11 @@ float AETCharacter::GetDefaultCapsuleHalfHeight() const
 {
 	const ACharacter* DefaultCharacter = GetClass()->GetDefaultObject<ACharacter>();
 	return DefaultCharacter->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
+}
+
+const FETActionConditionTableRowData* AETCharacter::GetCurrentActionConditionRowData() const
+{
+	return GetActionConditionRowData(CurrentActionMontageData);
 }
 
 const FETActionConditionTableRowData* AETCharacter::GetActionConditionRowData(const FETCharacterActionMontageData* InMontageData) const
@@ -467,6 +485,7 @@ bool AETCharacter::PlayAction(const FETCharacterActionMontageData* InMontageData
 		return false;
 	}
 
+	CurrentActionMontageData = InMontageData;
 	ApplyActionCondition(InMontageData);
 
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
@@ -482,6 +501,12 @@ bool AETCharacter::PlayAction(const FETCharacterActionMontageData* InMontageData
 void AETCharacter::HandleActionMontageBlendingOut(UAnimMontage* InMontage, bool bInterrupted, FGameplayTag InStateTag, uint32 InActionSerial, FOnActionEnded InOnActionEnded)
 {
 	OnActionMontageBlendingOut(InStateTag, bInterrupted);
+
+	// 다른 행동이 이미 시작됐으면 현재 행동 기록 유지
+	if (InActionSerial == ActionSerial)
+	{
+		CurrentActionMontageData = nullptr;
+	}
 
 	// 다른 행동이 이미 시작됐거나 (피격 등으로) 상태가 바뀌었으면 건드리지 않음
 	if (InActionSerial == ActionSerial && CharacterStateComponent->IsCurrentState(InStateTag))

@@ -52,6 +52,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Common")
 	EETCharacterType CharacterType = EETCharacterType::Monster;
 
+	// 캐릭터 이름 (보스 정보 등)
+	UPROPERTY(EditAnywhere, Category = "Common")
+	FText DisplayText;
+
 	// 스폰 볼륨이 생성할 캐릭터 BP (생성 시 이 행의 RowName 을 지정)
 	UPROPERTY(EditAnywhere, Category = "Common")
 	TSoftClassPtr<AETCharacter> CharacterClass;

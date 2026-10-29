@@ -18,6 +18,8 @@ public:
 	virtual void BeginPlay() override;
 
 public:
+	FORCEINLINE UETPlayerHUDWidget* GetPlayerHUDWidget() const { return PlayerHUDWidget; }
+
 	// 열려 있는 동안 HUD 숨김, 입력은 UI 에서만 처리
 	void OpenCheckpointWidget(const FName InCheckpointRowName);
 	void CloseCheckpointWidget();

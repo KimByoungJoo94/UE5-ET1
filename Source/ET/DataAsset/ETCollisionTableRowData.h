@@ -72,10 +72,6 @@ public:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
 	float Radius = 300.f;
 
-	// 오너 로컬 기준 오프셋 (X 전방, Y 우측, Z 위), 노티파이에 소켓 설정 시 소켓 로컬 기준
-	UPROPERTY(EditAnywhere)
-	FVector LocationOffset = FVector::ZeroVector;
-
 	UPROPERTY(EditAnywhere)
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypeArray;
 

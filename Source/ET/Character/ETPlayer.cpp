@@ -780,7 +780,7 @@ void AETPlayer::PlayParryParticle(const FDamageEvent& InDamageEvent, const bool 
 		ParryLocation = static_cast<const FPointDamageEvent&>(InDamageEvent).HitInfo.ImpactPoint;
 	}
 
-	FETHelper::SpawnParticleAtLocation(this, bInPerfect ? PlayerParryData.PerfectParryParticle : PlayerParryData.ParryParticle, ParryLocation, 1.f);
+	FETHelper::SpawnParticleAtLocation(this, bInPerfect ? PlayerParryData.PerfectParryParticle : PlayerParryData.ParryParticle, ParryLocation, FRotator::ZeroRotator, 1.f);
 }
 
 void AETPlayer::PlayPerfectDodge()

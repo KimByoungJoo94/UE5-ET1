@@ -17,9 +17,6 @@ UETBTTask_SelectAction::UETBTTask_SelectAction()
 
 	ActionIndexKey.SelectedKeyName = ETNames::BlackboardKey::ActionIndex;
 	ActionIndexKey.AddIntFilter(this, GET_MEMBER_NAME_CHECKED(ThisClass, ActionIndexKey));
-
-	ActionRangeKey.SelectedKeyName = ETNames::BlackboardKey::ActionRange;
-	ActionRangeKey.AddFloatFilter(this, GET_MEMBER_NAME_CHECKED(ThisClass, ActionRangeKey));
 }
 
 EBTNodeResult::Type UETBTTask_SelectAction::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
@@ -33,16 +30,7 @@ EBTNodeResult::Type UETBTTask_SelectAction::ExecuteTask(UBehaviorTreeComponent& 
 		return EBTNodeResult::Failed;
 	}
 
-	// MoveTo 도달 판정과 같은 기준 (두 캡슐 표면 사이 거리)
-	float OwnerRadius = 0.f;
-	float OwnerHalfHeight = 0.f;
-	float TargetRadius = 0.f;
-	float TargetHalfHeight = 0.f;
-	OwnerCharacter->GetSimpleCollisionCylinder(OwnerRadius, OwnerHalfHeight);
-	TargetActor->GetSimpleCollisionCylinder(TargetRadius, TargetHalfHeight);
-	const float Distance = FMath::Max(FVector::Dist2D(OwnerCharacter->GetActorLocation(), TargetActor->GetActorLocation()) - OwnerRadius - TargetRadius, 0.f);
-
-	// 쿨타임, 비용을 만족하고 MinRange 보다 멀리 있는 액션만 후보 (MaxRange 는 이동해서 맞춤)
+	// 쿨타임, 비용을 만족하는 액션만 후보 (거리는 이동 태스크에서 맞춤)
 	TArray<TPair<int32, float>> CandidateArray;
 	float TotalWeight = 0.f;
 
@@ -57,8 +45,7 @@ EBTNodeResult::Type UETBTTask_SelectAction::ExecuteTask(UBehaviorTreeComponent& 
 
 		const FETActionConditionTableRowData* ConditionRowData = OwnerCharacter->GetActionConditionRowData(MontageData);
 		const float Weight = ConditionRowData ? ConditionRowData->Weight : 1.f;
-		const float MinRange = ConditionRowData ? ConditionRowData->MinRange : 0.f;
-		if (Weight <= 0.f || Distance < MinRange)
+		if (Weight <= 0.f)
 		{
 			continue;
 		}
@@ -96,11 +83,7 @@ EBTNodeResult::Type UETBTTask_SelectAction::ExecuteTask(UBehaviorTreeComponent& 
 		}
 	}
 
-	const FETActionConditionTableRowData* SelectedRowData = OwnerCharacter->GetActionConditionRowData(OwnerCharacter->FindPlayableActionMontageData(ActionTag, SelectedIndex));
-	const float MaxRange = SelectedRowData ? SelectedRowData->MaxRange : 0.f;
-
 	BlackboardComponent->SetValueAsInt(ActionIndexKey.SelectedKeyName, SelectedIndex);
-	BlackboardComponent->SetValueAsFloat(ActionRangeKey.SelectedKeyName, MaxRange > 0.f ? MaxRange : UE_BIG_NUMBER);
 
 	Memory->LastActionIndex = SelectedIndex;
 

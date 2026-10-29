@@ -13,7 +13,7 @@ namespace
 	constexpr float LoopParticleLifeTime = 5.f;
 }
 
-void FETHelper::SpawnParticleAtLocation(const UObject* InWorldContextObject, const TSoftObjectPtr<UParticleSystem>& InParticle, const FVector& InLocation, const float InScale)
+void FETHelper::SpawnParticleAtLocation(const UObject* InWorldContextObject, const TSoftObjectPtr<UParticleSystem>& InParticle, const FVector& InLocation, const FRotator& InRotation, const float InScale)
 {
 	UParticleSystem* Particle = InParticle.LoadSynchronous();
 	UWorld* World = InWorldContextObject ? InWorldContextObject->GetWorld() : nullptr;
@@ -22,7 +22,7 @@ void FETHelper::SpawnParticleAtLocation(const UObject* InWorldContextObject, con
 		return;
 	}
 
-	UParticleSystemComponent* ParticleSystemComponent = UGameplayStatics::SpawnEmitterAtLocation(World, Particle, InLocation, FRotator::ZeroRotator, FVector(InScale));
+	UParticleSystemComponent* ParticleSystemComponent = UGameplayStatics::SpawnEmitterAtLocation(World, Particle, InLocation, InRotation, FVector(InScale));
 
 	// 루프 파티클은 끝나지 않아 자동 제거되지 않으므로 일정 시간 뒤 정지 (남은 입자가 사라지면 자동 제거)
 	if (ParticleSystemComponent && Particle->IsLooping())
@@ -70,4 +70,16 @@ bool FETHelper::IsInSight(const AActor* InOwner, const AActor* InTarget, const f
 
 	const FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(ETHelperIsInSight), false, InOwner);
 	return InOwner->GetWorld()->LineTraceTestByObjectType(EyeLocation, InTarget->GetActorLocation(), FCollisionObjectQueryParams(ECC_WorldStatic), QueryParams) == false;
+}
+
+float FETHelper::GetCollisionDistance2D(const AActor* InActorA, const AActor* InActorB)
+{
+	float RadiusA = 0.f;
+	float HalfHeightA = 0.f;
+	float RadiusB = 0.f;
+	float HalfHeightB = 0.f;
+	InActorA->GetSimpleCollisionCylinder(RadiusA, HalfHeightA);
+	InActorB->GetSimpleCollisionCylinder(RadiusB, HalfHeightB);
+
+	return FMath::Max(FVector::Dist2D(InActorA->GetActorLocation(), InActorB->GetActorLocation()) - RadiusA - RadiusB, 0.f);
 }

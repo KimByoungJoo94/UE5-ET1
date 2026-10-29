@@ -12,8 +12,8 @@ struct FETSelectActionMemory
 	int32 LastActionIndex = INDEX_NONE;
 };
 
-// 지금 사용 가능한 액션 중 가중치로 하나를 골라 블랙보드에 인덱스와 사용 거리(MaxRange) 기록, 후보가 없으면 실패
-// 다른 후보가 있으면 직전에 고른 액션은 제외
+// 쿨타임, 비용을 만족하는 액션 중 가중치로 하나를 골라 블랙보드에 인덱스 기록, 후보가 없으면 실패
+// 거리는 보지 않음 (ET Move To Action Range 가 액션 사용 거리로 접근, 후퇴), 다른 후보가 있으면 직전에 고른 액션은 제외
 UCLASS()
 class ET_API UETBTTask_SelectAction : public UBTTaskNode
 {
@@ -37,8 +37,4 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Blackboard")
 	FBlackboardKeySelector ActionIndexKey;
-
-	// MoveTo 의 AcceptableRadius 에 연결 (MaxRange 0 이면 이동 없이 바로 사용)
-	UPROPERTY(EditAnywhere, Category = "Blackboard")
-	FBlackboardKeySelector ActionRangeKey;
 };

@@ -23,7 +23,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Common", meta = (ClampMin = "0.0"))
 	float Cooldown = 0.f;
 
-	// AI 가 액션을 고를 때 대상과의 거리 조건 (MaxRange 0 이면 거리 제한 없음)
+	// AI 가 액션을 사용할 대상과의 거리 범위 (캡슐 표면 사이 거리, MaxRange 0 이면 거리 제한 없음)
+	// 액션을 고른 뒤 범위 안의 랜덤 거리를 향해 접근, 후퇴하고 범위 안에 들어오면 사용
 	UPROPERTY(EditAnywhere, Category = "AI", meta = (ClampMin = "0.0"))
 	float MinRange = 0.f;
 

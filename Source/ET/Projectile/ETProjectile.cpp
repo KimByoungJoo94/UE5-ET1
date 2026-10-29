@@ -148,7 +148,7 @@ void AETProjectile::ProcessHit(const FHitResult& InHitResult, AETCharacter* InTa
 
 	if (CachedProjectileRowData && (InTargetCharacter == nullptr || ActualDamage > 0.f))
 	{
-		FETHelper::SpawnParticleAtLocation(this, CachedProjectileRowData->HitParticle, InHitResult.ImpactPoint, CachedProjectileRowData->HitParticleScale);
+		FETHelper::SpawnParticleAtLocation(this, CachedProjectileRowData->HitParticle, InHitResult.ImpactPoint, FRotator::ZeroRotator, CachedProjectileRowData->HitParticleScale);
 	}
 
 	Destroy();

@@ -21,6 +21,7 @@ public:
 protected:
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Die() override;
 	virtual void Stun() override;
 	virtual void OnStunEnded(bool bInterrupted) override;
@@ -53,8 +54,9 @@ protected:
 
 	void OnDissolveFinished();
 
-	// 대상을 인식 중이거나 플레이어가 락온 중일 때만 표시 (사망 후에는 항상 숨김)
+	// 대상을 인식 중이거나 플레이어가 락온 중일 때만 표시 (사망 후에는 항상 숨김, 보스는 머리 위 대신 플레이어 HUD 보스 정보)
 	void UpdateStatBarVisible();
+	void UpdateBossInfoVisible(const bool bInVisible);
 
 	// BT 액션 태스크가 몽타주를 끊지 않도록 사망, 스턴, 등장 연출 동안 정지 (블랙보드는 유지)
 	void StopBrainLogic(const FString& InReason);

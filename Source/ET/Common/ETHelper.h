@@ -12,7 +12,7 @@ class ET_API FETHelper
 {
 public:
 	// 위치에 파티클 출력 (루프 파티클은 끝나지 않으므로 일정 시간 뒤 정지)
-	static void SpawnParticleAtLocation(const UObject* InWorldContextObject, const TSoftObjectPtr<UParticleSystem>& InParticle, const FVector& InLocation, const float InScale);
+	static void SpawnParticleAtLocation(const UObject* InWorldContextObject, const TSoftObjectPtr<UParticleSystem>& InParticle, const FVector& InLocation, const FRotator& InRotation, const float InScale);
 
 	// 컴포넌트 소켓에 붙여 파티클 출력 (사라질 때까지 따라다님, 루프 파티클은 반환한 컴포넌트로 호출한 쪽에서 정지)
 	static UParticleSystemComponent* SpawnParticleAttached(const TSoftObjectPtr<UParticleSystem>& InParticle, USceneComponent* InAttachComponent, const FName InSocketName);
@@ -22,4 +22,7 @@ public:
 
 	// 정면 기준 시야각 안에 있고 지형에 가려지지 않았는지 (다른 캐릭터에 가려지는 건 무시)
 	static bool IsInSight(const AActor* InOwner, const AActor* InTarget, const float InSightAngle);
+
+	// 두 액터 충돌 캡슐 표면 사이의 수평 거리 (겹치면 0)
+	static float GetCollisionDistance2D(const AActor* InActorA, const AActor* InActorB);
 };

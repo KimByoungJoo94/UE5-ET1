@@ -4,9 +4,11 @@
 #include "Components/ETCharacterStateComponent.h"
 #include "Common/ETGameplayTags.h"
 #include "UI/ETStatListWidget.h"
+#include "UI/ETPlayerHUDWidget.h"
 #include "Common/ETCommonSettings.h"
 #include "Common/ETNames.h"
 #include "Controller/ETAIController.h"
+#include "Controller/ETPlayerController.h"
 #include "Spawn/ETSpawnVolume.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -76,6 +78,17 @@ void AETMonster::BeginPlay()
 
 	UpdateStatBarVisible();
 	LockOnWidgetComponent->SetVisibility(false);
+}
+
+void AETMonster::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// 스폰 볼륨 리셋 등으로 사라지면 HUD 보스 정보에서 해제 (레벨 종료 시에는 HUD 도 함께 정리되므로 무시)
+	if (EndPlayReason == EEndPlayReason::Destroyed && GetCharacterType() == EETCharacterType::Boss)
+	{
+		UpdateBossInfoVisible(false);
+	}
+
+	Super::EndPlay(EndPlayReason);
 }
 
 void AETMonster::Die()
@@ -192,8 +205,10 @@ float AETMonster::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 void AETMonster::DetectTarget(AActor* InTarget, const bool bInPlayIntro)
 {
 	UBlackboardComponent* BlackboardComponent = GetBlackboardComponent();
-	if (InTarget == nullptr || BlackboardComponent == nullptr || IsDead()
-		|| BlackboardComponent->GetValueAsObject(ETNames::BlackboardKey::TargetActor) == InTarget)
+	if (InTarget == nullptr || 
+		BlackboardComponent == nullptr || 
+		IsDead() || 
+		BlackboardComponent->GetValueAsObject(ETNames::BlackboardKey::TargetActor) == InTarget)
 	{
 		return;
 	}
@@ -271,13 +286,34 @@ UBlackboardComponent* AETMonster::GetBlackboardComponent() const
 
 void AETMonster::UpdateStatBarVisible()
 {
-	if (StatBarWidgetComponent == nullptr)
-	{
-		return;
-	}
+	const bool bVisible = IsDead() == false && (GetAttackTarget() || bLockOnTargeted);
 
-	const bool bAlive = IsDead() == false;
-	StatBarWidgetComponent->SetVisibility(bAlive && (GetAttackTarget() || bLockOnTargeted));
+	if (GetCharacterType() == EETCharacterType::Boss)
+	{
+		UpdateBossInfoVisible(bVisible);
+	}
+	else if (StatBarWidgetComponent)
+	{
+		StatBarWidgetComponent->SetVisibility(bVisible);
+	}
+}
+
+void AETMonster::UpdateBossInfoVisible(const bool bInVisible)
+{
+	if (const AETPlayerController* PlayerController = Cast<AETPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
+	{
+		if (UETPlayerHUDWidget* PlayerHUDWidget = PlayerController->GetPlayerHUDWidget())
+		{
+			if (bInVisible)
+			{
+				PlayerHUDWidget->ShowBossInfo(this);
+			}
+			else
+			{
+				PlayerHUDWidget->HideBossInfo(this);
+			}
+		}
+	}
 }
 
 void AETMonster::OnLockOnTargeted()

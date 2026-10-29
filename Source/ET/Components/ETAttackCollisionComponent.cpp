@@ -12,6 +12,10 @@ namespace
 {
     // 한 틱에 나눠서 스윕하는 최대 횟수 (히치로 이동 거리가 커져도 비용 제한)
     constexpr int32 MaxWeaponCollisionStepCount = 16;
+
+    // 여러 번 범위 공격 위치를 바닥에 맞출 때 위아래 트레이스 거리
+    constexpr float GroundTraceUpDistance = 300.f;
+    constexpr float GroundTraceDownDistance = 1000.f;
 }
 
 UETAttackCollisionComponent::UETAttackCollisionComponent()
@@ -39,6 +43,16 @@ void UETAttackCollisionComponent::TickComponent(float DeltaTime, ELevelTick Tick
     {
         TraceWeaponCollision();
     }
+
+    if (RemainingMultiRadialAttackWaveCount > 0)
+    {
+        MultiRadialAttackElapsedTime += DeltaTime;
+        if (MultiRadialAttackElapsedTime >= MultiRadialAttackInterval)
+        {
+            MultiRadialAttackElapsedTime -= MultiRadialAttackInterval;
+            PlayMultiRadialAttackWave();
+        }
+    }
 }
 
 void UETAttackCollisionComponent::StartWeaponCollision(const FName InRowName)
@@ -57,7 +71,7 @@ void UETAttackCollisionComponent::EndWeaponCollision()
     bHasLastLocation = false;
 }
 
-void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowName, const FName InSocketName)
+void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowName, const FName InSocketName, const FVector& InLocationOffset, const FRotator& InRotationOffset)
 {
     AETCharacter* OwnerCharacter = Cast<AETCharacter>(GetOwner());
     const FETRadialAttackCollisionTableRowData* RowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETRadialAttackCollisionTableRowData>(InRowName);
@@ -66,47 +80,117 @@ void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowNa
         return;
     }
 
-    // 소켓이 유효하면 소켓 위치, 회전 기준 오프셋, 아니면 오너 기준 오프셋
-    const USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter->GetMesh();
+    // 엔진 Play Particle Effect 노티파이와 같은 회전 (기준 회전 * 회전 오프셋)
+    const FTransform OriginTransform = GetRadialAttackOriginTransform(OwnerCharacter, InSocketName);
+    const FRotator CenterParticleRotation = (OriginTransform.GetRotation() * FQuat(InRotationOffset)).Rotator();
+    PlayRadialAttack(OwnerCharacter, *RowData, OriginTransform.TransformPosition(InLocationOffset), CenterParticleRotation);
+}
+
+void UETAttackCollisionComponent::StartMultiRadialAttackCollision(const FETMultiRadialAttackData& InMultiRadialAttackData, const float InDuration)
+{
+    const FETRadialAttackCollisionTableRowData* RowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETRadialAttackCollisionTableRowData>(InMultiRadialAttackData.RadialAttackCollisionRowName);
+    if (RowData == nullptr || RowData->Radius <= 0.f)
+    {
+        return;
+    }
+
+    MultiRadialAttackData = InMultiRadialAttackData;
+    CachedMultiRadialAttackRowData = RowData;
+    RemainingMultiRadialAttackWaveCount = FMath::Max(MultiRadialAttackData.WaveCount, 1);
+    MultiRadialAttackInterval = InDuration / RemainingMultiRadialAttackWaveCount;
+    MultiRadialAttackElapsedTime = 0.f;
+
+    PlayMultiRadialAttackWave();
+}
+
+void UETAttackCollisionComponent::EndMultiRadialAttackCollision()
+{
+    RemainingMultiRadialAttackWaveCount = 0;
+    CachedMultiRadialAttackRowData = nullptr;
+}
+
+FTransform UETAttackCollisionComponent::GetRadialAttackOriginTransform(const AETCharacter* InOwnerCharacter, const FName InSocketName) const
+{
+    const USkeletalMeshComponent* SkeletalMeshComponent = InOwnerCharacter->GetMesh();
     const bool bUseSocket = InSocketName.IsNone() == false && SkeletalMeshComponent && SkeletalMeshComponent->DoesSocketExist(InSocketName);
-    const FTransform OriginTransform = bUseSocket ? SkeletalMeshComponent->GetSocketTransform(InSocketName) : OwnerCharacter->GetActorTransform();
-    const FVector Origin = OriginTransform.TransformPosition(RowData->LocationOffset);
-    const TArray<AActor*> IgnoreActorArray = { OwnerCharacter };
+    return bUseSocket ? SkeletalMeshComponent->GetSocketTransform(InSocketName) : InOwnerCharacter->GetActorTransform();
+}
+
+void UETAttackCollisionComponent::PlayRadialAttack(AETCharacter* InOwnerCharacter, const FETRadialAttackCollisionTableRowData& InRowData, const FVector& InOrigin, const FRotator& InCenterParticleRotation)
+{
+    const TArray<AActor*> IgnoreActorArray = { InOwnerCharacter };
     TArray<AActor*> OverlapActorArray;
 
     UKismetSystemLibrary::SphereOverlapActors(
-        OwnerCharacter,
-        Origin,
-        RowData->Radius,
-        RowData->ObjectTypeArray,
+        InOwnerCharacter,
+        InOrigin,
+        InRowData.Radius,
+        InRowData.ObjectTypeArray,
         AETCharacter::StaticClass(),
         IgnoreActorArray,
         OverlapActorArray);
 
-    FETHelper::SpawnParticleAtLocation(this, RowData->CenterParticle, Origin, RowData->CenterParticleScale);
-    PlayCameraShake(RowData->CameraShakeRowName, &Origin);
+    FETHelper::SpawnParticleAtLocation(this, InRowData.CenterParticle, InOrigin, InCenterParticleRotation, InRowData.CenterParticleScale);
+    PlayCameraShake(InRowData.CameraShakeRowName, &InOrigin);
 
     for (AActor* OverlapActor : OverlapActorArray)
     {
         const FVector TargetLocation = OverlapActor->GetActorLocation();
-        const FHitResult HitResult(OverlapActor, nullptr, TargetLocation, (TargetLocation - Origin).GetSafeNormal());
+        const FHitResult HitResult(OverlapActor, nullptr, TargetLocation, (TargetLocation - InOrigin).GetSafeNormal());
 
-        if (OwnerCharacter->AttackTarget(OverlapActor, HitResult, OwnerCharacter->GetAttackDamage()) > 0.f)
+        if (InOwnerCharacter->AttackTarget(OverlapActor, HitResult, InOwnerCharacter->GetAttackDamage()) > 0.f)
         {
-            FETHelper::SpawnParticleAtLocation(this, RowData->HitParticle, TargetLocation, RowData->HitParticleScale);
+            FETHelper::SpawnParticleAtLocation(this, InRowData.HitParticle, TargetLocation, FRotator::ZeroRotator, InRowData.HitParticleScale);
         }
     }
 
 #if ENABLE_DRAW_DEBUG
-    if (RowData->DrawDebugType != EDrawDebugTrace::None)
+    if (InRowData.DrawDebugType != EDrawDebugTrace::None)
     {
-        const bool bPersistent = RowData->DrawDebugType == EDrawDebugTrace::Persistent;
-        const float LifeTime = RowData->DrawDebugType == EDrawDebugTrace::ForDuration ? RowData->DrawDebugTime : 0.f;
+        const bool bPersistent = InRowData.DrawDebugType == EDrawDebugTrace::Persistent;
+        const float LifeTime = InRowData.DrawDebugType == EDrawDebugTrace::ForDuration ? InRowData.DrawDebugTime : 0.f;
         const FColor DebugColor = OverlapActorArray.IsEmpty() ? FColor::Red : FColor::Green;
 
-        DrawDebugSphere(GetWorld(), Origin, RowData->Radius, 24, DebugColor, bPersistent, LifeTime);
+        DrawDebugSphere(GetWorld(), InOrigin, InRowData.Radius, 24, DebugColor, bPersistent, LifeTime);
     }
 #endif
+}
+
+void UETAttackCollisionComponent::PlayMultiRadialAttackWave()
+{
+    --RemainingMultiRadialAttackWaveCount;
+
+    AETCharacter* OwnerCharacter = Cast<AETCharacter>(GetOwner());
+    if (OwnerCharacter && CachedMultiRadialAttackRowData)
+    {
+        // 웨이브마다 현재 소켓, 오너 위치 기준 (이동하면서 주변 공격 가능)
+        const FTransform OriginTransform = GetRadialAttackOriginTransform(OwnerCharacter, MultiRadialAttackData.SocketName);
+        const FVector Center = OriginTransform.TransformPosition(MultiRadialAttackData.LocationOffset);
+        const float MaxRadius = FMath::Max(MultiRadialAttackData.MinRadius, MultiRadialAttackData.MaxRadius);
+        const int32 AttackCount = FMath::RandRange(MultiRadialAttackData.MinAttackCountPerWave, FMath::Max(MultiRadialAttackData.MinAttackCountPerWave, MultiRadialAttackData.MaxAttackCountPerWave));
+
+        for (int32 Index = 0; Index < AttackCount; ++Index)
+        {
+            // 거리 제곱으로 뽑아야 면적 기준으로 고르게 분포 (그냥 거리로 뽑으면 중심 쪽에 몰림)
+            const float Distance = FMath::Sqrt(FMath::FRandRange(FMath::Square(MultiRadialAttackData.MinRadius), FMath::Square(MaxRadius)));
+            const float Angle = FMath::FRandRange(0.f, UE_TWO_PI);
+            const FVector RandomLocation = Center + FVector(FMath::Cos(Angle) * Distance, FMath::Sin(Angle) * Distance, 0.f);
+
+            PlayRadialAttack(OwnerCharacter, *CachedMultiRadialAttackRowData, FindGroundLocation(RandomLocation), OriginTransform.Rotator());
+        }
+    }
+}
+
+FVector UETAttackCollisionComponent::FindGroundLocation(const FVector& InLocation) const
+{
+    const FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(ETMultiRadialAttackGround), false, GetOwner());
+    FHitResult HitResult;
+    if (GetWorld()->LineTraceSingleByObjectType(HitResult, InLocation + FVector(0.f, 0.f, GroundTraceUpDistance), InLocation - FVector(0.f, 0.f, GroundTraceDownDistance), FCollisionObjectQueryParams(ECC_WorldStatic), QueryParams))
+    {
+        return HitResult.ImpactPoint;
+    }
+
+    return InLocation;
 }
 
 void UETAttackCollisionComponent::PlayCameraShake(const FName InCameraShakeRowName, const FVector* InEpicenter)
@@ -196,7 +280,7 @@ void UETAttackCollisionComponent::SweepWeaponCollision(AETCharacter* OwnerCharac
 
                     if (OwnerCharacter->AttackTarget(HitActor, HitResult, OwnerCharacter->GetAttackDamage()) > 0.f)
                     {
-                        FETHelper::SpawnParticleAtLocation(this, CachedWeaponCollisionRowData->HitParticle, HitResult.ImpactPoint, CachedWeaponCollisionRowData->HitParticleScale);
+                        FETHelper::SpawnParticleAtLocation(this, CachedWeaponCollisionRowData->HitParticle, HitResult.ImpactPoint, FRotator::ZeroRotator, CachedWeaponCollisionRowData->HitParticleScale);
                         PlayCameraShake(CachedWeaponCollisionRowData->CameraShakeRowName);
                     }
                 }

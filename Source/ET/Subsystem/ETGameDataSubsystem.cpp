@@ -13,6 +13,7 @@
 #include "DataAsset/ETActionConditionTableRowData.h"
 #include "DataAsset/ETSpawnVolumeTableRowData.h"
 #include "DataAsset/ETProjectileTableRowData.h"
+#include "DataAsset/ETAITableRowData.h"
 #include "Common/ETNames.h"
 
 void UETGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -108,6 +109,11 @@ TArray<FName> UETGameDataSubsystem::GetSpawnVolumeRowNameOptions()
 TArray<FName> UETGameDataSubsystem::GetProjectileRowNameOptions()
 {
 	return GetRowNameOptions(FETProjectileTableRowData::StaticStruct());
+}
+
+TArray<FName> UETGameDataSubsystem::GetAIRowNameOptions()
+{
+	return GetRowNameOptions(FETAITableRowData::StaticStruct());
 }
 
 TArray<FName> UETGameDataSubsystem::GetRowNameOptions(const UScriptStruct* InRowStruct)

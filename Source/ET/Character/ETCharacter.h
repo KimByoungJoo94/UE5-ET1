@@ -14,6 +14,7 @@ struct FETCharacterActionMontageData;
 struct FETActionConditionTableRowData;
 struct FGameplayTag;
 enum class EETCharacterType : uint8;
+enum class EETGameStatType : uint8;
 
 // PlayAction 으로 재생한 몽타주의 BlendingOut 시점 (끊긴 경우 포함)
 DECLARE_DELEGATE_OneParam(FOnActionEnded, bool bInterrupted);
@@ -31,6 +32,7 @@ protected:
 
 public:
 	FORCEINLINE UETCharacterStateComponent* GetCharacterStateComponent() { return CharacterStateComponent; }
+	bool IsDead() const;
 	FORCEINLINE UETGameStatComponent* GetGameStatComponent() { return GameStatComponent; }
 	FORCEINLINE UETAttackCollisionComponent* GetAttackCollisionComponent() { return AttackCollisionComponent; }
 	FORCEINLINE UETTimeFreezeComponent* GetTimeFreezeComponent() { return TimeFreezeComponent; }
@@ -56,6 +58,9 @@ public:
 	// 공격 시 바라볼 대상 (플레이어는 락온 대상, AI 는 블랙보드 대상)
 	virtual AActor* GetAttackTarget() const { return nullptr; }
 	virtual void ResetGameStat();
+
+	// 이동 속도 스탯(WalkSpeed, SprintSpeed)을 이동 컴포넌트 최대 속도에 적용
+	void ApplyMoveSpeed(const EETGameStatType InMoveSpeedStatType);
 	void SetCapsuleHalfHeightKeepGround(const float InHalfHeight);
 	void ResetCapsuleHalfHeight();
 	float GetDefaultCapsuleHalfHeight() const;

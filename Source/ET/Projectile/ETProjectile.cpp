@@ -1,6 +1,6 @@
 ﻿#include "Projectile/ETProjectile.h"
 #include "Character/ETCharacter.h"
-#include "Components/ETAttackCollisionComponent.h"
+#include "Common/ETHelper.h"
 #include "DataAsset/ETCharacterTableRowData.h"
 #include "DataAsset/ETProjectileTableRowData.h"
 #include "Subsystem/ETGameDataSubsystem.h"
@@ -140,7 +140,7 @@ void AETProjectile::ProcessHit(const FHitResult& InHitResult, AETCharacter* InTa
 		{
 			ActualDamage = Character->AttackTarget(InTargetCharacter, InHitResult, AttackDamage);
 		}
-		else if (ETCharacterType::IsHostile(OwnerCharacterType, InTargetCharacter->GetCharacterType()))
+		else if (FETHelper::IsHostile(OwnerCharacterType, InTargetCharacter->GetCharacterType()))
 		{
 			ActualDamage = UGameplayStatics::ApplyPointDamage(InTargetCharacter, AttackDamage, GetVelocity().GetSafeNormal(), InHitResult, nullptr, this, UDamageType::StaticClass());
 		}
@@ -148,7 +148,7 @@ void AETProjectile::ProcessHit(const FHitResult& InHitResult, AETCharacter* InTa
 
 	if (CachedProjectileRowData && (InTargetCharacter == nullptr || ActualDamage > 0.f))
 	{
-		UETAttackCollisionComponent::SpawnParticle(this, CachedProjectileRowData->HitParticle, InHitResult.ImpactPoint, CachedProjectileRowData->HitParticleScale);
+		FETHelper::SpawnParticleAtLocation(this, CachedProjectileRowData->HitParticle, InHitResult.ImpactPoint, CachedProjectileRowData->HitParticleScale);
 	}
 
 	Destroy();

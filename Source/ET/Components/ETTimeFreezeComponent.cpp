@@ -191,7 +191,7 @@ void UETTimeFreezeComponent::FindTimeFreezeTargets(const FETTimeFreezeTableRowDa
 	for (AActor* OverlapActor : OverlapActorArray)
 	{
 		AETCharacter* OverlapCharacter = Cast<AETCharacter>(OverlapActor);
-		if (OverlapCharacter == nullptr || OverlapCharacter->GetCharacterStateComponent()->IsCurrentState(ETGameplayTags::Character_State_Death))
+		if (OverlapCharacter == nullptr || OverlapCharacter->IsDead())
 		{
 			continue;
 		}

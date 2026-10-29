@@ -152,7 +152,7 @@ void AETSpawnVolume::OnRangeSphereBeginOverlap(UPrimitiveComponent* OverlappedCo
 {
 	if (IsPlayerCapsule(OtherActor, OtherComp))
 	{
-		SetPlayerInRange(true);
+		bPlayerInRange = true;
 
 		if (bLockPlayerInRange)
 		{
@@ -166,7 +166,7 @@ void AETSpawnVolume::OnRangeSphereEndOverlap(UPrimitiveComponent* OverlappedComp
 {
 	if (IsPlayerCapsule(OtherActor, OtherComp))
 	{
-		SetPlayerInRange(false);
+		bPlayerInRange = false;
 
 		// 잠금 중에는 높이 차이로 구체를 벗어나도 유지
 		if (bPlayerLocked == false)
@@ -183,19 +183,6 @@ bool AETSpawnVolume::IsPlayerCapsule(const AActor* InOtherActor, const UPrimitiv
 	return Player && InOtherComp == Player->GetCapsuleComponent();
 }
 
-void AETSpawnVolume::SetPlayerInRange(const bool bInRange)
-{
-	bPlayerInRange = bInRange;
-
-	for (const TWeakObjectPtr<AETMonster>& SpawnedMonster : SpawnedMonsterArray)
-	{
-		if (SpawnedMonster.IsValid())
-		{
-			SpawnedMonster->SetStatBarVisible(bPlayerInRange);
-		}
-	}
-}
-
 void AETSpawnVolume::OnSpawnedMonsterDied()
 {
 	if (HasAliveSpawnedMonster())
@@ -207,11 +194,23 @@ void AETSpawnVolume::OnSpawnedMonsterDied()
 	UpdateLockTickEnabled();
 }
 
+void AETSpawnVolume::AlertSpawnedMonsters(AActor* InTarget)
+{
+	// 이미 같은 대상을 인식한 몬스터는 DetectTarget 에서 무시하므로 연쇄 호출이 반복되지 않음
+	for (const TWeakObjectPtr<AETMonster>& SpawnedMonster : SpawnedMonsterArray)
+	{
+		if (AETMonster* Monster = SpawnedMonster.Get())
+		{
+			Monster->DetectTarget(InTarget, true);
+		}
+	}
+}
+
 bool AETSpawnVolume::HasAliveSpawnedMonster() const
 {
 	for (const TWeakObjectPtr<AETMonster>& SpawnedMonster : SpawnedMonsterArray)
 	{
-		if (SpawnedMonster.IsValid() && SpawnedMonster->GetCharacterStateComponent()->IsCurrentState(ETGameplayTags::Character_State_Death) == false)
+		if (SpawnedMonster.IsValid() && SpawnedMonster->IsDead() == false)
 		{
 			return true;
 		}
@@ -344,9 +343,8 @@ void AETSpawnVolume::SpawnCharacters()
 		}
 
 		Monster->SetCharacterRowName(SpawnCharacterData.CharacterRowName);
-		Monster->SetSpawnVolume(this);
+		Monster->SetHomeSpawnVolume(this);
 		Monster->FinishSpawning(SpawnTransform);
-		Monster->SetStatBarVisible(bPlayerInRange);
 
 		SpawnedMonsterArray.Add(Monster);
 	}

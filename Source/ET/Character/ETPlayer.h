@@ -19,6 +19,8 @@ class UInputMappingContext;
 class UInputAction;
 class UAnimMontage;
 class UParticleSystem;
+class UParticleSystemComponent;
+
 struct FInputActionValue;
 struct FGameplayTag;
 
@@ -56,6 +58,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputAction> DodgeAction;
+
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UInputAction> SprintAction;
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputAction> ParryAction;
@@ -116,6 +121,29 @@ public:
 	float HitStopTimeDilation = 0.05f;
 };
 
+USTRUCT()
+struct FETPlayerChargeParticleData
+{
+	GENERATED_BODY()
+
+public:	
+	UPROPERTY(EditDefaultsOnly)
+	TSoftObjectPtr<UParticleSystem> Particle;
+
+	UPROPERTY(EditDefaultsOnly)
+	FName SocketName;
+};
+
+USTRUCT()
+struct FETPlayerChargeAttackData
+{
+	GENERATED_BODY()
+
+public:	
+	UPROPERTY(EditDefaultsOnly)
+	TArray<FETPlayerChargeParticleData> ChargeParticleArray;
+};
+
 
 UCLASS()
 class ET_API AETPlayer : public AETCharacter, public IETDefeatInterface
@@ -147,6 +175,8 @@ public:
 	void OnDodgeActionStarted();
 	void OnParryActionStarted();
 	void OnParryActionCompleted();
+	void OnSprintActionStarted();
+	void OnSprintActionCompleted();
 	void OnActiveSkillActionStarted(const int32 InSkillIndex);
 	void OnLockOnActionStarted();
 	void OnMenuActionStarted();
@@ -199,6 +229,7 @@ protected:
 	void ApplySavedPermanentGameStat();
 
 	void OnChargeCountChanged(const int32 InCurrentChargeCount, const int32 InMaxChargeCount);
+
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Component")
 	TObjectPtr<USpringArmComponent> SpringArmComponent;
@@ -231,6 +262,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ET|Parry")
 	FETPlayerParryData PlayerParryData;
 
+	UPROPERTY(EditDefaultsOnly, Category = "ET|ChargeAttack")
+	FETPlayerChargeAttackData PlayerChargeAttackData;
+
 protected:
 	bool bComboAttackReserved = false;	
 	int32 ComboAttackIndex = 0;
@@ -246,7 +280,9 @@ protected:
 	UPROPERTY(Transient)
 	TObjectPtr<UAnimMontage> ParryMontage;
 
-	// 회피, 패리 몽타주의 ETAnimNotifyState_PerfectTiming 구간 (이 구간에 공격이 닿으면 퍼펙트)
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UParticleSystemComponent>> ChargeParticleSystemComponentArray;
+		
 	bool bPerfectTiming = false;
 
 private:

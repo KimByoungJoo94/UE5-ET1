@@ -27,9 +27,6 @@ public:
 
 	void StartRadialAttackCollision(const FName InRowName, const FName InSocketName = NAME_None);
 
-	// 판정 파티클 출력 (루프 파티클은 일정 시간 뒤 정지, 발사체 등 다른 판정에서도 사용)
-	static void SpawnParticle(const UObject* InWorldContextObject, const TSoftObjectPtr<UParticleSystem>& InParticle, const FVector& InLocation, const float InScale);
-
 protected:
 	void TraceWeaponCollision();
 	void SweepWeaponCollision(AETCharacter* OwnerCharacter, const FVector& StartLocation, const FVector& EndLocation);

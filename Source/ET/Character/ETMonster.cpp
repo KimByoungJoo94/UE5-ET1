@@ -59,8 +59,13 @@ void AETMonster::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (GetCharacterType() == EETCharacterType::Boss)
+	{
+		StatBarWidgetComponent->DestroyComponent();
+		StatBarWidgetComponent = nullptr;
+	}
 	// 위젯은 WidgetComponent::BeginPlay 에서 생성되고 첫 Tick 에 Construct 되므로 그 전에 소유 캐릭터 지정
-	if (UETStatListWidget* StatListWidget = Cast<UETStatListWidget>(StatBarWidgetComponent->GetUserWidgetObject()))
+	else if (UETStatListWidget* StatListWidget = Cast<UETStatListWidget>(StatBarWidgetComponent->GetUserWidgetObject()))
 	{
 		StatListWidget->SetOwningETCharacter(this);
 		StatListWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
@@ -69,30 +74,23 @@ void AETMonster::BeginPlay()
 		StatBarWidgetComponent->SetDrawSize(StatListWidget->BuildStatWidgets(GetDefault<UETCommonSettings>()->UI.MonsterStatList));
 	}
 
-	// 플레이어가 스폰 볼륨에 들어왔을 때만 표시
-	StatBarWidgetComponent->SetVisibility(false);
+	UpdateStatBarVisible();
 	LockOnWidgetComponent->SetVisibility(false);
 }
 
 void AETMonster::Die()
 {
 	// BT 공격 태스크가 중단되며 몽타주를 멈추므로 사망 몽타주 재생 전에 먼저 정지
-	if (const AAIController* AIController = Cast<AAIController>(GetController()))
-	{
-		if (UBrainComponent* BrainComponent = AIController->GetBrainComponent())
-		{
-			BrainComponent->StopLogic(TEXT("Death"));
-		}
-	}
+	StopBrainLogic(TEXT("Death"));
 
 	Super::Die();
 
-	StatBarWidgetComponent->SetVisibility(false);
+	UpdateStatBarVisible();
 	LockOnWidgetComponent->SetVisibility(false);
 
-	if (AETSpawnVolume* MySpawnVolume = SpawnVolume.Get())
+	if (AETSpawnVolume* SpawnVolume = GetHomeSpawnVolume())
 	{
-		MySpawnVolume->OnSpawnedMonsterDied();
+		SpawnVolume->OnSpawnedMonsterDied();
 	}
 
 	const FETCharacterTableRowData* CharacterRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETCharacterTableRowData>(CharacterRowName);
@@ -111,13 +109,7 @@ void AETMonster::Die()
 void AETMonster::Stun()
 {
 	// BT 액션 태스크가 중단되며 몽타주를 멈추고 이동도 계속되므로 스턴 몽타주 재생 전에 정지
-	if (const AAIController* AIController = Cast<AAIController>(GetController()))
-	{
-		if (UBrainComponent* BrainComponent = AIController->GetBrainComponent())
-		{
-			BrainComponent->StopLogic(TEXT("Stun"));
-		}
-	}
+	StopBrainLogic(TEXT("Stun"));
 
 	Super::Stun();
 }
@@ -126,19 +118,13 @@ void AETMonster::OnStunEnded(bool bInterrupted)
 {
 	Super::OnStunEnded(bInterrupted);
 
-	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death))
+	if (IsDead())
 	{
 		return;
 	}
 
 	// 블랙보드는 유지되므로 인식 중이던 대상부터 다시 판단
-	if (const AAIController* AIController = Cast<AAIController>(GetController()))
-	{
-		if (UBrainComponent* BrainComponent = AIController->GetBrainComponent())
-		{
-			BrainComponent->RestartLogic();
-		}
-	}
+	RestartBrainLogic();
 }
 
 bool AETMonster::PlayIntro()
@@ -151,12 +137,7 @@ bool AETMonster::PlayIntro()
 	bIntroPlayed = true;
 
 	// BT 액션 태스크가 몽타주를 끊지 않도록 연출 동안 정지 (끝나면 블랙보드 대상으로 바로 전투)
-	const AAIController* AIController = Cast<AAIController>(GetController());
-	UBrainComponent* BrainComponent = AIController ? AIController->GetBrainComponent() : nullptr;
-	if (BrainComponent)
-	{
-		BrainComponent->StopLogic(TEXT("Intro"));
-	}
+	StopBrainLogic(TEXT("Intro"));
 
 	if (const AActor* AttackTarget = GetAttackTarget())
 	{
@@ -165,11 +146,7 @@ bool AETMonster::PlayIntro()
 
 	if (Super::PlayIntro() == false)
 	{
-		if (BrainComponent)
-		{
-			BrainComponent->RestartLogic();
-		}
-
+		RestartBrainLogic();
 		return false;
 	}
 
@@ -180,18 +157,12 @@ void AETMonster::OnIntroEnded(bool bInterrupted)
 {
 	Super::OnIntroEnded(bInterrupted);
 
-	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death))
+	if (IsDead())
 	{
 		return;
 	}
 
-	if (const AAIController* AIController = Cast<AAIController>(GetController()))
-	{
-		if (UBrainComponent* BrainComponent = AIController->GetBrainComponent())
-		{
-			BrainComponent->RestartLogic();
-		}
-	}
+	RestartBrainLogic();
 }
 
 void AETMonster::Disappear()
@@ -207,26 +178,55 @@ void AETMonster::OnDissolveFinished()
 float AETMonster::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	if (ActualDamage <= 0.f || CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death))
+	if (ActualDamage <= 0.f || IsDead())
 	{
 		return ActualDamage;
 	}
 
 	// 탐지 조건과 상관없이 공격한 대상 인식 (유지, 해제는 ET Find Target 에서 판정)
-	AAIController* AIController = Cast<AAIController>(GetController());
-	if (UBlackboardComponent* BlackboardComponent = AIController ? AIController->GetBlackboardComponent() : nullptr)
-	{
-		AActor* Attacker = EventInstigator ? EventInstigator->GetPawn() : DamageCauser;
-		BlackboardComponent->SetValueAsObject(ETNames::BlackboardKey::TargetActor, Attacker);
-	}
+	DetectTarget(EventInstigator ? EventInstigator->GetPawn() : DamageCauser, false);
 
 	return ActualDamage;
 }
 
+void AETMonster::DetectTarget(AActor* InTarget, const bool bInPlayIntro)
+{
+	UBlackboardComponent* BlackboardComponent = GetBlackboardComponent();
+	if (InTarget == nullptr || BlackboardComponent == nullptr || IsDead()
+		|| BlackboardComponent->GetValueAsObject(ETNames::BlackboardKey::TargetActor) == InTarget)
+	{
+		return;
+	}
+
+	BlackboardComponent->SetValueAsObject(ETNames::BlackboardKey::TargetActor, InTarget);
+	UpdateStatBarVisible();
+
+	// 스턴, 피격 등 행동 중에는 연출로 끊지 않음 (연출 없이 바로 전투)
+	const bool bActing = CharacterStateComponent->GetCurrentState().IsValid() && CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Idle) == false;
+	if (bInPlayIntro && bActing == false)
+	{
+		PlayIntro();
+	}
+
+	if (AETSpawnVolume* SpawnVolume = GetHomeSpawnVolume())
+	{
+		SpawnVolume->AlertSpawnedMonsters(InTarget);
+	}
+}
+
+void AETMonster::LoseTarget()
+{
+	if (UBlackboardComponent* BlackboardComponent = GetBlackboardComponent())
+	{
+		BlackboardComponent->SetValueAsObject(ETNames::BlackboardKey::TargetActor, nullptr);
+	}
+
+	UpdateStatBarVisible();
+}
+
 AActor* AETMonster::GetAttackTarget() const
 {
-	const AAIController* AIController = Cast<AAIController>(GetController());
-	const UBlackboardComponent* BlackboardComponent = AIController ? AIController->GetBlackboardComponent() : nullptr;
+	const UBlackboardComponent* BlackboardComponent = GetBlackboardComponent();
 	if (BlackboardComponent == nullptr)
 	{
 		return nullptr;
@@ -235,27 +235,61 @@ AActor* AETMonster::GetAttackTarget() const
 	return Cast<AActor>(BlackboardComponent->GetValueAsObject(ETNames::BlackboardKey::TargetActor));
 }
 
-AETSpawnVolume* AETMonster::GetSpawnVolume() const
+AETSpawnVolume* AETMonster::GetHomeSpawnVolume() const
 {
-	return SpawnVolume.Get();
+	return HomeSpawnVolume.Get();
 }
 
-void AETMonster::SetSpawnVolume(AETSpawnVolume* InSpawnVolume)
+void AETMonster::SetHomeSpawnVolume(AETSpawnVolume* InHomeSpawnVolume)
 {
-	SpawnVolume = InSpawnVolume;
+	HomeSpawnVolume = InHomeSpawnVolume;
 }
 
-void AETMonster::SetStatBarVisible(const bool bVisible)
+void AETMonster::StopBrainLogic(const FString& InReason)
 {
-	StatBarWidgetComponent->SetVisibility(bVisible && CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death) == false);
+	const AAIController* AIController = Cast<AAIController>(GetController());
+	if (UBrainComponent* BrainComponent = AIController ? AIController->GetBrainComponent() : nullptr)
+	{
+		BrainComponent->StopLogic(InReason);
+	}
+}
+
+void AETMonster::RestartBrainLogic()
+{
+	const AAIController* AIController = Cast<AAIController>(GetController());
+	if (UBrainComponent* BrainComponent = AIController ? AIController->GetBrainComponent() : nullptr)
+	{
+		BrainComponent->RestartLogic();
+	}
+}
+
+UBlackboardComponent* AETMonster::GetBlackboardComponent() const
+{
+	AAIController* AIController = Cast<AAIController>(GetController());
+	return AIController ? AIController->GetBlackboardComponent() : nullptr;
+}
+
+void AETMonster::UpdateStatBarVisible()
+{
+	if (StatBarWidgetComponent == nullptr)
+	{
+		return;
+	}
+
+	const bool bAlive = IsDead() == false;
+	StatBarWidgetComponent->SetVisibility(bAlive && (GetAttackTarget() || bLockOnTargeted));
 }
 
 void AETMonster::OnLockOnTargeted()
 {
+	bLockOnTargeted = true;
 	LockOnWidgetComponent->SetVisibility(true);
+	UpdateStatBarVisible();
 }
 
 void AETMonster::OnLockOnTargetReleased()
 {
+	bLockOnTargeted = false;
 	LockOnWidgetComponent->SetVisibility(false);
+	UpdateStatBarVisible();
 }

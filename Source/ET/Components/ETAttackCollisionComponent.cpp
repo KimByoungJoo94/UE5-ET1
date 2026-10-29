@@ -4,19 +4,14 @@
 #include "Subsystem/ETGameDataSubsystem.h"
 #include "Subsystem/ETJobSubsystem.h"
 #include "Job/ETCameraJobs.h"
+#include "Common/ETHelper.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
-#include "Particles/ParticleSystem.h"
-#include "Particles/ParticleSystemComponent.h"
-#include "TimerManager.h"
 
 namespace
 {
     // 한 틱에 나눠서 스윕하는 최대 횟수 (히치로 이동 거리가 커져도 비용 제한)
     constexpr int32 MaxWeaponCollisionStepCount = 16;
-
-    // 루프 파티클 최대 재생 시간
-    constexpr float LoopParticleLifeTime = 5.f;
 }
 
 UETAttackCollisionComponent::UETAttackCollisionComponent()
@@ -88,7 +83,7 @@ void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowNa
         IgnoreActorArray,
         OverlapActorArray);
 
-    SpawnParticle(this, RowData->CenterParticle, Origin, RowData->CenterParticleScale);
+    FETHelper::SpawnParticleAtLocation(this, RowData->CenterParticle, Origin, RowData->CenterParticleScale);
     PlayCameraShake(RowData->CameraShakeRowName, &Origin);
 
     for (AActor* OverlapActor : OverlapActorArray)
@@ -98,7 +93,7 @@ void UETAttackCollisionComponent::StartRadialAttackCollision(const FName InRowNa
 
         if (OwnerCharacter->AttackTarget(OverlapActor, HitResult, OwnerCharacter->GetAttackDamage()) > 0.f)
         {
-            SpawnParticle(this, RowData->HitParticle, TargetLocation, RowData->HitParticleScale);
+            FETHelper::SpawnParticleAtLocation(this, RowData->HitParticle, TargetLocation, RowData->HitParticleScale);
         }
     }
 
@@ -201,37 +196,11 @@ void UETAttackCollisionComponent::SweepWeaponCollision(AETCharacter* OwnerCharac
 
                     if (OwnerCharacter->AttackTarget(HitActor, HitResult, OwnerCharacter->GetAttackDamage()) > 0.f)
                     {
-                        SpawnParticle(this, CachedWeaponCollisionRowData->HitParticle, HitResult.ImpactPoint, CachedWeaponCollisionRowData->HitParticleScale);
+                        FETHelper::SpawnParticleAtLocation(this, CachedWeaponCollisionRowData->HitParticle, HitResult.ImpactPoint, CachedWeaponCollisionRowData->HitParticleScale);
                         PlayCameraShake(CachedWeaponCollisionRowData->CameraShakeRowName);
                     }
                 }
             }
         }
-    }
-}
-
-void UETAttackCollisionComponent::SpawnParticle(const UObject* InWorldContextObject, const TSoftObjectPtr<UParticleSystem>& InParticle, const FVector& InLocation, const float InScale)
-{
-    UParticleSystem* Particle = InParticle.LoadSynchronous();
-    UWorld* World = InWorldContextObject ? InWorldContextObject->GetWorld() : nullptr;
-    if (Particle == nullptr || World == nullptr)
-    {
-        return;
-    }
-
-    UParticleSystemComponent* ParticleSystemComponent = UGameplayStatics::SpawnEmitterAtLocation(World, Particle, InLocation, FRotator::ZeroRotator, FVector(InScale));
-
-    // 루프 파티클은 끝나지 않아 자동 제거되지 않으므로 일정 시간 뒤 정지 (남은 입자가 사라지면 자동 제거)
-    if (ParticleSystemComponent && Particle->IsLooping())
-    {
-        FTimerHandle DeactivateTimerHandle;
-        World->GetTimerManager().SetTimer(
-            DeactivateTimerHandle,
-            FTimerDelegate::CreateWeakLambda(ParticleSystemComponent, [ParticleSystemComponent]()
-            {
-                ParticleSystemComponent->DeactivateSystem();
-            }),
-            LoopParticleLifeTime,
-            false);
     }
 }

@@ -29,7 +29,6 @@ protected:
 	// IETLockOnInterface 구현 캐릭터 중 탐색 반경, 카메라 시야각, 시야 차단으로 거른 뒤 화면 중앙 각도와 거리 가중합이 가장 낮은 캐릭터
 	AETCharacter* FindLockOnTarget() const;
 
-	bool IsTargetDead(AETCharacter* InTarget) const;
 	FVector GetTargetLookAtLocation(const AETCharacter* InTarget) const;
 
 	void UpdateControlRotation(const float InDeltaTime);

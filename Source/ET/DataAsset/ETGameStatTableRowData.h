@@ -8,7 +8,8 @@ UENUM(BlueprintType)
 enum class EETGameStatType : uint8
 {
 	Health = 0,	
-	Speed,
+	WalkSpeed,
+	SprintSpeed,
 	Attack,
 	HeavyAttackMaxCharge,
 	Mana,
@@ -17,8 +18,7 @@ enum class EETGameStatType : uint8
 	Momentum,
 	MomentumDrain,
 	MomentumAttackBonus,
-	MomentumGain,
-	DetectRange,
+	MomentumGain,	
 	StunPoint,
 	StunAttack,
 	Max,

@@ -9,6 +9,7 @@
 #include "DataAsset/ETCharacterTableRowData.h"
 #include "DataAsset/ETActionConditionTableRowData.h"
 #include "DataAsset/ETRewardTableRowData.h"
+#include "Common/ETHelper.h"
 #include "Subsystem/ETGameDataSubsystem.h"
 #include "Subsystem/ETLevelSubsystem.h"
 #include "Subsystem/ETTimeDilationSubsystem.h"
@@ -54,6 +55,7 @@ void AETCharacter::PreInitializeComponents()
 	}
 
 	GameStatComponent->GenerateGameStat(CharacterRowData->BaseGameStatRowName);
+	ApplyMoveSpeed(EETGameStatType::WalkSpeed);
 
 	CachedActionDataAsset = CharacterRowData->ActionDataAsset.LoadSynchronous();
 }
@@ -87,9 +89,14 @@ float AETCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 	return ActualDamage;
 }
 
-bool AETCharacter::TryAvoidDamage(const FDamageEvent& InDamageEvent, AActor* InDamageCauser)
+bool AETCharacter::IsDead() const
 {
 	return CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death);
+}
+
+bool AETCharacter::TryAvoidDamage(const FDamageEvent& InDamageEvent, AActor* InDamageCauser)
+{
+	return IsDead();
 }
 
 void AETCharacter::HitReact(AActor* InDamageCauser)
@@ -223,7 +230,7 @@ void AETCharacter::Die()
 void AETCharacter::ApplyStunDamage(const float InStunDamage)
 {
 	if (InStunDamage <= 0.f ||
-		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death) ||
+		IsDead() ||
 		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Stun) ||
 		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Intro))
 	{
@@ -247,7 +254,7 @@ void AETCharacter::ApplyStunDamage(const float InStunDamage)
 
 void AETCharacter::Stun()
 {
-	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death))
+	if (IsDead())
 	{
 		return;
 	}
@@ -263,7 +270,7 @@ void AETCharacter::Stun()
 
 void AETCharacter::OnStunEnded(bool bInterrupted)
 {
-	if (CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death))
+	if (IsDead())
 	{
 		return;
 	}
@@ -281,7 +288,7 @@ float AETCharacter::AttackTarget(AActor* InTarget, const FHitResult& InHitResult
 {
 	// 무기, 범위 공격, 발사체 모두 여기를 거치므로 같은 편 판정을 한 곳에서 처리
 	const AETCharacter* TargetCharacter = Cast<AETCharacter>(InTarget);
-	if (TargetCharacter && ETCharacterType::IsHostile(GetCharacterType(), TargetCharacter->GetCharacterType()) == false)
+	if (TargetCharacter && FETHelper::IsHostile(GetCharacterType(), TargetCharacter->GetCharacterType()) == false)
 	{
 		return 0.f;
 	}
@@ -309,6 +316,11 @@ void AETCharacter::ResetGameStat()
 
 	// 기세는 0 에서 시작해서 시간에 따라 감소
 	GameStatComponent->EmptyCurrentValue(EETGameStatType::Momentum);
+}
+
+void AETCharacter::ApplyMoveSpeed(const EETGameStatType InMoveSpeedStatType)
+{
+	GetCharacterMovement()->MaxWalkSpeed = GameStatComponent->GetGameStat(InMoveSpeedStatType).GetCurrentValue();
 }
 
 void AETCharacter::SetCapsuleHalfHeightKeepGround(const float InHalfHeight)

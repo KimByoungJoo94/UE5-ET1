@@ -18,7 +18,7 @@ void UETLockOnComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	AETCharacter* Target = LockOnTarget.Get();
-	if (Target == nullptr || IsTargetDead(Target))
+	if (Target == nullptr || Target->IsDead())
 	{
 		EndLockOn();
 		return;
@@ -107,7 +107,7 @@ AETCharacter* UETLockOnComponent::FindLockOnTarget() const
 	for (AActor* OverlapActor : OverlapActorArray)
 	{
 		AETCharacter* Candidate = Cast<AETCharacter>(OverlapActor);
-		if (Candidate == nullptr || Candidate->Implements<UETLockOnInterface>() == false || IsTargetDead(Candidate))
+		if (Candidate == nullptr || Candidate->Implements<UETLockOnInterface>() == false || Candidate->IsDead())
 		{
 			continue;
 		}
@@ -142,12 +142,6 @@ AETCharacter* UETLockOnComponent::FindLockOnTarget() const
 	}
 
 	return BestTarget;
-}
-
-bool UETLockOnComponent::IsTargetDead(AETCharacter* InTarget) const
-{
-	const UETCharacterStateComponent* TargetStateComponent = InTarget->GetCharacterStateComponent();
-	return TargetStateComponent && TargetStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death);
 }
 
 FVector UETLockOnComponent::GetTargetLookAtLocation(const AETCharacter* InTarget) const

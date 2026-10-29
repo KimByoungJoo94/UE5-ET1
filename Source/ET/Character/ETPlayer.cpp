@@ -25,8 +25,10 @@
 #include "Job/ETLevelJobs.h"
 #include "Controller/ETPlayerController.h"
 #include "Common/ETNames.h"
+#include "Common/ETHelper.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "Engine/DamageEvents.h"
 
 AETPlayer::AETPlayer()
@@ -41,7 +43,6 @@ AETPlayer::AETPlayer()
 	{
 		CharacterMovementComponent->bOrientRotationToMovement = true;
 		CharacterMovementComponent->RotationRate = FRotator(0.f, 500.f, 0.f);
-		CharacterMovementComponent->MaxWalkSpeed = 500.f;
 		CharacterMovementComponent->BrakingDecelerationWalking = 2000.f;
 	}
 
@@ -135,6 +136,8 @@ void AETPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		EnhancedInputComponent->BindAction(PlayerInputData.PrimaryAction, ETriggerEvent::Completed, this, &ThisClass::OnPrimaryActionCompleted);
 
 		EnhancedInputComponent->BindAction(PlayerInputData.DodgeAction, ETriggerEvent::Started, this, &ThisClass::OnDodgeActionStarted);
+		EnhancedInputComponent->BindAction(PlayerInputData.SprintAction, ETriggerEvent::Started, this, &ThisClass::OnSprintActionStarted);
+		EnhancedInputComponent->BindAction(PlayerInputData.SprintAction, ETriggerEvent::Completed, this, &ThisClass::OnSprintActionCompleted);
 		EnhancedInputComponent->BindAction(PlayerInputData.ParryAction, ETriggerEvent::Started, this, &ThisClass::OnParryActionStarted);
 		EnhancedInputComponent->BindAction(PlayerInputData.ParryAction, ETriggerEvent::Completed, this, &ThisClass::OnParryActionCompleted);
 
@@ -177,7 +180,7 @@ void AETPlayer::OnMoveActionTriggered(const FInputActionValue& InValue)
 void AETPlayer::OnLookActionTriggered(const FInputActionValue& InValue)
 {	
 	if (LockOnComponent->IsLockedOn() || 
-		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Death) ||
+		IsDead() ||
 		CharacterStateComponent->IsCurrentState(ETGameplayTags::Character_State_Intro))
 	{
 		return;
@@ -351,6 +354,16 @@ void AETPlayer::OnParryActionStarted()
 void AETPlayer::OnParryActionCompleted()
 {
 	ReleaseParry();
+}
+
+void AETPlayer::OnSprintActionStarted()
+{
+	ApplyMoveSpeed(EETGameStatType::SprintSpeed);
+}
+
+void AETPlayer::OnSprintActionCompleted()
+{
+	ApplyMoveSpeed(EETGameStatType::WalkSpeed);
 }
 
 void AETPlayer::OnActiveSkillActionStarted(const int32 InSkillIndex)
@@ -728,23 +741,38 @@ void AETPlayer::PlayComboAttack()
 
 void AETPlayer::OnChargeCountChanged(const int32 InCurrentChargeCount, const int32 InMaxChargeCount)
 {
+	// 충전을 모두 써서 공격하면 충전 파티클 정지 (남은 입자가 사라지면 자동 제거)
 	if (InCurrentChargeCount <= 0)
 	{
+		for (UParticleSystemComponent* ChargeParticleSystemComponent : ChargeParticleSystemComponentArray)
+		{
+			if (ChargeParticleSystemComponent)
+			{
+				ChargeParticleSystemComponent->DeactivateSystem();
+			}
+		}
+
+		ChargeParticleSystemComponentArray.Reset();
 		return;
 	}
 
-	// 충전 단계가 오를 때마다 범위 공격 (판정, 파티클은 범위 공격 테이블 행 기준)
 	AttackCollisionComponent->StartRadialAttackCollision(ETNames::RowName::RadialAttackCharge);
+
+	// 처음 충전될 때만 생성 (이미 붙어 있으면 유지)
+	if (ChargeParticleSystemComponentArray.IsEmpty())
+	{
+		for (const FETPlayerChargeParticleData& ChargeParticleData : PlayerChargeAttackData.ChargeParticleArray)
+		{
+			if (UParticleSystemComponent* ChargeParticleSystemComponent = FETHelper::SpawnParticleAttached(ChargeParticleData.Particle, GetMesh(), ChargeParticleData.SocketName))
+			{
+				ChargeParticleSystemComponentArray.Add(ChargeParticleSystemComponent);
+			}
+		}
+	}
 }
 
 void AETPlayer::PlayParryParticle(const FDamageEvent& InDamageEvent, const bool bInPerfect)
 {
-	UParticleSystem* ParryParticle = bInPerfect ? PlayerParryData.PerfectParryParticle.LoadSynchronous() : PlayerParryData.ParryParticle.LoadSynchronous();
-	if (ParryParticle == nullptr)
-	{
-		return;
-	}
-
 	// 포인트 데미지면 무기가 닿은 지점, 아니면 캐릭터 위치
 	FVector ParryLocation = GetActorLocation();
 	if (InDamageEvent.IsOfType(FPointDamageEvent::ClassID))
@@ -752,7 +780,7 @@ void AETPlayer::PlayParryParticle(const FDamageEvent& InDamageEvent, const bool 
 		ParryLocation = static_cast<const FPointDamageEvent&>(InDamageEvent).HitInfo.ImpactPoint;
 	}
 
-	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ParryParticle, ParryLocation);
+	FETHelper::SpawnParticleAtLocation(this, bInPerfect ? PlayerParryData.PerfectParryParticle : PlayerParryData.ParryParticle, ParryLocation, 1.f);
 }
 
 void AETPlayer::PlayPerfectDodge()

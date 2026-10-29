@@ -5,60 +5,15 @@
 #include "ETCharacterTableRowData.generated.h"
 
 class UETCharacterActionDataAsset;
-class UBehaviorTree;
 class AETCharacter;
 
 UENUM()
 enum class EETCharacterType : uint8
 {
 	Player = 0,
-	Monster,
-	// 처치 기록을 세이브에 남김 (최초 처치 보상, 레벨 클리어 판정)
+	Monster,	
 	Boss,
 	Max,
-};
-
-namespace ETCharacterType
-{
-	// 플레이어와 몬스터(보스 포함)만 서로 적 (같은 편은 공격이 닿아도 데미지 없음)
-	inline bool IsHostile(const EETCharacterType InAttackerType, const EETCharacterType InTargetType)
-	{
-		return (InAttackerType == EETCharacterType::Player) != (InTargetType == EETCharacterType::Player);
-	}
-}
-
-UENUM()
-enum class EETTargetDetectType : uint8
-{	
-	Range = 0,
-	Sight,
-};
-
-UENUM()
-enum class EETTargetLoseType : uint8
-{	
-	Leash = 0,
-	Persistent,
-};
-
-// AI 설정 (BT, 대상 탐지, 탐지 거리는 DetectRange 스탯)
-USTRUCT()
-struct ET_API FETCharacterAIData
-{
-	GENERATED_BODY()
-
-public:	
-	UPROPERTY(EditAnywhere)
-	TSoftObjectPtr<UBehaviorTree> BehaviorTree;
-
-	UPROPERTY(EditAnywhere)
-	EETTargetDetectType TargetDetectType = EETTargetDetectType::Range;
-
-	UPROPERTY(EditAnywhere)
-	EETTargetLoseType TargetLoseType = EETTargetLoseType::Leash;
-
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0", ClampMax = "360.0", EditCondition = "TargetDetectType == EETTargetDetectType::Sight"))
-	float SightAngle = 120.f;
 };
 
 // 처치(사망) 시 처리
@@ -108,8 +63,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Common")
 	TSoftObjectPtr<UETCharacterActionDataAsset> ActionDataAsset;
 
-	UPROPERTY(EditAnywhere, Category = "AI")
-	FETCharacterAIData AIData;
+	UPROPERTY(EditAnywhere, Category = "AI", meta = (GetOptions = "ET.ETGameDataSubsystem.GetAIRowNameOptions"))
+	FName AIRowName;
 
 	UPROPERTY(EditAnywhere, Category = "Defeat")
 	FETCharacterDefeatData DefeatData;

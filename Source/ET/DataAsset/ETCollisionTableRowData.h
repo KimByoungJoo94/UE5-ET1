@@ -79,21 +79,18 @@ public:
 	UPROPERTY(EditAnywhere)
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypeArray;
 
-	// 판정할 때마다 판정 중심에 출력 (맞은 대상이 없어도)
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UParticleSystem> CenterParticle;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
 	float CenterParticleScale = 1.f;
 
-	// 실제 데미지가 들어갔을 때 대상 위치에 출력
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UParticleSystem> HitParticle;
 
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
 	float HitParticleScale = 1.f;
 
-	// 판정할 때마다 판정 중심을 진원지로 카메라 쉐이크 (맞은 대상이 없어도, 거리 감쇠는 카메라 쉐이크 테이블 Inner, Outer 반경)
 	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetCameraShakeRowNameOptions"))
 	FName CameraShakeRowName;
 

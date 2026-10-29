@@ -37,6 +37,9 @@ public:
 	// 생성한 몬스터가 Die 에서 호출 (모두 처치하면 잠금 해제)
 	void OnSpawnedMonsterDied();
 
+	// 생성한 몬스터가 대상을 인식하면 호출 (같은 볼륨의 나머지 몬스터도 연쇄 인식)
+	void AlertSpawnedMonsters(AActor* InTarget);
+
 private:
 	UFUNCTION()
 	void OnRangeSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -46,9 +49,6 @@ private:
 
 	// 플레이어 캡슐의 진입, 이탈만 처리 (다른 컴포넌트, 몬스터 오버랩 무시)
 	bool IsPlayerCapsule(const AActor* InOtherActor, const UPrimitiveComponent* InOtherComp) const;
-
-	// 플레이어 진입 여부를 기록하고 생성한 몬스터의 체력바 표시 갱신
-	void SetPlayerInRange(const bool bInRange);
 
 	bool HasAliveSpawnedMonster() const;
 
@@ -104,7 +104,7 @@ protected:
 private:
 	TArray<TWeakObjectPtr<AETMonster>> SpawnedMonsterArray;
 
-	// 리셋으로 새로 생성한 몬스터에도 현재 상태를 적용하기 위해 기록
+	// 범위 밖에서 잠금이 풀리면 잠금 대상 해제하기 위해 기록
 	bool bPlayerInRange = false;
 
 	// 테이블 잠금 옵션 (생성 시 기록)

@@ -109,6 +109,9 @@ public:
 	UFUNCTION()
 	static TArray<FName> GetAIRowNameOptions();
 
+	UFUNCTION()
+	static TArray<FName> GetGimmickRowNameOptions();
+
 private:
 	static TArray<FName> GetRowNameOptions(const UScriptStruct* InRowStruct);
 	static const UDataTable* FindDataTableInPath(const UScriptStruct* InRowStruct);

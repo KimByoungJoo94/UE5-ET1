@@ -26,7 +26,7 @@ public:
 	FRotator RelativeRotation = FRotator::ZeroRotator;
 };
 
-// 스폰 볼륨 구성 (위치는 레벨에 배치한 AETSpawnVolume 이 가짐)
+// 스폰 볼륨 구성 (위치는 레벨에 배치하거나 기믹으로 생성한 AETSpawnVolume 이 가짐)
 USTRUCT()
 struct ET_API FETSpawnVolumeTableRowData : public FTableRowBase
 {
@@ -39,6 +39,10 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TArray<FETSpawnVolumeCharacterData> SpawnCharacterArray;
+
+	// 끄면 체크포인트 휴식 등의 리셋에서 다시 생성하지 않음 (처음 생성한 몬스터는 살아 있으면 유지, 기믹 매복 등 일회성 배치)
+	UPROPERTY(EditAnywhere)
+	bool bRespawnOnReset = true;
 
 	// 플레이어가 범위 안쪽으로 들어오면 생성한 몬스터를 모두 처치할 때까지 범위 밖으로 나갈 수 없음 (수평 거리 기준)
 	UPROPERTY(EditAnywhere)

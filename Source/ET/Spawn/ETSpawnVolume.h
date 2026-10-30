@@ -28,8 +28,11 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 
 public:
-	// 생성한 몬스터를 모두 제거하고 처음 상태로 다시 생성
+	// 생성한 몬스터를 모두 제거하고 처음 상태로 다시 생성 (테이블 bRespawnOnReset 이 꺼져 있으면 무시)
 	void ResetSpawn();
+
+	// 런타임에 생성할 때 BeginPlay 전에 지정 (SpawnActorDeferred 후 FinishSpawning 전)
+	FORCEINLINE void SetSpawnVolumeRowName(const FName InSpawnVolumeRowName) { SpawnVolumeRowName = InSpawnVolumeRowName; }
 
 	// 볼륨 중심 기준 범위 구체 안인지
 	bool IsInRange(const FVector& InLocation) const;
@@ -39,6 +42,12 @@ public:
 
 	// 생성한 몬스터가 대상을 인식하면 호출 (같은 볼륨의 나머지 몬스터도 연쇄 인식)
 	void AlertSpawnedMonsters(AActor* InTarget);
+
+	// 순간이동 기믹 목적지 후보 (살아 있는 몬스터가 있고 보스가 없으며 플레이어가 범위 밖)
+	bool IsTeleportDestination(const AETPlayer* InPlayer) const;
+
+	// 잠금 시작 거리의 원 위에서 내비메시 위이고 캡슐이 겹치지 않는 위치 (볼륨 중심을 바라봄, 못 찾으면 false)
+	bool FindTeleportTransform(const AETPlayer* InPlayer, OUT FTransform& OutTransform) const;
 
 private:
 	UFUNCTION()
@@ -106,6 +115,9 @@ private:
 
 	// 범위 밖에서 잠금이 풀리면 잠금 대상 해제하기 위해 기록
 	bool bPlayerInRange = false;
+
+	// 테이블 리셋 옵션 (생성 시 기록)
+	bool bRespawnOnReset = true;
 
 	// 테이블 잠금 옵션 (생성 시 기록)
 	bool bLockPlayerInRange = false;

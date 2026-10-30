@@ -17,6 +17,10 @@ public:
 	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetRewardRowNameOptions"))
 	FName RewardRowName;
 
+	// 비어 있으면 기믹 없음 (보상과 독립, 보상은 상호작용 즉시 지급)
+	UPROPERTY(EditAnywhere, meta = (GetOptions = "ET.ETGameDataSubsystem.GetGimmickRowNameOptions"))
+	FName GimmickRowName;
+
 	// 비어 있으면 BP 설정 유지
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UParticleSystem> ParticleSystem;

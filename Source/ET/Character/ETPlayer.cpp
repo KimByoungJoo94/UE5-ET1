@@ -531,6 +531,22 @@ void AETPlayer::SetPerfectTiming(const bool bInPerfectTiming)
 	bPerfectTiming = bInPerfectTiming;
 }
 
+void AETPlayer::TeleportByGimmick(const FTransform& InTransform)
+{
+	if (LockOnComponent->IsLockedOn())
+	{
+		LockOnComponent->EndLockOn();
+	}
+
+	// 도착 위치는 FindTeleportSpot 으로 이미 보정했으므로 검사 생략
+	TeleportTo(InTransform.GetLocation(), InTransform.Rotator(), false, true);
+
+	if (AController* PlayerController = GetController())
+	{
+		PlayerController->SetControlRotation(InTransform.Rotator());
+	}
+}
+
 void AETPlayer::GainPerfectMomentum()
 {
 	GameStatComponent->AddDepletedValue(EETGameStatType::Momentum, GameStatComponent->GetGameStat(EETGameStatType::MomentumGain).GetCurrentValue());

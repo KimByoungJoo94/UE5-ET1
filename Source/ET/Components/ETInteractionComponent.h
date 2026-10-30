@@ -33,6 +33,8 @@ public:
 	void DoInteraction(AActor* InTarget);
 	// 대기 중이던 상호작용 몽타주 재개 (체크포인트 창 닫기 등)
 	void EndInteraction();
+	// 상호작용 몽타주를 바로 블렌드아웃 (기믹 발동 등 위협이 생겨 남은 동작을 기다리지 않고 조작을 돌려줄 때)
+	void CancelInteraction();
 
 private:
 	void ReleaseInteractionTarget();

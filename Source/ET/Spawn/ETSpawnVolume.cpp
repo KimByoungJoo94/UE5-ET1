@@ -16,7 +16,14 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Materials/MaterialInterface.h"
+#include "NavigationSystem.h"
 #include "UObject/ConstructorHelpers.h"
+
+namespace
+{
+	// 순간이동 위치를 찾을 때 원 위에서 나눠 시도하는 횟수
+	constexpr int32 TeleportAttemptCount = 8;
+}
 
 AETSpawnVolume::AETSpawnVolume()
 {
@@ -137,6 +144,11 @@ void AETSpawnVolume::Tick(float DeltaSeconds)
 
 void AETSpawnVolume::ResetSpawn()
 {
+	if (bRespawnOnReset == false)
+	{
+		return;
+	}
+
 	EndLock();
 	DestroySpawnedCharacters();
 	SpawnCharacters();
@@ -204,6 +216,70 @@ void AETSpawnVolume::AlertSpawnedMonsters(AActor* InTarget)
 			Monster->DetectTarget(InTarget, true);
 		}
 	}
+}
+
+bool AETSpawnVolume::IsTeleportDestination(const AETPlayer* InPlayer) const
+{
+	if (InPlayer == nullptr || IsInRange(InPlayer->GetActorLocation()) || HasAliveSpawnedMonster() == false)
+	{
+		return false;
+	}
+
+	bool bHasBoss = false;
+	for (const TWeakObjectPtr<AETMonster>& SpawnedMonster : SpawnedMonsterArray)
+	{
+		if (SpawnedMonster.IsValid() && SpawnedMonster->GetCharacterType() == EETCharacterType::Boss)
+		{
+			bHasBoss = true;
+			break;
+		}
+	}
+
+	return bHasBoss == false;
+}
+
+bool AETSpawnVolume::FindTeleportTransform(const AETPlayer* InPlayer, OUT FTransform& OutTransform) const
+{
+	const UNavigationSystemV1* NavigationSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	if (InPlayer == nullptr || NavigationSystem == nullptr)
+	{
+		return false;
+	}
+
+	float CapsuleRadius = 0.f;
+	float CapsuleHalfHeight = 0.f;
+	InPlayer->GetCapsuleComponent()->GetScaledCapsuleSize(CapsuleRadius, CapsuleHalfHeight);
+
+	// 잠금 볼륨이면 도착하자마자 잠기는 거리 (잠금이 없어도 경계 근처에서 몬스터를 바라보며 시작)
+	const float Distance = FMath::Max(GetLockDistance(InPlayer) - LockEnterMargin, 0.f);
+	const float StartAngle = FMath::FRandRange(0.f, UE_TWO_PI);
+	const FVector Center = GetActorLocation();
+
+	// 볼륨 높이와 지형 높이가 달라도 찾도록 위아래로 넉넉하게 투영
+	const FVector ProjectExtent(CapsuleRadius, CapsuleRadius, 500.f);
+
+	bool bFound = false;
+	for (int32 Index = 0; Index < TeleportAttemptCount && bFound == false; ++Index)
+	{
+		const float Angle = StartAngle + UE_TWO_PI * Index / TeleportAttemptCount;
+		const FVector CandidateLocation = Center + FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.f) * Distance;
+
+		FNavLocation NavLocation;
+		if (NavigationSystem->ProjectPointToNavigation(CandidateLocation, NavLocation, ProjectExtent))
+		{
+			FVector TeleportLocation = NavLocation.Location + FVector(0.f, 0.f, CapsuleHalfHeight);
+			const FRotator TeleportRotation(0.f, (Center - TeleportLocation).Rotation().Yaw, 0.f);
+
+			// 벽, 지형에 캡슐이 겹치면 가까운 빈 위치로 보정 (보정할 수 없으면 다음 후보)
+			if (GetWorld()->FindTeleportSpot(InPlayer, TeleportLocation, TeleportRotation))
+			{
+				OutTransform = FTransform(TeleportRotation, TeleportLocation);
+				bFound = true;
+			}
+		}
+	}
+
+	return bFound;
 }
 
 bool AETSpawnVolume::HasAliveSpawnedMonster() const
@@ -307,6 +383,7 @@ void AETSpawnVolume::SpawnCharacters()
 
 	RangeSphereComponent->SetSphereRadius(SpawnVolumeRowData->Range);
 
+	bRespawnOnReset = SpawnVolumeRowData->bRespawnOnReset;
 	bLockPlayerInRange = SpawnVolumeRowData->bLockPlayerInRange;
 	LockEnterMargin = SpawnVolumeRowData->LockEnterMargin;
 	LockBoundaryMaterial = bLockPlayerInRange ? SpawnVolumeRowData->LockBoundaryMaterial.LoadSynchronous() : nullptr;

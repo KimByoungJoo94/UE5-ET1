@@ -197,6 +197,9 @@ public:
 	void ResetParry();
 	void SetPerfectTiming(const bool bInPerfectTiming);
 
+	// 기믹 순간이동 (락온 해제, 카메라를 도착 방향으로)
+	void TeleportByGimmick(const FTransform& InTransform);
+
 	virtual float AttackTarget(AActor* InTarget, const FHitResult& InHitResult, const float InDamage) override;
 	virtual float GetAttackDamage() const override;
 	virtual AActor* GetAttackTarget() const override;

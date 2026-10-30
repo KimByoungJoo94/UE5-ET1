@@ -30,9 +30,12 @@ void FETHelper::SpawnParticleAtLocation(const UObject* InWorldContextObject, con
 		FTimerHandle DeactivateTimerHandle;
 		World->GetTimerManager().SetTimer(
 			DeactivateTimerHandle,
-			FTimerDelegate::CreateWeakLambda(ParticleSystemComponent, [ParticleSystemComponent]()
+			FTimerDelegate::CreateWeakLambda(ParticleSystemComponent, [WeakParticleSystemComponent = TWeakObjectPtr<UParticleSystemComponent>(ParticleSystemComponent)]()
 			{
-				ParticleSystemComponent->DeactivateSystem();
+				if (UParticleSystemComponent* ParticleSystemComponent = WeakParticleSystemComponent.Get())
+				{
+					ParticleSystemComponent->DeactivateSystem();
+				}
 			}),
 			LoopParticleLifeTime,
 			false);

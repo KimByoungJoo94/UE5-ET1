@@ -7,6 +7,8 @@
 #include "Common/ETHelper.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/DamageType.h"
+#include "GameFramework/Controller.h"
 
 namespace
 {
@@ -116,22 +118,36 @@ FTransform UETAttackCollisionComponent::GetRadialAttackOriginTransform(const AET
     return bUseSocket ? SkeletalMeshComponent->GetSocketTransform(InSocketName) : InOwnerCharacter->GetActorTransform();
 }
 
+void UETAttackCollisionComponent::PlayRadialExplosion(AActor* InDamageCauser, AETCharacter* InInstigatorCharacter, const FName InRowName, const FVector& InOrigin, const float InDamage)
+{
+    const FETRadialAttackCollisionTableRowData* RowData = InDamageCauser ? ETSubsystem::Get<UETGameDataSubsystem>(InDamageCauser).GetRow<FETRadialAttackCollisionTableRowData>(InRowName) : nullptr;
+    if (RowData == nullptr || RowData->Radius <= 0.f)
+    {
+        return;
+    }
+
+    // 폭발한 액터가 바로 사라져도 쉐이크가 취소되지 않도록 월드 기준
+    TArray<AActor*> OverlapActorArray;
+    OverlapRadialAttack(InDamageCauser->GetWorld(), *RowData, InOrigin, InDamageCauser->GetActorRotation(), InDamageCauser, OverlapActorArray);
+
+    AController* InstigatorController = InInstigatorCharacter ? InInstigatorCharacter->GetController() : nullptr;
+    for (AActor* OverlapActor : OverlapActorArray)
+    {
+        const FVector TargetLocation = OverlapActor->GetActorLocation();
+        const FVector HitFromDirection = (TargetLocation - InOrigin).GetSafeNormal();
+        const FHitResult HitResult(OverlapActor, nullptr, TargetLocation, HitFromDirection);
+
+        if (UGameplayStatics::ApplyPointDamage(OverlapActor, InDamage, HitFromDirection, HitResult, InstigatorController, InDamageCauser, UDamageType::StaticClass()) > 0.f)
+        {
+            FETHelper::SpawnParticleAtLocation(InDamageCauser, RowData->HitParticle, TargetLocation, FRotator::ZeroRotator, RowData->HitParticleScale);
+        }
+    }
+}
+
 void UETAttackCollisionComponent::PlayRadialAttack(AETCharacter* InOwnerCharacter, const FETRadialAttackCollisionTableRowData& InRowData, const FVector& InOrigin, const FRotator& InCenterParticleRotation)
 {
-    const TArray<AActor*> IgnoreActorArray = { InOwnerCharacter };
     TArray<AActor*> OverlapActorArray;
-
-    UKismetSystemLibrary::SphereOverlapActors(
-        InOwnerCharacter,
-        InOrigin,
-        InRowData.Radius,
-        InRowData.ObjectTypeArray,
-        AETCharacter::StaticClass(),
-        IgnoreActorArray,
-        OverlapActorArray);
-
-    FETHelper::SpawnParticleAtLocation(this, InRowData.CenterParticle, InOrigin, InCenterParticleRotation, InRowData.CenterParticleScale);
-    PlayCameraShake(InRowData.CameraShakeRowName, &InOrigin);
+    OverlapRadialAttack(this, InRowData, InOrigin, InCenterParticleRotation, InOwnerCharacter, OverlapActorArray);
 
     for (AActor* OverlapActor : OverlapActorArray)
     {
@@ -143,15 +159,40 @@ void UETAttackCollisionComponent::PlayRadialAttack(AETCharacter* InOwnerCharacte
             FETHelper::SpawnParticleAtLocation(this, InRowData.HitParticle, TargetLocation, FRotator::ZeroRotator, InRowData.HitParticleScale);
         }
     }
+}
+
+void UETAttackCollisionComponent::OverlapRadialAttack(const UObject* InWorldContextObject, const FETRadialAttackCollisionTableRowData& InRowData, const FVector& InOrigin, const FRotator& InCenterParticleRotation, AActor* InIgnoreActor, OUT TArray<AActor*>& OutOverlapActorArray)
+{
+    TArray<AActor*> IgnoreActorArray;
+    if (InIgnoreActor)
+    {
+        IgnoreActorArray.Add(InIgnoreActor);
+    }
+
+    UKismetSystemLibrary::SphereOverlapActors(
+        InWorldContextObject,
+        InOrigin,
+        InRowData.Radius,
+        InRowData.ObjectTypeArray,
+        AETCharacter::StaticClass(),
+        IgnoreActorArray,
+        OutOverlapActorArray);
+
+    FETHelper::SpawnParticleAtLocation(InWorldContextObject, InRowData.CenterParticle, InOrigin, InCenterParticleRotation, InRowData.CenterParticleScale);
+    if (InRowData.CameraShakeRowName.IsNone() == false)
+    {
+        // 진원지 기준으로 카메라 쉐이크 테이블 Inner, Outer 반경 거리 감쇠
+        ETSubsystem::Get<UETJobSubsystem>(InWorldContextObject).Run(InWorldContextObject, MakeUnique<FETCameraShakeJob>(InRowData.CameraShakeRowName, InOrigin));
+    }
 
 #if ENABLE_DRAW_DEBUG
     if (InRowData.DrawDebugType != EDrawDebugTrace::None)
     {
         const bool bPersistent = InRowData.DrawDebugType == EDrawDebugTrace::Persistent;
         const float LifeTime = InRowData.DrawDebugType == EDrawDebugTrace::ForDuration ? InRowData.DrawDebugTime : 0.f;
-        const FColor DebugColor = OverlapActorArray.IsEmpty() ? FColor::Red : FColor::Green;
+        const FColor DebugColor = OutOverlapActorArray.IsEmpty() ? FColor::Red : FColor::Green;
 
-        DrawDebugSphere(GetWorld(), InOrigin, InRowData.Radius, 24, DebugColor, bPersistent, LifeTime);
+        DrawDebugSphere(InWorldContextObject->GetWorld(), InOrigin, InRowData.Radius, 24, DebugColor, bPersistent, LifeTime);
     }
 #endif
 }
@@ -191,17 +232,6 @@ FVector UETAttackCollisionComponent::FindGroundLocation(const FVector& InLocatio
     }
 
     return InLocation;
-}
-
-void UETAttackCollisionComponent::PlayCameraShake(const FName InCameraShakeRowName, const FVector* InEpicenter)
-{
-    if (InCameraShakeRowName.IsNone())
-    {
-        return;
-    }
-
-    TUniquePtr<FETCameraShakeJob> CameraShakeJob = InEpicenter ? MakeUnique<FETCameraShakeJob>(InCameraShakeRowName, *InEpicenter) : MakeUnique<FETCameraShakeJob>(InCameraShakeRowName);
-    ETSubsystem::Get<UETJobSubsystem>(this).Run(this, MoveTemp(CameraShakeJob));
 }
 
 void UETAttackCollisionComponent::TraceWeaponCollision()
@@ -281,7 +311,10 @@ void UETAttackCollisionComponent::SweepWeaponCollision(AETCharacter* OwnerCharac
                     if (OwnerCharacter->AttackTarget(HitActor, HitResult, OwnerCharacter->GetAttackDamage()) > 0.f)
                     {
                         FETHelper::SpawnParticleAtLocation(this, CachedWeaponCollisionRowData->HitParticle, HitResult.ImpactPoint, FRotator::ZeroRotator, CachedWeaponCollisionRowData->HitParticleScale);
-                        PlayCameraShake(CachedWeaponCollisionRowData->CameraShakeRowName);
+                        if (CachedWeaponCollisionRowData->CameraShakeRowName.IsNone() == false)
+                        {
+                            ETSubsystem::Get<UETJobSubsystem>(this).Run(this, MakeUnique<FETCameraShakeJob>(CachedWeaponCollisionRowData->CameraShakeRowName));
+                        }
                     }
                 }
             }

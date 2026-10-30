@@ -70,16 +70,19 @@ public:
 	void StartMultiRadialAttackCollision(const FETMultiRadialAttackData& InMultiRadialAttackData, const float InDuration);
 	void EndMultiRadialAttackCollision();
 
+	// 공격자 캐릭터 없는 범위 폭발 (기믹 등, 같은 편 판정 없이 범위 안 모든 캐릭터에게 데미지)
+	// 데미지 Instigator 는 InInstigatorCharacter (맞은 몬스터의 인식, 처치 보상 대상, 없으면 Instigator 없이 데미지)
+	static void PlayRadialExplosion(AActor* InDamageCauser, AETCharacter* InInstigatorCharacter, const FName InRowName, const FVector& InOrigin, const float InDamage);
+
 protected:
 	void TraceWeaponCollision();
 	void SweepWeaponCollision(AETCharacter* OwnerCharacter, const FVector& StartLocation, const FVector& EndLocation);
-	// 진원지가 있으면 카메라 쉐이크 테이블 Inner, Outer 반경으로 거리 감쇠
-	void PlayCameraShake(const FName InCameraShakeRowName, const FVector* InEpicenter = nullptr);
-
 	// 소켓이 유효하면 소켓, 아니면 오너 Transform
 	FTransform GetRadialAttackOriginTransform(const AETCharacter* InOwnerCharacter, const FName InSocketName) const;
-	// 중심 위치에서 판정, 중심 파티클, 카메라 쉐이크, 피격 파티클
+	// 중심 위치에서 판정 후 오너의 공격으로 맞은 캐릭터마다 데미지, 피격 파티클
 	void PlayRadialAttack(AETCharacter* InOwnerCharacter, const FETRadialAttackCollisionTableRowData& InRowData, const FVector& InOrigin, const FRotator& InCenterParticleRotation);
+	// 중심 위치에서 판정, 중심 파티클, 카메라 쉐이크, 디버그 (데미지는 호출한 쪽에서 맞은 캐릭터마다)
+	static void OverlapRadialAttack(const UObject* InWorldContextObject, const FETRadialAttackCollisionTableRowData& InRowData, const FVector& InOrigin, const FRotator& InCenterParticleRotation, AActor* InIgnoreActor, OUT TArray<AActor*>& OutOverlapActorArray);
 
 	void PlayMultiRadialAttackWave();
 	// 위치 아래 바닥 (바닥이 없으면 그대로)

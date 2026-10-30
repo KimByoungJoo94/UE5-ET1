@@ -5,6 +5,7 @@
 #include "Character/ETCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Animation/AnimInstance.h"
+#include "Animation/AnimMontage.h"
 
 UETInteractionComponent::UETInteractionComponent()
 {	
@@ -89,6 +90,17 @@ void UETInteractionComponent::EndInteraction()
 	if (UAnimInstance* AnimInstance = GetInteractingAnimInstance())
 	{
 		AnimInstance->Montage_Resume(AnimInstance->GetCurrentActiveMontage());
+	}
+}
+
+void UETInteractionComponent::CancelInteraction()
+{
+	if (UAnimInstance* AnimInstance = GetInteractingAnimInstance())
+	{
+		if (const UAnimMontage* CurrentMontage = AnimInstance->GetCurrentActiveMontage())
+		{
+			AnimInstance->Montage_Stop(CurrentMontage->GetDefaultBlendOutTime(), CurrentMontage);
+		}
 	}
 }
 

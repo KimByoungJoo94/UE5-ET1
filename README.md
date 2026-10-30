@@ -14,6 +14,7 @@
 | Sci-fi Container Free 02 | Fab | `Content/Fab/Sci-fi_Container_Free_02` |
 | The Motherland Calls | Fab | `Content/Fab/The_Motherland_Calls` |
 | Torii Gate - 3D Model | Fab | `Content/Fab/Torii_Gate_-_3D_Model` |
+| Monitor V - Tactical Emergency Device | Fab | `Content/Fab/Monitor_V_-_Tactical_Emergency_Device` |
 | Free Material Pack | Fab | `Content/FreeMaterialPack` |
 | Soul: Cave | Fab | `Content/SoulCave` |
 | Asian Village | Fab | `Content/Asian_Village` |

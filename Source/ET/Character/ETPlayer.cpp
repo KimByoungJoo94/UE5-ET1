@@ -2,6 +2,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/RootMotionSource.h"
+#include "Environment/ETWaterPlane.h"
+#include "EngineUtils.h"
 #include "Camera/CameraComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
@@ -70,6 +72,12 @@ void AETPlayer::BeginPlay()
 
 	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Idle);
 
+	TActorIterator<AETWaterPlane> WaterPlaneIterator(GetWorld());
+	if (WaterPlaneIterator)
+	{
+		WaterPlane = *WaterPlaneIterator;
+	}
+
 	// 최대값이 바뀌므로 현재값을 채우기 전에 적용
 	ApplySavedPermanentGameStat();
 	ResetGameStat();
@@ -81,6 +89,13 @@ void AETPlayer::BeginPlay()
 
 	// 레벨 시작 연출 (재생 중에는 입력, 카메라 회전 불가)
 	PlayIntro();
+}
+
+void AETPlayer::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult)
+{
+	Super::CalcCamera(DeltaTime, OutResult);
+
+	KeepCameraAboveWater(OutResult);
 }
 
 void AETPlayer::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -525,6 +540,18 @@ void AETPlayer::ResetParry()
 	bParryPaused = false;
 	bParryReleased = false;
 	ParryMontage = nullptr;
+}
+
+void AETPlayer::KeepCameraAboveWater(OUT FMinimalViewInfo& OutViewInfo) const
+{
+	if (const AETWaterPlane* CurrentWaterPlane = WaterPlane.Get())
+	{
+		const float MinCameraHeight = CurrentWaterPlane->GetSurfaceHeight() + CurrentWaterPlane->GetCameraSurfaceMargin();
+		if (OutViewInfo.Location.Z < MinCameraHeight && CurrentWaterPlane->IsInWaterArea(OutViewInfo.Location))
+		{
+			OutViewInfo.Location.Z = MinCameraHeight;
+		}
+	}
 }
 
 void AETPlayer::SetPerfectTiming(const bool bInPerfectTiming)

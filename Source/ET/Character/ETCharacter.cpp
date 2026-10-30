@@ -77,9 +77,7 @@ float AETCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 
 	if (GameStatComponent->GetGameStat(EETGameStatType::Health).GetCurrentValue() <= 0.f)
 	{
-		CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Death);
-		ProcessDefeat(EventInstigator ? EventInstigator->GetPawn() : DamageCauser);
-		Die();
+		Kill(EventInstigator ? EventInstigator->GetPawn() : DamageCauser);
 	}
 	else
 	{
@@ -87,6 +85,19 @@ float AETCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 	}
 
 	return ActualDamage;
+}
+
+void AETCharacter::Kill(AActor* InKiller)
+{
+	if (IsDead())
+	{
+		return;
+	}
+
+	GameStatComponent->EmptyCurrentValue(EETGameStatType::Health);
+	CharacterStateComponent->ChangeState(ETGameplayTags::Character_State_Death);
+	ProcessDefeat(InKiller);
+	Die();
 }
 
 bool AETCharacter::IsDead() const

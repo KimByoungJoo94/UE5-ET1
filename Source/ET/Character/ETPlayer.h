@@ -9,6 +9,7 @@
 enum class EETGameStatType : uint8;
 
 class USpringArmComponent;
+class AETWaterPlane;
 class UCameraComponent;
 class UETInteractionComponent;
 class UETChargeAttackComponent;
@@ -160,6 +161,7 @@ protected:
 
 public:
 	virtual void Tick(float DeltaTime) override;
+	virtual void CalcCamera(float DeltaTime, struct FMinimalViewInfo& OutResult) override;
 	virtual bool CanJumpInternal_Implementation() const override;
 virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 		
@@ -233,6 +235,9 @@ protected:
 
 	void OnChargeCountChanged(const int32 InCurrentChargeCount, const int32 InMaxChargeCount);
 
+	// 카메라가 수면 아래로 내려가지 않도록 높이만 수면 위로 올림 (거리, 방향은 유지해서 캐릭터 쪽으로 당겨지지 않음)
+	void KeepCameraAboveWater(OUT FMinimalViewInfo& OutViewInfo) const;
+
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Component")
 	TObjectPtr<USpringArmComponent> SpringArmComponent;
@@ -289,4 +294,8 @@ protected:
 	bool bPerfectTiming = false;
 
 private:
-	FDelegateHandle OnChargeCountChangedHandle;};
+	FDelegateHandle OnChargeCountChangedHandle;
+
+	// 레벨의 수면 (없으면 카메라 보정 없음, 레벨당 하나라 시작 시 한 번 찾음)
+	TWeakObjectPtr<AETWaterPlane> WaterPlane;
+};

@@ -49,6 +49,9 @@ public:
 	virtual float AttackTarget(AActor* InTarget, const FHitResult& InHitResult, const float InDamage);
 	virtual float GetAttackDamage() const;
 
+	// 회피, 패리, 데미지 계산 없이 체력을 비우고 바로 사망 (익사 등, InKiller 가 없으면 처치 보상 없음)
+	void Kill(AActor* InKiller = nullptr);
+
 	// 보상 테이블 행 적용 (영구 스탯은 스탯 컴포넌트에 반영)
 	virtual void ApplyReward(const FName InRewardRowName);
 

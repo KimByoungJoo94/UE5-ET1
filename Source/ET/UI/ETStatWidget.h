@@ -33,6 +33,7 @@ protected:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	void OnUpdateGameStat(const FETGameStat& InGameStat);
 	void UpdateGameStat(const FETGameStat& InGameStat);
@@ -44,6 +45,10 @@ protected:
 	// 엔진 GColorList 의 색 이름
 	UPROPERTY(EditAnywhere, Category = "Stat", meta = (GetOptions = "ET.ETUserWidget.GetColorNameOptions"))
 	FName ProgressBarColorName = TEXT("red");
+
+	// 막대가 목표값을 따라가는 속도 (0 이면 즉시 반영)
+	UPROPERTY(EditAnywhere, Category = "Stat", meta = (ClampMin = "0.0"))
+	float ProgressBarInterpSpeed = 10.f;
 
 	UPROPERTY(EditAnywhere, Category = "Stat")
 	bool bUseStatText = true;
@@ -69,8 +74,15 @@ private:
 	// 스탯 이름은 우선 enum 표시 이름 사용
 	void UpdateDisplayNameText();
 
+	// 바인딩 직후 등 처음 표시할 때는 보간 없이 바로 반영
+	void SetProgressBarPercent(const float InPercent, const bool bInImmediately);
+
 private:
 	TWeakObjectPtr<UETGameStatComponent> BoundGameStatComponent;
 
 	FDelegateHandle OnUpdateGameStatHandle;
+
+	// 막대 보간 (Tick 에서 표시값을 목표값으로)
+	float TargetProgressBarPercent = 0.f;
+	float DisplayProgressBarPercent = 0.f;
 };

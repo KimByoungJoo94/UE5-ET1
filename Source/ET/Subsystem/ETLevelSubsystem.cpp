@@ -1,4 +1,5 @@
 ﻿#include "Subsystem/ETLevelSubsystem.h"
+#include "Character/ETCharacter.h"
 #include "Subsystem/ETGameDataSubsystem.h"
 #include "Subsystem/ETSaveSubsystem.h"
 #include "DataAsset/ETLevelTableRowData.h"
@@ -117,7 +118,7 @@ void UETLevelSubsystem::RecordCurrentLevel(const UWorld* InWorld)
 	SaveSubsystem.Save();
 }
 
-void UETLevelSubsystem::RecordCharacterDefeat(const FName InCharacterRowName, const bool bInBoss)
+void UETLevelSubsystem::RecordCharacterDefeat(const FName InCharacterRowName)
 {
 	UETSaveSubsystem& SaveSubsystem = ETSubsystem::Get<UETSaveSubsystem>(this);
 
@@ -128,11 +129,6 @@ void UETLevelSubsystem::RecordCharacterDefeat(const FName InCharacterRowName, co
 	{
 		SaveSubsystem.Save();
 	}
-
-	if (bInBoss)
-	{
-		OnBossDefeated.Broadcast(InCharacterRowName);
-	}
 }
 
 bool UETLevelSubsystem::IsCharacterDefeated(const FName InCharacterRowName) const
@@ -140,13 +136,34 @@ bool UETLevelSubsystem::IsCharacterDefeated(const FName InCharacterRowName) cons
 	return ETSubsystem::Get<UETSaveSubsystem>(this).GetWorldSaveData().DefeatedCharacterRowNameSet.Contains(InCharacterRowName);
 }
 
-bool UETLevelSubsystem::IsLevelCleared(const FName InLevelRowName) const
+void UETLevelSubsystem::TryClearLevel(const UWorld* InWorld, const FName InDefeatedCharacterRowName)
 {
-	const FETLevelTableRowData* LevelRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETLevelTableRowData>(InLevelRowName);
-	if (LevelRowData == nullptr || LevelRowData->ClearCharacterRowName.IsNone())
+	const FName LevelRowName = FindLevelRowName(InWorld);
+	const FETLevelTableRowData* LevelRowData = ETSubsystem::Get<UETGameDataSubsystem>(this).GetRow<FETLevelTableRowData>(LevelRowName);
+	if (LevelRowData == nullptr || LevelRowData->ClearCharacterRowName.IsNone() || LevelRowData->ClearCharacterRowName != InDefeatedCharacterRowName)
 	{
-		return false;
+		return;
 	}
 
-	return IsCharacterDefeated(LevelRowData->ClearCharacterRowName);
+	UETSaveSubsystem& SaveSubsystem = ETSubsystem::Get<UETSaveSubsystem>(this);
+
+	bool bAlreadyCleared = false;
+	SaveSubsystem.GetWorldSaveData().ClearedLevelRowNameSet.Add(LevelRowName, &bAlreadyCleared);
+
+	if (bAlreadyCleared == false)
+	{
+		// 익사 등 처치자가 없어도 레벨 클리어 보상은 플레이어에게 (클리어 저장에 보상이 포함되도록 보상 적용 후 저장)
+		if (AETCharacter* PlayerCharacter = Cast<AETCharacter>(UGameplayStatics::GetPlayerCharacter(InWorld, 0)))
+		{
+			PlayerCharacter->ApplyReward(LevelRowData->ClearRewardRowName);
+		}
+
+		SaveSubsystem.Save();
+		OnLevelCleared.Broadcast(LevelRowName);
+	}
+}
+
+bool UETLevelSubsystem::IsLevelCleared(const FName InLevelRowName) const
+{
+	return ETSubsystem::Get<UETSaveSubsystem>(this).GetWorldSaveData().ClearedLevelRowNameSet.Contains(InLevelRowName);
 }

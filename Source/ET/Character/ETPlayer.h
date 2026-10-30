@@ -186,6 +186,7 @@ public:
 	void PlayActiveSkill(const int32 InSkillIndex);
 	// ~Key Input
 
+	// 회복 플라스크 1회 사용 (최대 체력의 HealFlaskPercent % 회복, 남은 횟수가 없으면 무시)
 	void UseItem();
 
 	// 영구 스탯은 세이브 데이터에도 반영 (디스크 저장은 체크포인트 / 사망 / 게임 종료 시)

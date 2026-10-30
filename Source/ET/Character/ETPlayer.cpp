@@ -280,7 +280,9 @@ void AETPlayer::OnPrimaryActionCompleted()
 
 void AETPlayer::OnUseItemActionStarted()
 {
-	if (CanPlayAction(ETGameplayTags::Character_Action_UseItem) == false || GetCharacterMovement()->IsFalling())
+	if (CanPlayAction(ETGameplayTags::Character_Action_UseItem) == false ||
+		GetCharacterMovement()->IsFalling() ||
+		GameStatComponent->HasEnoughCurrentValue(EETGameStatType::HealFlaskCount, 1.f) == false)
 	{
 		return;
 	}
@@ -291,8 +293,15 @@ void AETPlayer::OnUseItemActionStarted()
 
 void AETPlayer::UseItem()
 {
-	// TODO : 기본 체력 회복 또는 설정한 아이템 사용
-	GameStatComponent->AddDepletedValue(EETGameStatType::Health, 10.f);
+	// 몽타주 재생 중 횟수가 바뀌었을 수 있으므로 사용 시점에 다시 확인
+	if (GameStatComponent->HasEnoughCurrentValue(EETGameStatType::HealFlaskCount, 1.f))
+	{
+		const float MaxHealth = GameStatComponent->GetGameStat(EETGameStatType::Health).GetMaxValue();
+		const float HealPercent = GameStatComponent->GetGameStat(EETGameStatType::HealFlaskPercent).GetCurrentValue();
+
+		GameStatComponent->AddDepletedValue(EETGameStatType::HealFlaskCount, -1.f);
+		GameStatComponent->AddDepletedValue(EETGameStatType::Health, MaxHealth * HealPercent * 0.01f);
+	}
 }
 
 void AETPlayer::OnDodgeActionStarted()

@@ -60,6 +60,17 @@ void UETStatWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
+void UETStatWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+
+	if (ValueProgressBar && FMath::IsNearlyEqual(DisplayProgressBarPercent, TargetProgressBarPercent) == false)
+	{
+		DisplayProgressBarPercent = FMath::FInterpTo(DisplayProgressBarPercent, TargetProgressBarPercent, InDeltaTime, ProgressBarInterpSpeed);
+		ValueProgressBar->SetPercent(DisplayProgressBarPercent);
+	}
+}
+
 void UETStatWidget::BindGameStatComponent()
 {
 	// 타입이 바뀌었을 수 있으므로 기존 바인딩은 항상 먼저 해제
@@ -76,6 +87,7 @@ void UETStatWidget::BindGameStatComponent()
 		OnUpdateGameStatHandle = OwningGameStatComponent->GetOnUpdateGameStatDelegate(GameStatType).AddUObject(this, &ThisClass::OnUpdateGameStat);
 
 		UpdateGameStat(OwningGameStatComponent->GetGameStat(GameStatType));
+		SetProgressBarPercent(TargetProgressBarPercent, true);
 	}
 }
 
@@ -112,6 +124,21 @@ void UETStatWidget::UpdateDisplayNameText()
 	}
 }
 
+void UETStatWidget::SetProgressBarPercent(const float InPercent, const bool bInImmediately)
+{
+	TargetProgressBarPercent = InPercent;
+
+	if (bInImmediately)
+	{
+		DisplayProgressBarPercent = InPercent;
+
+		if (ValueProgressBar)
+		{
+			ValueProgressBar->SetPercent(InPercent);
+		}
+	}
+}
+
 void UETStatWidget::OnUpdateGameStat(const FETGameStat& InGameStat)
 {
 	UpdateGameStat(InGameStat);
@@ -122,10 +149,7 @@ void UETStatWidget::UpdateGameStat(const FETGameStat& InGameStat)
 	const float CurrentValue = InGameStat.GetCurrentValue();
 	const float MaxValue = InGameStat.GetMaxValue();
 
-	if (ValueProgressBar)
-	{
-		ValueProgressBar->SetPercent(MaxValue > 0.f ? CurrentValue / MaxValue : 0.f);
-	}
+	SetProgressBarPercent(MaxValue > 0.f ? CurrentValue / MaxValue : 0.f, ProgressBarInterpSpeed <= 0.f);
 
 	if (bUseStatText == false)
 	{

@@ -182,8 +182,7 @@ void AETCharacter::ProcessDefeat(AActor* InKiller)
 	}
 
 	const FETCharacterDefeatData& DefeatData = CharacterRowData->DefeatData;
-	const bool bBoss = CharacterRowData->CharacterType == EETCharacterType::Boss;
-	const bool bRecordDefeat = bBoss || DefeatData.OnceRewardRowName.IsNone() == false;
+	const bool bRecordDefeat = DefeatData.OnceRewardRowName.IsNone() == false;
 
 	if (DefeatData.SlowDuration > 0.f)
 	{
@@ -205,8 +204,10 @@ void AETCharacter::ProcessDefeat(AActor* InKiller)
 	// 최초 처치 저장에 보상이 포함되도록 보상 적용 후 기록
 	if (bRecordDefeat)
 	{
-		LevelSubsystem.RecordCharacterDefeat(CharacterRowName, bBoss);
+		LevelSubsystem.RecordCharacterDefeat(CharacterRowName);
 	}
+
+	LevelSubsystem.TryClearLevel(GetWorld(), CharacterRowName);
 }
 
 void AETCharacter::Die()

@@ -21,6 +21,8 @@ enum class EETGameStatType : uint8
 	MomentumGain,	
 	StunPoint,
 	StunAttack,
+	HealFlaskCount,		// 회복 플라스크 사용 가능 횟수 (현재값이 남은 횟수, 체크포인트 휴식 시 충전)
+	HealFlaskPercent,	// 회복 플라스크 1회 회복량 (최대 체력의 %, 30 = 30%)
 	Max,
 };
 

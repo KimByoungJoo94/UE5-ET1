@@ -93,7 +93,7 @@ protected:
 	void HitReact(AActor* InDamageCauser);
 	// 피격 몽타주 재생 직전 호출 (진행 중이던 행동 정리용)
 	virtual void OnHitReact() {}
-	// 처치한 캐릭터에게 보상 지급, 처치 기록 (보스 또는 1회 보상이 있는 캐릭터)
+	// 처치한 캐릭터에게 보상 지급, 처치 기록 (1회 보상이 있는 캐릭터), 현재 레벨 클리어 판정
 	void ProcessDefeat(AActor* InKiller);
 	// 사망 공통 처리 (판정, 이동, 충돌 정지 후 사망 몽타주 재생)
 	virtual void Die();

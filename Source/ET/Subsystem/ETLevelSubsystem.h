@@ -5,7 +5,7 @@
 #include "Subsystem/ETSubsystem.h"
 #include "ETLevelSubsystem.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnBossDefeated, FName InCharacterRowName);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnLevelCleared, FName InLevelRowName);
 
 // 레벨 이동, 레벨 진행 판정 (진행 정보는 UETSaveSubsystem 이 보관)
 UCLASS()
@@ -35,13 +35,14 @@ public:
 	// 레벨 시작 시 마지막 레벨로 기록 (이어하기 시 열 레벨)
 	void RecordCurrentLevel(const UWorld* InWorld);
 
-	// 처치 기록 (최초 처치일 때만 저장, 보스면 OnBossDefeated 알림)
-	void RecordCharacterDefeat(const FName InCharacterRowName, const bool bInBoss);
+	// 처치 기록 (최초 처치일 때만 저장)
+	void RecordCharacterDefeat(const FName InCharacterRowName);
 	bool IsCharacterDefeated(const FName InCharacterRowName) const;
 
-	// 레벨의 클리어 보스 처치 기록이 있는지
+	// 처치한 캐릭터가 현재 레벨의 클리어 캐릭터면 레벨 클리어 기록 (최초 클리어면 플레이어에게 클리어 보상, OnLevelCleared 알림)
+	void TryClearLevel(const UWorld* InWorld, const FName InDefeatedCharacterRowName);
 	bool IsLevelCleared(const FName InLevelRowName) const;
 
 public:
-	FOnBossDefeated OnBossDefeated;
+	FOnLevelCleared OnLevelCleared;
 };

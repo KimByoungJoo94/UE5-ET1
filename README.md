@@ -15,6 +15,7 @@
 | The Motherland Calls | Fab | `Content/Fab/The_Motherland_Calls` |
 | Torii Gate - 3D Model | Fab | `Content/Fab/Torii_Gate_-_3D_Model` |
 | Monitor V - Tactical Emergency Device | Fab | `Content/Fab/Monitor_V_-_Tactical_Emergency_Device` |
+| FREE Ritual Stone | Fab | `Content/Fab/FREE_Ritual_Stone` |
 | Free Material Pack | Fab | `Content/FreeMaterialPack` |
 | Soul: Cave | Fab | `Content/SoulCave` |
 | Asian Village | Fab | `Content/Asian_Village` |
@@ -46,6 +47,23 @@ Content/ParagonMinions/Characters/Minions/Down_Minions/Meshes/SK_Minion_Lane_Sup
 
 > `Buff_Black_Skeleton` 은 원본에 `UpperBody_InMotion` 슬롯이 이미 있어 수정하지 않았습니다.
 > 슬롯은 ABP 컴파일 시 스켈레톤에 자동 등록되기도 하지만, 몽타주에서 슬롯을 선택하려면 미리 추가해 두는 것이 안전합니다.
+
+### FREE Ritual Stone - 폴더 이름 변경, 피벗 위치 수정, 콜리전 추가
+
+| 항목 | 내용 |
+| --- | --- |
+| 수정 내용 | 설치 폴더 `FREE_Ritual_Stone🪨` 를 `FREE_Ritual_Stone` 으로 이름 변경 (에디터에서 변경 후 리디렉터 정리) |
+| 이유 | 경로에 이모지가 포함되어 있어 경로 처리 문제 방지 |
+| 수정 내용 | 모델링 모드 Edit Pivot 으로 피벗을 메시 중앙으로 이동 |
+| 이유 | 원본 피벗이 메시에서 멀리 떨어져 있어 배치, 위치 조정이 어려움 |
+| 수정 내용 | 스태틱 메시 에디터에서 박스 단순화 콜리전 추가 |
+| 이유 | 원본 콜리전이 메시 형태와 맞지 않음 |
+
+대상 스태틱 메시
+
+```
+Content/Fab/FREE_Ritual_Stone/free_ritual_stone/StaticMeshes/free_ritual_stone
+```
 
 ## Controls
 

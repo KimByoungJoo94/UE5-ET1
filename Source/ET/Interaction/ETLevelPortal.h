@@ -25,7 +25,7 @@ public:
 	// ~IETInteractionInterface
 
 protected:
-	void OnBossDefeated(FName InCharacterRowName);
+	void OnLevelCleared(FName InLevelRowName);
 
 private:
 	void UpdatePortalOpen();
@@ -39,5 +39,5 @@ private:
 
 	bool bOpen = false;
 
-	FDelegateHandle OnBossDefeatedHandle;
+	FDelegateHandle OnLevelClearedHandle;
 };

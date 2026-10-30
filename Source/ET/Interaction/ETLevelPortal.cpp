@@ -21,7 +21,7 @@ void AETLevelPortal::BeginPlay()
 	CurrentLevelRowName = LevelSubsystem.FindLevelRowName(GetWorld());
 	ensureMsgf(CurrentLevelRowName.IsNone() == false, TEXT("Level is not in level table. Portal: %s"), *GetName());
 
-	OnBossDefeatedHandle = LevelSubsystem.OnBossDefeated.AddUObject(this, &ThisClass::OnBossDefeated);
+	OnLevelClearedHandle = LevelSubsystem.OnLevelCleared.AddUObject(this, &ThisClass::OnLevelCleared);
 
 	UpdatePortalOpen();
 }
@@ -30,7 +30,7 @@ void AETLevelPortal::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	if (UETLevelSubsystem* LevelSubsystem = ETSubsystem::GetPtr<UETLevelSubsystem>(this))
 	{
-		LevelSubsystem->OnBossDefeated.Remove(OnBossDefeatedHandle);
+		LevelSubsystem->OnLevelCleared.Remove(OnLevelClearedHandle);
 	}
 
 	Super::EndPlay(EndPlayReason);
@@ -61,7 +61,7 @@ void AETLevelPortal::OnInteraction(AActor* InInteractor)
 	LevelSubsystem.OpenLevel(LevelRowData->NextLevelRowName);
 }
 
-void AETLevelPortal::OnBossDefeated(FName InCharacterRowName)
+void AETLevelPortal::OnLevelCleared(FName InLevelRowName)
 {
 	UpdatePortalOpen();
 }

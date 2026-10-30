@@ -93,13 +93,13 @@ void UETInteractionComponent::EndInteraction()
 	}
 }
 
-void UETInteractionComponent::CancelInteraction()
+void UETInteractionComponent::CancelInteraction(const bool bInImmediately)
 {
 	if (UAnimInstance* AnimInstance = GetInteractingAnimInstance())
 	{
 		if (const UAnimMontage* CurrentMontage = AnimInstance->GetCurrentActiveMontage())
 		{
-			AnimInstance->Montage_Stop(CurrentMontage->GetDefaultBlendOutTime(), CurrentMontage);
+			AnimInstance->Montage_Stop(bInImmediately ? 0.f : CurrentMontage->GetDefaultBlendOutTime(), CurrentMontage);
 		}
 	}
 }

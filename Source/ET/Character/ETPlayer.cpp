@@ -44,6 +44,7 @@ AETPlayer::AETPlayer()
 		CharacterMovementComponent->bOrientRotationToMovement = true;
 		CharacterMovementComponent->RotationRate = FRotator(0.f, 500.f, 0.f);
 		CharacterMovementComponent->BrakingDecelerationWalking = 2000.f;
+		CharacterMovementComponent->JumpZVelocity = 500.f;
 	}
 
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
@@ -537,6 +538,9 @@ void AETPlayer::TeleportByGimmick(const FTransform& InTransform)
 	{
 		LockOnComponent->EndLockOn();
 	}
+
+	// 상호작용 동작 중이면 도착 후 기본 자세에서 바로 움직일 수 있도록 블렌드 없이 정지
+	InteractionComponent->CancelInteraction(true);
 
 	// 도착 위치는 FindTeleportSpot 으로 이미 보정했으므로 검사 생략
 	TeleportTo(InTransform.GetLocation(), InTransform.Rotator(), false, true);

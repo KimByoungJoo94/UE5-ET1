@@ -69,8 +69,11 @@ void AETFieldItem::OnInteraction(AActor* InInteractor)
 	const FETGimmickTableRowData* GimmickRowData = FieldItemRowData ? GameDataSubsystem.GetRow<FETGimmickTableRowData>(FieldItemRowData->GimmickRowName) : nullptr;
 	if (GimmickRowData)
 	{
-		// 남은 상호작용 동작 때문에 기믹에 대응하지 못하지 않도록 바로 조작을 돌려줌
-		if (UETInteractionComponent* InteractionComponent = Player->GetInteractionComponent())
+		// 상자 자리에 위협이 생기면(폭발, 매복) 남은 상호작용 동작 때문에 대응하지 못하지 않도록 바로 조작을 돌려줌
+		// 순간이동만 있으면 순간이동할 때까지 상호작용 동작 유지
+		const bool bThreatAtGimmick = GimmickRowData->ExplosionRadialAttackCollisionRowName.IsNone() == false || GimmickRowData->SpawnVolumeRowName.IsNone() == false;
+		UETInteractionComponent* InteractionComponent = Player->GetInteractionComponent();
+		if (bThreatAtGimmick && InteractionComponent)
 		{
 			InteractionComponent->CancelInteraction();
 		}

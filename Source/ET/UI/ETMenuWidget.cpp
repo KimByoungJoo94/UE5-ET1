@@ -25,6 +25,7 @@ void UETMenuWidget::NativeConstruct()
 	Super::NativeConstruct();
 
 	ReturnToGameButton->OnClicked.AddUObject(this, &ThisClass::OnReturnToGameButtonClicked);
+	ReturnToCheckpointButton->OnClicked.AddUObject(this, &ThisClass::OnReturnToCheckpointButtonClicked);
 	ReturnToTitleButton->OnClicked.AddUObject(this, &ThisClass::OnReturnToTitleButtonClicked);
 	QuitGameButton->OnClicked.AddUObject(this, &ThisClass::OnQuitGameButtonClicked);
 
@@ -54,6 +55,13 @@ FReply UETMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEve
 void UETMenuWidget::OnReturnToGameButtonClicked()
 {
 	CloseMenuWidget();
+}
+
+void UETMenuWidget::OnReturnToCheckpointButtonClicked()
+{
+	// 현재 레벨을 다시 열면 GameMode 가 마지막 체크포인트(현재 레벨에 없으면 PlayerStart)에서 시작 (몬스터, 상태도 초기화)
+	ETSubsystem::Get<UETSaveSubsystem>(this).Save();
+	ETSubsystem::Get<UETLevelSubsystem>(this).RestartLevel();
 }
 
 void UETMenuWidget::OnReturnToTitleButtonClicked()

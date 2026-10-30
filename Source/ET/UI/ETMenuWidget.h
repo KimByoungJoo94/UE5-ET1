@@ -26,6 +26,7 @@ protected:
 	virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 
 	void OnReturnToGameButtonClicked();
+	void OnReturnToCheckpointButtonClicked();
 	void OnReturnToTitleButtonClicked();
 	void OnQuitGameButtonClicked();
 
@@ -42,6 +43,9 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UETTextButtonWidget> ReturnToTitleButton;
 
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UETTextButtonWidget> ReturnToCheckpointButton;
+	
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UETTextButtonWidget> QuitGameButton;
 

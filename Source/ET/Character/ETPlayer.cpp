@@ -51,7 +51,7 @@ AETPlayer::AETPlayer()
 
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
 	SpringArmComponent->SetupAttachment(RootComponent);
-	SpringArmComponent->TargetArmLength = 500.0f;
+	SpringArmComponent->TargetArmLength = 600.0f;
 	SpringArmComponent->SetRelativeRotation(FRotator(-30.f, 0.f, 0.f));
 	SpringArmComponent->bUsePawnControlRotation = true;
 

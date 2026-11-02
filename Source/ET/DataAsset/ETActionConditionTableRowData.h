@@ -34,4 +34,12 @@ public:
 	// AI 가 사용 가능한 액션 중 고를 확률 가중치
 	UPROPERTY(EditAnywhere, Category = "AI", meta = (ClampMin = "0.0"))
 	float Weight = 1.f;
+
+	// AI 가 액션 종료 후 다음 행동까지 대기할 기본 시간 (초)
+	UPROPERTY(EditAnywhere, Category = "AI", meta = (ClampMin = "0.0"))
+	float WaitTime = 1.f;
+
+	// 매번 [Max(0, WaitTime - RandomDeviation), WaitTime + RandomDeviation] 에서 선택 (초)
+	UPROPERTY(EditAnywhere, Category = "AI", meta = (ClampMin = "0.0"))
+	float RandomDeviation = 0.2f;
 };

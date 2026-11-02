@@ -429,18 +429,18 @@ void AETCharacter::ApplyActionCondition(const FETCharacterActionMontageData* InM
 
 const FETCharacterActionMontageData* AETCharacter::FindPlayableActionMontageData(const FGameplayTag& InActionTag, const int32 InIndex) const
 {
-	if (CachedActionDataAsset == nullptr)
-	{
-		return nullptr;
-	}
-
-	const FETCharacterActionMontageData* MontageData = CachedActionDataAsset->GetActionMontageData(InActionTag, InIndex);
+	const FETCharacterActionMontageData* MontageData = GetActionMontageData(InActionTag, InIndex);
 	if (MontageData == nullptr || MontageData->Montage == nullptr || IsActionConditionMet(MontageData) == false)
 	{
 		return nullptr;
 	}
 
 	return MontageData;
+}
+
+const FETCharacterActionMontageData* AETCharacter::GetActionMontageData(const FGameplayTag& InActionTag, const int32 InIndex) const
+{
+	return CachedActionDataAsset ? CachedActionDataAsset->GetActionMontageData(InActionTag, InIndex) : nullptr;
 }
 
 int32 AETCharacter::GetActionMontageNum(const FGameplayTag& InActionTag) const

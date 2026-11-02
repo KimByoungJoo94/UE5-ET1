@@ -78,6 +78,8 @@ public:
 	bool PlayAction(const FGameplayTag& InActionTag, const int32 InIndex, const FGameplayTag& InStateTag, const FOnActionEnded& InOnActionEnded = FOnActionEnded());
 
 	int32 GetActionMontageNum(const FGameplayTag& InActionTag) const;
+	// 사용 가능 여부(비용, 쿨타임)와 무관하게 액션 데이터 조회 (행동 후 대기 등)
+	const FETCharacterActionMontageData* GetActionMontageData(const FGameplayTag& InActionTag, const int32 InIndex) const;
 	// 몽타주가 있고 액션 조건(비용, 쿨타임)을 만족하는 몽타주 데이터 (없으면 nullptr)
 	const FETCharacterActionMontageData* FindPlayableActionMontageData(const FGameplayTag& InActionTag, const int32 InIndex) const;
 	const FETActionConditionTableRowData* GetActionConditionRowData(const FETCharacterActionMontageData* InMontageData) const;
